@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Plus, Truck, CreditCard } from "lucide-react";
-import hero from "@/assets/hero.jpg";
+import heroPhones from "@/assets/hero-phones.png";
+import logo from "@/assets/vcampro-logo.png";
 import { products, brl } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 import { useText, numFromText } from "@/lib/content";
@@ -33,7 +34,10 @@ function Shop() {
   return (
     <div>
       <section className="relative overflow-hidden">
-        <img src={hero} alt="iPhone SE 2020 et deux téléphones Android Duo Android" width={1600} height={912} className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-60">
+          <img src={heroPhones} alt="iPhone SE 2020, Duo Android et iPhone 7 GPS Manager" className="max-h-[52%] w-auto max-w-[90%] object-contain" />
+          <img src={logo} alt="Vcampro" className="max-h-[26%] w-auto max-w-[62%] object-contain" />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="relative mx-auto max-w-6xl px-4 py-24 sm:py-32">
           <h1 className="max-w-xl text-4xl font-bold leading-tight sm:text-6xl">
