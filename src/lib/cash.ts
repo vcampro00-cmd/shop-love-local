@@ -6,7 +6,16 @@ export type CashEntry = {
   label: string;
   amount: number;
   kind: CashEntryKind;
+  units?: number | null;
+  unitPrice?: number | null;
 };
+
+export type Employee = { id: string; name: string; unitPrice: number };
+
+/** Salaire payé à l'unité : nombre d'unités × prix par unité, arrondi au centime. */
+export function salaryAmount(units: number, unitPrice: number): number {
+  return Math.round(units * unitPrice * 100) / 100;
+}
 
 export type CashBook = {
   /** Entrées automatiques (paiements reçus) + entrées manuelles, triées par date. */
@@ -14,6 +23,7 @@ export type CashBook = {
   expenses: CashEntry[];
   purchases: CashEntry[];
   employees: CashEntry[];
+  staff?: Employee[];
 };
 
 export type CashSummary = {
@@ -53,6 +63,7 @@ export function normalizeBook(book: Partial<CashBook> | null | undefined): CashB
     expenses: book?.expenses ?? [],
     purchases: book?.purchases ?? [],
     employees: book?.employees ?? [],
+    staff: book?.staff ?? [],
   };
 }
 

@@ -72,3 +72,10 @@ describe("caisse mensuelle", () => {
     expect(monthOf("2026-09-30T22:30:00Z")).toBe("2026-10");
   });
 });
+
+import { salaryAmount } from "@/lib/cash";
+describe("salaire à l'unité", () => {
+  it("multiplie les unités par le prix par unité", () => {
+    expect(salaryAmount(4, 12.5)).toBe(50);
+  });
+});
