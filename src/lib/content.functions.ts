@@ -58,3 +58,11 @@ export const saveSiteTexts = createServerFn({ method: "POST" })
 
     return { saved: rows.length };
   });
+
+// Vérifie le code d'accès avant d'ouvrir l'espace propriétaire (la comparaison reste côté serveur).
+export const checkEditCode = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ code: z.string().min(1).max(80) }).parse(input))
+  .handler(async ({ data }) => {
+    const expected = process.env["SITE_EDIT_CODE"];
+    return { ok: Boolean(expected) && data.code === expected };
+  });
