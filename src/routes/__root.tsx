@@ -81,10 +81,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Vcampro — Loja online" },
-      { name: "description", content: "Compre online na Vcampro com entrega ou retirada no local." },
+      { title: "Vcampro — Boutique en ligne" },
+      { name: "description", content: "Achetez en ligne chez Vcampro : livraison ou retrait sur place." },
       { property: "og:title", content: "Vcampro" },
-      { property: "og:description", content: "Compre online na Vcampro com entrega ou retirada no local." },
+      { property: "og:description", content: "Achetez en ligne chez Vcampro : livraison ou retrait sur place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -106,7 +106,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="fr" className="dark">
       <head>
         <HeadContent />
       </head>

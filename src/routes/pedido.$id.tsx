@@ -8,11 +8,11 @@ export const Route = createFileRoute("/pedido/$id")({
   validateSearch: z.object({ m: z.enum(["entrega", "retirada"]).catch("entrega"), t: z.number().catch(0) }),
   head: () => ({
     meta: [
-      { title: "Pedido confirmado — Vcampro" },
-      { name: "description", content: "Seu pedido na Vcampro foi recebido." },
+      { title: "Commande confirmée — Vcampro" },
+      { name: "description", content: "Votre commande Vcampro a bien été reçue." },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Pedido confirmado — Vcampro" },
-      { property: "og:description", content: "Seu pedido na Vcampro foi recebido." },
+      { property: "og:title", content: "Commande confirmée — Vcampro" },
+      { property: "og:description", content: "Votre commande Vcampro a bien été reçue." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -26,14 +26,14 @@ function Confirmed() {
   return (
     <div className="mx-auto max-w-lg px-4 py-24 text-center">
       <CheckCircle2 className="mx-auto h-16 w-16 text-accent" />
-      <h1 className="mt-6 text-3xl font-bold">Pedido recebido!</h1>
-      <p className="mt-2 text-muted-foreground">Número do pedido: <span className="font-bold text-foreground">{id}</span> · Total {brl(t)}</p>
+      <h1 className="mt-6 text-3xl font-bold">Commande reçue !</h1>
+      <p className="mt-2 text-muted-foreground">Numéro de commande : <span className="font-bold text-foreground">{id}</span> · Total {brl(t)}</p>
       <div className="mt-8 rounded-2xl border bg-card p-5 text-left text-sm">
         {m === "entrega"
-          ? "Seu pedido será preparado e enviado ao endereço informado. Avisaremos pelo telefone quando sair para entrega."
-          : "Avisaremos pelo telefone quando o pedido estiver pronto. Para retirar, apresente o número do pedido e um documento com foto."}
+          ? "Votre commande sera préparée puis envoyée à l'adresse indiquée. Nous vous prévenons par téléphone à l'expédition."
+          : "Nous vous prévenons par téléphone quand la commande est prête. Pour la retirer, présentez le numéro de commande et une pièce d'identité."}
       </div>
-      <Button asChild className="mt-8 bg-brand"><Link to="/">Continuar comprando</Link></Button>
+      <Button asChild className="mt-8 bg-brand"><Link to="/">Continuer mes achats</Link></Button>
     </div>
   );
 }
