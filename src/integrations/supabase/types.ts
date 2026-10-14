@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          label: string
+          spent_on: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          label: string
+          spent_on?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          label?: string
+          spent_on?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address: string
