@@ -1,8 +1,11 @@
-export type Product = { id: string; name: string; description: string; price: number; tag: string };
+import iphoneSeImg from "@/assets/iphone-se-2020.png";
+import redmiImg from "@/assets/redmi-note-11s.png";
+
+export type Product = { id: string; name: string; description: string; price: number; tag: string; image: string };
 
 export const products: Product[] = [
-  { id: "iphone-se-2020", name: "iPhone SE 2020", description: "Écran 4,7\", puce A13 Bionic, Touch ID.", price: 300, tag: "Apple" },
-  { id: "redmi-11s", name: "Redmi Note 11S", description: "Écran AMOLED 6,43\", appareil photo 108 Mpx.", price: 300, tag: "Xiaomi" },
+  { id: "iphone-se-2020", name: "iPhone SE 2020", description: "Écran 4,7\", puce A13 Bionic, Touch ID.", price: 300, tag: "Apple", image: iphoneSeImg },
+  { id: "redmi-11s", name: "Redmi Note 11S", description: "Écran AMOLED 6,43\", appareil photo 108 Mpx.", price: 300, tag: "Xiaomi", image: redmiImg },
 ];
 
 // Abonnement à l'application : 20 € par semaine.

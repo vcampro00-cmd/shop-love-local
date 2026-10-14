@@ -57,8 +57,13 @@ function Shop() {
           {products.map((p) => (
             <article key={p.id} className="flex flex-col rounded-3xl border bg-card p-6 transition hover:border-primary">
               <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{p.tag}</span>
-              <h3 className="mt-4 text-lg font-bold">{p.name}</h3>
-              <p className="mt-1 flex-1 text-sm text-muted-foreground">{p.description}</p>
+              <div className="mt-4 flex flex-1 items-center gap-4">
+                <img src={p.image} alt={p.name} loading="lazy" width={700} height={1000} className="h-32 w-24 shrink-0 object-contain drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]" />
+                <div>
+                  <h3 className="text-lg font-bold">{p.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
+                </div>
+              </div>
               <div className="mt-6 flex items-center justify-between">
                 <span className="text-xl font-bold">{brl(p.price)}</span>
                 <Button size="sm" onClick={() => { add(p.id); toast.success(`${p.name} ajouté au panier`); }}>

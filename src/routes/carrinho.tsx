@@ -70,7 +70,10 @@ function Cart() {
               if (!p) return null;
               return (
                 <div key={l.id} className="flex items-center justify-between gap-4 p-4">
-                  <div><p className="font-medium">{p.name}</p><p className="text-sm text-muted-foreground">{brl(p.price)}</p></div>
+                  <div className="flex items-center gap-3">
+                    <img src={p.image} alt={p.name} loading="lazy" width={700} height={1000} className="h-16 w-12 shrink-0 object-contain" />
+                    <div><p className="font-medium">{p.name}</p><p className="text-sm text-muted-foreground">{brl(p.price)}</p></div>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button type="button" size="icon" variant="outline" onClick={() => setQty(l.id, l.qty - 1)} aria-label="Diminuer"><Minus className="h-4 w-4" /></Button>
                     <span className="w-6 text-center">{l.qty}</span>
