@@ -165,8 +165,7 @@ function Caisse() {
 }
 
 function monthLabel(m: string) {
-  const [y, mo] = m.split("-").map(Number);
-  return new Date(y, mo - 1, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  return new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
 const eur = (n: number) => n.toFixed(2).replace(".", ",") + " EUR";
