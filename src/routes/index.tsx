@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Plus, Truck, Store, CreditCard } from "lucide-react";
 import hero from "@/assets/hero.jpg";
-import { products, brl } from "@/lib/products";
+import { products, brl, APP_PLAN_LABEL } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 
@@ -69,6 +69,7 @@ function Shop() {
             </article>
           ))}
         </div>
+        <p className="mt-6 rounded-2xl border bg-secondary p-4 text-sm text-muted-foreground">Remarque : {APP_PLAN_LABEL}.</p>
       </section>
     </div>
   );
