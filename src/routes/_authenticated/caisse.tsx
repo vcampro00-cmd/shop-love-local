@@ -51,7 +51,10 @@ function Caisse() {
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
     const value = Number(amount.replace(",", "."));
-    if (!label.trim() || !(value > 0)) return toast.error(t("cash.invalid"));
+    if (!label.trim() || !(value > 0)) {
+      toast.error(t("cash.invalid"));
+      return;
+    }
     setBusy(true);
     try {
       await add({ data: { label, amount: value, spent_on: date } });
