@@ -25,7 +25,7 @@ export const DEFAULTS: Record<string, string> = {
   // Fiche Clone Deliveroo
   "product.clone-deliveroo.name": "Clone Deliveroo",
   "product.clone-deliveroo.tag": "Android ×2",
-  "product.clone-deliveroo.description": "Deux téléphones comme s'ils n'étaient qu'un seul : l'un reste avec le propriétaire, l'autre avec le livreur. Quand le propriétaire prend un selfie sur le sien, celui du livreur se débloque automatiquement. Pour cela, il y a un abonnement de 15 € par semaine.",
+  "product.clone-deliveroo.description": "Deux téléphones Android livrés ensemble : le téléphone principal et un téléphone de rechange, fonctionnels et pratiques. Abonnement de 15 € par semaine.",
   "product.clone-deliveroo.price": "380",
 
   // Livraison
