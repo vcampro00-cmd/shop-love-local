@@ -52,7 +52,6 @@ function Caisse() {
   const addEmp = useServerFn(addEmployee);
   const delEmp = useServerFn(deleteEmployee);
   const [empName, setEmpName] = useState("");
-  const [empRate, setEmpRate] = useState("");
   const [empId, setEmpId] = useState("");
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
@@ -73,11 +72,10 @@ function Caisse() {
 
   async function submitEmployee(ev: React.FormEvent) {
     ev.preventDefault();
-    const r = num(empRate || "0");
-    if (!empName.trim() || !(r >= 0)) { toast.error(t("cash.invalid")); return; }
+    if (!empName.trim()) { toast.error(t("cash.invalid")); return; }
     try {
-      await addEmp({ data: { name: empName, unit_price: r } });
-      setEmpName(""); setEmpRate("");
+      await addEmp({ data: { name: empName, unit_price: 0 } });
+      setEmpName("");
       await qc.invalidateQueries({ queryKey: ["cash-book"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
   }
@@ -219,9 +217,8 @@ function Caisse() {
 
       <form onSubmit={submitEmployee} className="mt-6 rounded-2xl border bg-card p-5">
         <h2 className="font-semibold">{t("cash.staffTitle")}</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_160px_auto]">
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
           <Input placeholder={t("cash.staffName")} value={empName} onChange={(e) => setEmpName(e.target.value)} maxLength={100} />
-          <Input placeholder={t("cash.staffUnitPrice")} inputMode="decimal" value={empRate} onChange={(e) => setEmpRate(e.target.value)} />
           <Button type="submit" variant="outline">{t("cash.staffAdd")}</Button>
         </div>
         {staff.length > 0 && (
@@ -230,7 +227,6 @@ function Caisse() {
               <li key={x.id} className="flex items-center justify-between py-2 text-sm">
                 <span className="font-medium">{x.name}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-muted-foreground">{brl(x.unitPrice)} {t("cash.perUnit")}</span>
                   <button type="button" aria-label="Supprimer" onClick={() => removeEmployee(x.id)} className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
