@@ -208,7 +208,7 @@ function Cart() {
         {loading ? (
           <Button size="lg" disabled className="mt-6 w-full bg-brand">{t("cart.pay")}</Button>
         ) : user ? (
-          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(plan === "full" ? total : parts.now)}</Button>
+          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(effectivePlan === "full" ? total : parts.now)}</Button>
         ) : (
           <Button
             size="lg"
