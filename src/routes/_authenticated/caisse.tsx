@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, Trash2 } from "lucide-react";
 import { addExpense, deleteExpense, getCashBook } from "@/lib/cash.functions";
-import { availableMonths, filterBookByMonth, monthOf, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
+import { availableMonths, filterBookByMonth, monthOf, normalizeBook, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -58,9 +58,10 @@ function Caisse() {
     return <p className="mx-auto max-w-md px-4 py-24 text-center text-muted-foreground">{t("admin.loading")}</p>;
 
   const current = monthOf(new Date().toISOString());
-  const months = availableMonths(data, current);
+  const full = normalizeBook(data);
+  const months = availableMonths(full, current);
   const selected = month ?? current;
-  const book = filterBookByMonth(data, selected);
+  const book = filterBookByMonth(full, selected);
   const s = summarizeCash(book);
 
   async function submit(ev: React.FormEvent) {
