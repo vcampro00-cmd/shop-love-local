@@ -1,11 +1,13 @@
 import iphoneSeImg from "@/assets/iphone-se-2020.png";
-import redmiImg from "@/assets/redmi-note-11s.png";
+import clone1Img from "@/assets/clone-deliveroo-1.png";
+import clone2Img from "@/assets/clone-deliveroo-2.png";
 
 export type Product = { id: string; name: string; description: string; price: number; tag: string; image: string };
 
 export const products: Product[] = [
   { id: "iphone-se-2020", name: "iPhone SE 2020", description: "Écran 4,7\", puce A13 Bionic, Touch ID.", price: 300, tag: "Apple", image: iphoneSeImg },
-  { id: "redmi-11s", name: "Redmi Note 11S", description: "Écran AMOLED 6,43\", appareil photo 108 Mpx.", price: 300, tag: "Xiaomi", image: redmiImg },
+  { id: "clone-deliveroo-1", name: "Clone Deliveroo 1", description: "Android 13, écran 6,5\", batterie 5000 mAh.", price: 300, tag: "Android", image: clone1Img },
+  { id: "clone-deliveroo-2", name: "Clone Deliveroo 2", description: "Android 13, écran 6,6\", batterie 5000 mAh.", price: 300, tag: "Android", image: clone2Img },
 ];
 
 // Abonnement à l'application : 20 € par semaine.
