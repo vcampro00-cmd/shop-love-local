@@ -16,8 +16,8 @@ const orderQueryOptions = (id: string) =>
   });
 
 export const Route = createFileRoute("/_authenticated/pedido/$id")({
-  validateSearch: (search: Record<string, unknown>): { session_id?: string } => ({
-    session_id: typeof search.session_id === "string" ? search.session_id : undefined,
+  validateSearch: (search: Record<string, unknown>): { session_id?: string | undefined } => ({
+    session_id: typeof search["session_id"] === "string" ? search["session_id"] : undefined,
   }),
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderQueryOptions(params.id)),
   head: () => ({

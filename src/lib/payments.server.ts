@@ -15,7 +15,7 @@ export async function applyPaidSession(sessionId: string, env: StripeEnv): Promi
   const stripe = createStripeClient(env);
   const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["payment_intent"] });
   if (session.payment_status !== "paid") return;
-  const orderId = session.metadata?.orderId;
+  const orderId = session.metadata?.['orderId'];
   if (!orderId) return;
 
   const db = await admin();

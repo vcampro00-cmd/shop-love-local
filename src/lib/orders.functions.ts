@@ -207,7 +207,7 @@ export const startPayment = createServerFn({ method: "POST" })
       const found = await stripe.customers.search({ query: `metadata['userId']:'${context.userId}'`, limit: 1 });
       const customerId =
         found.data[0]?.id ??
-        (await stripe.customers.create({ email: email || undefined, metadata: { userId: context.userId } })).id;
+        (await stripe.customers.create({ ...(email ? { email } : {}), metadata: { userId: context.userId } })).id;
       const split = order.payment_plan === "split";
       const label = split ? `Commande ${order.ref} — 1er paiement sur 2` : `Commande ${order.ref}`;
       const session = await stripe.checkout.sessions.create({
