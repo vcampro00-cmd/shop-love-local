@@ -10,6 +10,9 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { CartProvider } from "@/lib/cart";
+import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
+import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -80,12 +83,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Vcampro — Loja online" },
       { name: "description", content: "Compre online na Vcampro com entrega ou retirada no local." },
-      { name: "author", content: "Lovable" },
       { property: "og:title", content: "Vcampro" },
       { property: "og:description", content: "Compre online na Vcampro com entrega ou retirada no local." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -123,7 +124,14 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <CartProvider>
+        <div className="flex min-h-screen flex-col">
+          <SiteHeader />
+          <main className="flex-1"><Outlet /></main>
+          <SiteFooter />
+        </div>
+        <Toaster />
+      </CartProvider>
     </QueryClientProvider>
   );
 }
