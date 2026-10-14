@@ -17,6 +17,7 @@ import { Route as ComoFuncionaRouteImport } from './routes/como-funciona'
 import { Route as EditarRouteImport } from './routes/editar'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedCaisseRouteImport } from './routes/_authenticated/caisse'
 import { Route as AuthenticatedMesCommandesRouteImport } from './routes/_authenticated/mes-commandes'
 import { Route as AuthenticatedPaiementIdRouteImport } from './routes/_authenticated/paiement.$id'
 import { Route as AuthenticatedPedidoIdRouteImport } from './routes/_authenticated/pedido.$id'
@@ -63,6 +64,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCaisseRoute = AuthenticatedCaisseRouteImport.update({
+  id: '/caisse',
+  path: '/caisse',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMesCommandesRoute =
   AuthenticatedMesCommandesRouteImport.update({
     id: '/mes-commandes',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/editar': typeof EditarRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/editar': typeof EditarRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/editar': typeof EditarRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/caisse': typeof AuthenticatedCaisseRoute
   '/_authenticated/mes-commandes': typeof AuthenticatedMesCommandesRoute
   '/_authenticated/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/_authenticated/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/editar'
     | '/reinitialiser-mot-de-passe'
     | '/admin'
+    | '/caisse'
     | '/mes-commandes'
     | '/paiement/$id'
     | '/pedido/$id'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/editar'
     | '/reinitialiser-mot-de-passe'
     | '/admin'
+    | '/caisse'
     | '/mes-commandes'
     | '/paiement/$id'
     | '/pedido/$id'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/editar'
     | '/reinitialiser-mot-de-passe'
     | '/_authenticated/admin'
+    | '/_authenticated/caisse'
     | '/_authenticated/mes-commandes'
     | '/_authenticated/paiement/$id'
     | '/_authenticated/pedido/$id'
@@ -265,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/caisse': {
+      id: '/_authenticated/caisse'
+      path: '/caisse'
+      fullPath: '/caisse'
+      preLoaderRoute: typeof AuthenticatedCaisseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mes-commandes': {
       id: '/_authenticated/mes-commandes'
       path: '/mes-commandes'
@@ -312,6 +331,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedCaisseRoute: typeof AuthenticatedCaisseRoute
   AuthenticatedMesCommandesRoute: typeof AuthenticatedMesCommandesRoute
   AuthenticatedPaiementIdRoute: typeof AuthenticatedPaiementIdRoute
   AuthenticatedPedidoIdRoute: typeof AuthenticatedPedidoIdRoute
@@ -319,6 +339,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedCaisseRoute: AuthenticatedCaisseRoute,
   AuthenticatedMesCommandesRoute: AuthenticatedMesCommandesRoute,
   AuthenticatedPaiementIdRoute: AuthenticatedPaiementIdRoute,
   AuthenticatedPedidoIdRoute: AuthenticatedPedidoIdRoute,
