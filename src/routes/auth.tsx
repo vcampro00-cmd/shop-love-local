@@ -24,6 +24,9 @@ export const Route = createFileRoute("/auth")({
   component: Auth,
 });
 
+const OWNER_LOGIN = "vcamprovendas";
+const OWNER_EMAIL = "vcampro00@gmail.com";
+
 const schema = z.object({
   email: z.string().trim().email("E-mail invalide").max(255),
   password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)").max(200),
@@ -42,7 +45,10 @@ function Auth() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const r = schema.safeParse(form);
+    // Identifiant du propriétaire : « Vcamprovendas » se connecte au compte administrateur.
+    const ident = form.email.trim().toLowerCase();
+    const email = mode === "signin" && ident === OWNER_LOGIN ? OWNER_EMAIL : form.email;
+    const r = schema.safeParse({ ...form, email });
     if (!r.success) {
       toast.error(r.error.issues[0]?.message ?? "Vérifiez vos informations");
       return;
@@ -70,7 +76,7 @@ function Auth() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password: form.password });
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -118,7 +124,7 @@ function Auth() {
       <form onSubmit={submit} className="mt-6 space-y-4 rounded-3xl border bg-card p-6">
         <div>
           <Label htmlFor="email">{t("auth.email")}</Label>
-          <Input id="email" type="email" autoComplete="email" value={form.email} onChange={set("email")} maxLength={255} />
+          <Input id="email" type={mode === "signin" ? "text" : "email"} autoComplete={mode === "signin" ? "username" : "email"} value={form.email} onChange={set("email")} maxLength={255} />
         </div>
         <div>
           <Label htmlFor="password">{t("auth.password")}</Label>
