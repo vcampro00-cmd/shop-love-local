@@ -8,6 +8,13 @@
       "when": 1791970484611,
       "tag": "0000_create_site_texts",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791973978090,
+      "tag": "0001_add_orders_and_roles",
+      "breakpoints": true
     }
   ]
 }
