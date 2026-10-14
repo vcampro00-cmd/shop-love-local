@@ -6,7 +6,7 @@ export const DEFAULTS: Record<string, string> = {
   // Accueil
   "home.heroTitleA": "Achetez en ligne chez",
   "home.heroTitleB": "Vcampro",
-  "home.heroSubtitle": "Payez sur le site et recevez votre commande à votre adresse.",
+  "home.heroSubtitle": "Payez sur le site, faites-vous livrer ou retirez votre commande sur place.",
   "home.ctaPrimary": "Voir les téléphones",
   "home.ctaSecondary": "Comment ça marche",
   "home.card1Title": "Paiement en ligne",
