@@ -54,8 +54,6 @@ function Caisse() {
   const [empName, setEmpName] = useState("");
   const [empRate, setEmpRate] = useState("");
   const [empId, setEmpId] = useState("");
-  const [units, setUnits] = useState("");
-  const [rate, setRate] = useState("");
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
 
@@ -192,21 +190,20 @@ function Caisse() {
           staff.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">{t("cash.staffEmpty")}</p>
           ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_120px_130px_150px_auto]">
+            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_140px_160px_auto]">
               <select
                 aria-label={t("cash.staffPick")}
                 value={empId}
-                onChange={(e) => { setEmpId(e.target.value); const emp = staff.find((x) => x.id === e.target.value); if (emp && emp.unitPrice > 0) setRate(String(emp.unitPrice)); }}
+                onChange={(e) => setEmpId(e.target.value)}
                 className="h-10 rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="">{t("cash.staffPick")}</option>
                 {staff.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
               </select>
-              <Input placeholder={t("cash.units")} inputMode="numeric" value={units} onChange={(e) => setUnits(e.target.value)} />
-              <Input placeholder={t("cash.staffUnitPrice")} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
+              <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               <Button type="submit" disabled={busy}>
-                {t("cash.add")}{num(units) > 0 && num(rate) > 0 ? ` (${brl(salaryAmount(Math.round(num(units)), num(rate)))})` : ""}
+                {t("cash.add")}
               </Button>
             </div>
           )
