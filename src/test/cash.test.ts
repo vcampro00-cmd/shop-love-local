@@ -37,3 +37,24 @@ describe("summarizeCash", () => {
     expect(s.net).toBe(-450);
   });
 });
+
+import { filterBookByMonth, monthOf } from "@/lib/cash";
+describe("caisse mensuelle", () => {
+  const book = {
+    entries: [
+      { id: "a", date: "2026-10-01T08:00:00Z", label: "x", amount: 100, kind: "auto" as const },
+      { id: "b", date: "2026-09-30T21:30:00Z", label: "y", amount: 50, kind: "auto" as const },
+    ],
+    expenses: [{ id: "c", date: "2026-09-15", label: "z", amount: 20, kind: "sortie" as const }],
+    purchases: [],
+  };
+  it("repart de zéro le 1er du mois", () => {
+    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(150);
+  });
+  it("garde le mois précédent consultable", () => {
+    expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(-20);
+  });
+  it("utilise l'heure de Paris", () => {
+    expect(monthOf("2026-09-30T22:30:00Z")).toBe("2026-10");
+  });
+});
