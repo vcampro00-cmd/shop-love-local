@@ -53,12 +53,12 @@ function Shop() {
 
       <section id="produtos" className="mx-auto max-w-6xl px-4 pb-20 pt-8">
         <h2 className="mb-6 text-2xl font-bold">Téléphones</h2>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2">
           {products.map((p) => (
             <article key={p.id} className="flex flex-col rounded-3xl border bg-card p-6 transition hover:border-primary">
               <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{p.tag}</span>
               <div className="mt-4 flex flex-1 items-center gap-4">
-                <img src={p.image} alt={p.name} loading="lazy" width={700} height={1000} className="h-32 w-24 shrink-0 object-contain drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]" />
+                <img src={p.image} alt={p.name} loading="lazy" width={p.imageW} height={p.imageH} className="h-32 w-auto shrink-0 object-contain drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]" />
                 <div>
                   <h3 className="text-lg font-bold">{p.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
