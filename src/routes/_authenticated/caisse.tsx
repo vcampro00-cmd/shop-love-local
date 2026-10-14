@@ -86,21 +86,45 @@ function Caisse() {
         <Stat label={t("cash.net")} value={brl(s.net)} strong />
       </div>
 
-      <form onSubmit={submit} className="mt-8 grid gap-3 rounded-2xl border bg-card p-5 sm:grid-cols-[180px_1fr_140px_160px_auto]">
-        <select
-          value={kind}
-          onChange={(e) => setKind(e.target.value as Kind)}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-          aria-label={t("cash.kindLabel")}
-        >
-          <option value="entree">{t("cash.kind.in")}</option>
-          <option value="sortie">{t("cash.kind.out")}</option>
-          <option value="achat">{t("cash.kind.purchase")}</option>
-        </select>
-        <Input placeholder={t("cash.labelPlaceholder")} value={label} onChange={(e) => setLabel(e.target.value)} maxLength={200} />
-        <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <Button type="submit" disabled={busy}>{t("cash.add")}</Button>
+      <form onSubmit={submit} className="mt-8 rounded-2xl border bg-card p-5">
+        <fieldset className="border-0 p-0">
+          <legend className="text-sm font-medium">{t("cash.kindLabel")}</legend>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {KINDS.map((k) => (
+              <label
+                key={k.value}
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
+                  kind === k.value ? "border-primary bg-primary/10" : "border-input hover:border-primary/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="cash-kind"
+                  value={k.value}
+                  checked={kind === k.value}
+                  onChange={() => setKind(k.value)}
+                  className="sr-only"
+                />
+                <span
+                  aria-hidden
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                    kind === k.value ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background"
+                  }`}
+                >
+                  {kind === k.value && <Check className="h-3.5 w-3.5" />}
+                </span>
+                <span className="font-medium">{t(k.key)}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_140px_160px_auto]">
+          <Input placeholder={t("cash.labelPlaceholder")} value={label} onChange={(e) => setLabel(e.target.value)} maxLength={200} />
+          <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <Button type="submit" disabled={busy}>{t("cash.add")}</Button>
+        </div>
       </form>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
