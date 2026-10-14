@@ -99,7 +99,7 @@ function Caisse() {
             {KINDS.map((k) => (
               <label
                 key={k.value}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
+                className={`relative flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${
                   kind === k.value ? "border-primary bg-primary/10" : "border-input hover:border-primary/50"
                 }`}
               >
@@ -109,7 +109,7 @@ function Caisse() {
                   value={k.value}
                   checked={kind === k.value}
                   onChange={() => setKind(k.value)}
-                  className="sr-only"
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
                 <span
                   aria-hidden
