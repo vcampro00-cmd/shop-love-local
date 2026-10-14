@@ -11,6 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { CartProvider } from "@/lib/cart";
+import { siteTextsQueryOptions } from "@/lib/content";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
@@ -77,6 +78,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Les textes écrits par le propriétaire sont lus une fois ici, avant l'affichage de toute page.
+  loader: ({ context }) => context.queryClient.ensureQueryData(siteTextsQueryOptions),
   head: () => ({
     meta: [
       { charSet: "utf-8" },

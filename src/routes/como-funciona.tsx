@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DELIVERY_FEE, brl } from "@/lib/products";
+import { useText } from "@/lib/content";
 
 export const Route = createFileRoute("/como-funciona")({
   head: () => ({
@@ -15,23 +15,20 @@ export const Route = createFileRoute("/como-funciona")({
   component: HowItWorks,
 });
 
-const steps = [
-  { t: "Choisissez vos téléphones", d: "Ajoutez au panier les téléphones souhaités et ajustez les quantités." },
-  { t: "Livraison à votre adresse", d: `Faites-vous livrer à l'adresse indiquée (frais de ${brl(DELIVERY_FEE)}).` },
-  { t: "Remplissez vos informations", d: "Indiquez nom, téléphone et adresse complète de livraison." },
-  { t: "Payez sur le site", d: "Réglez votre commande en ligne en toute sécurité." },
-  { t: "Suivez votre commande", d: "Vous recevez un numéro de commande. Nous vous prévenons quand elle est en route." },
-];
+const STEPS = [1, 2, 3, 4, 5];
 
 function HowItWorks() {
+  const t = useText();
+  const steps = STEPS.map((n) => ({ n, t: t(`steps.${n}.title`), d: t(`steps.${n}.text`) }));
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-16">
-      <h1 className="text-4xl font-bold">Comment <span className="text-brand">commander</span></h1>
-      <p className="mt-3 text-muted-foreground">Acheter chez Vcampro est simple. Voici les étapes :</p>
+      <h1 className="text-4xl font-bold">{t("steps.titleA")} <span className="text-brand">{t("steps.titleB")}</span></h1>
+      <p className="mt-3 text-muted-foreground">{t("steps.intro")}</p>
       <ol className="mt-10 space-y-4">
-        {steps.map((s, i) => (
-          <li key={s.t} className="flex gap-4 rounded-2xl border bg-card p-5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand font-bold text-primary-foreground">{i + 1}</span>
+        {steps.map((s) => (
+          <li key={s.n} className="flex gap-4 rounded-2xl border bg-card p-5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand font-bold text-primary-foreground">{s.n}</span>
             <div><h2 className="font-bold">{s.t}</h2><p className="text-sm text-muted-foreground">{s.d}</p></div>
           </li>
         ))}

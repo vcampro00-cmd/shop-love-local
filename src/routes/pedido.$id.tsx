@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { CheckCircle2 } from "lucide-react";
 import { brl } from "@/lib/products";
+import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/pedido/$id")({
@@ -22,16 +23,16 @@ export const Route = createFileRoute("/pedido/$id")({
 
 function Confirmed() {
   const { id } = Route.useParams();
-  const { t } = Route.useSearch();
+  const { t: total } = Route.useSearch();
+  const t = useText();
+
   return (
     <div className="mx-auto max-w-lg px-4 py-24 text-center">
       <CheckCircle2 className="mx-auto h-16 w-16 text-accent" />
-      <h1 className="mt-6 text-3xl font-bold">Commande reçue !</h1>
-      <p className="mt-2 text-muted-foreground">Numéro de commande : <span className="font-bold text-foreground">{id}</span> · Total {brl(t)}</p>
-      <div className="mt-8 rounded-2xl border bg-card p-5 text-left text-sm">
-        Votre commande sera préparée puis envoyée à l'adresse indiquée. Nous vous prévenons par téléphone à l'expédition.
-      </div>
-      <Button asChild className="mt-8 bg-brand"><Link to="/">Continuer mes achats</Link></Button>
+      <h1 className="mt-6 text-3xl font-bold">{t("order.title")}</h1>
+      <p className="mt-2 text-muted-foreground">Numéro de commande : <span className="font-bold text-foreground">{id}</span> · Total {brl(total)}</p>
+      <div className="mt-8 rounded-2xl border bg-card p-5 text-left text-sm">{t("order.info")}</div>
+      <Button asChild className="mt-8 bg-brand"><Link to="/">{t("order.continue")}</Link></Button>
     </div>
   );
 }
