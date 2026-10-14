@@ -4,7 +4,9 @@ import { computeTotals, isKnownProduct, makeOrderRef } from "@/lib/pricing";
 // Les montants viennent des valeurs du propriétaire : iPhone SE 2020 300 €,
 // Duo Android 380 €, frais de livraison 20 €.
 const priceOf = (id: string) =>
-  ({ "iphone-se-2020": 300, "clone-deliveroo": 380 })[id as "iphone-se-2020" | "clone-deliveroo"] ?? 0;
+  ({ "iphone-se-2020": 300, "clone-deliveroo": 380, "iphone-7-gps-manager": 150 })[
+    id as "iphone-se-2020" | "clone-deliveroo" | "iphone-7-gps-manager"
+  ] ?? 0;
 
 describe("Totaux de commande", () => {
   it("additionne les téléphones et ajoute les frais de livraison", () => {
@@ -20,6 +22,11 @@ describe("Totaux de commande", () => {
   it("ne facture pas la livraison d'un panier vide", () => {
     expect(computeTotals([], priceOf, 20)).toEqual({ subtotal: 0, deliveryFee: 0, total: 0 });
   });
+
+  it("compte l'iPhone 7 GPS Manager à 150 € la pièce", () => {
+    const totals = computeTotals([{ id: "iphone-7-gps-manager", qty: 2 }], priceOf, 20);
+    expect(totals).toEqual({ subtotal: 300, deliveryFee: 20, total: 320 });
+  });
 });
 
 describe("Référence de commande", () => {
@@ -31,6 +38,7 @@ describe("Référence de commande", () => {
 
   it("refuse un identifiant de téléphone inconnu", () => {
     expect(isKnownProduct("clone-deliveroo")).toBe(true);
+    expect(isKnownProduct("iphone-7-gps-manager")).toBe(true);
     expect(isKnownProduct("redmi-note-11s")).toBe(false);
   });
 });

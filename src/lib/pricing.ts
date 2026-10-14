@@ -2,7 +2,7 @@
 // Le serveur recalcule les totaux avec ces fonctions : les montants envoyés par le
 // navigateur ne sont jamais enregistrés tels quels.
 
-export const PRODUCT_IDS = ["iphone-se-2020", "clone-deliveroo"] as const;
+export const PRODUCT_IDS = ["iphone-se-2020", "clone-deliveroo", "iphone-7-gps-manager"] as const;
 
 export type CartItem = { id: string; qty: number };
 

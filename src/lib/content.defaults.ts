@@ -28,6 +28,12 @@ export const DEFAULTS: Record<string, string> = {
   "product.clone-deliveroo.description": "Deux téléphones Android livrés ensemble : le téléphone principal reste avec le propriétaire et l'autre avec le livreur, fonctionnels et pratiques. Abonnement de 15 € par semaine.",
   "product.clone-deliveroo.price": "380",
 
+  // Fiche iPhone 7 GPS Manager
+  "product.iphone-7-gps-manager.name": "iPhone 7 GPS Manager",
+  "product.iphone-7-gps-manager.tag": "Apple",
+  "product.iphone-7-gps-manager.description": "",
+  "product.iphone-7-gps-manager.price": "150",
+
   // Livraison
   "delivery.fee": "5",
   "delivery.label": "Livraison",
@@ -199,6 +205,15 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("product.clone-deliveroo.tag", "Étiquette"),
       long("product.clone-deliveroo.description", "Description"),
       money("product.clone-deliveroo.price", "Prix en euros"),
+    ],
+  },
+  {
+    title: "iPhone 7 GPS Manager",
+    fields: [
+      text("product.iphone-7-gps-manager.name", "Nom"),
+      text("product.iphone-7-gps-manager.tag", "Étiquette"),
+      long("product.iphone-7-gps-manager.description", "Description"),
+      money("product.iphone-7-gps-manager.price", "Prix en euros"),
     ],
   },
   {
