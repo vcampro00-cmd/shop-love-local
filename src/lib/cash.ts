@@ -1,4 +1,4 @@
-export type CashEntryKind = "auto" | "entree" | "sortie" | "achat";
+export type CashEntryKind = "auto" | "entree" | "sortie" | "achat" | "salaire";
 
 export type CashEntry = {
   id: string;
@@ -13,21 +13,24 @@ export type CashBook = {
   entries: CashEntry[];
   expenses: CashEntry[];
   purchases: CashEntry[];
+  employees: CashEntry[];
 };
 
 export type CashSummary = {
   inTotal: number;
   outTotal: number;
   purchaseTotal: number;
+  employeeTotal: number;
   net: number;
 };
 
-/** Gains nets = entrées (auto + manuelles) − sorties − achats de téléphones. */
+/** Gains nets = entrées (auto + manuelles) − sorties − achats de téléphones − salaires versés. */
 export function summarizeCash(book: CashBook): CashSummary {
   const inTotal = book.entries.reduce((s, e) => s + e.amount, 0);
   const outTotal = book.expenses.reduce((s, e) => s + e.amount, 0);
   const purchaseTotal = book.purchases.reduce((s, e) => s + e.amount, 0);
-  return { inTotal, outTotal, purchaseTotal, net: inTotal - outTotal - purchaseTotal };
+  const employeeTotal = book.employees.reduce((s, e) => s + e.amount, 0);
+  return { inTotal, outTotal, purchaseTotal, employeeTotal, net: inTotal - outTotal - purchaseTotal - employeeTotal };
 }
 
 /** "YYYY-MM" du mois (heure de Paris) d'une date ISO ou "YYYY-MM-DD". */
@@ -40,12 +43,12 @@ export function monthOf(date: string): string {
 /** La caisse repart de zéro le 1er de chaque mois : on ne garde que les lignes du mois choisi. */
 export function filterBookByMonth(book: CashBook, month: string): CashBook {
   const keep = (rows: CashEntry[]) => rows.filter((r) => monthOf(r.date) === month);
-  return { entries: keep(book.entries), expenses: keep(book.expenses), purchases: keep(book.purchases) };
+  return { entries: keep(book.entries), expenses: keep(book.expenses), purchases: keep(book.purchases), employees: keep(book.employees) };
 }
 
 /** Mois disponibles (mois courant inclus), du plus récent au plus ancien. */
 export function availableMonths(book: CashBook, current: string): string[] {
   const set = new Set<string>([current]);
-  for (const r of [...book.entries, ...book.expenses, ...book.purchases]) set.add(monthOf(r.date));
+  for (const r of [...book.entries, ...book.expenses, ...book.purchases, ...book.employees]) set.add(monthOf(r.date));
   return [...set].sort().reverse();
 }

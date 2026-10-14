@@ -29,12 +29,13 @@ export const Route = createFileRoute("/_authenticated/caisse")({
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
 
-type Kind = "entree" | "sortie" | "achat";
+type Kind = "entree" | "sortie" | "achat" | "salaire";
 
 const KINDS: { value: Kind; key: string }[] = [
   { value: "entree", key: "cash.kind.in" },
   { value: "sortie", key: "cash.kind.out" },
   { value: "achat", key: "cash.kind.purchase" },
+  { value: "salaire", key: "cash.kind.employee" },
 ];
 
 function Caisse() {
@@ -107,17 +108,18 @@ function Caisse() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label={t("cash.in")} value={brl(s.inTotal)} />
         <Stat label={t("cash.out")} value={brl(s.outTotal)} />
         <Stat label={t("cash.purchases")} value={brl(s.purchaseTotal)} />
+        <Stat label={t("cash.employees")} value={brl(s.employeeTotal)} />
         <Stat label={t("cash.net")} value={brl(s.net)} strong />
       </div>
 
       <form onSubmit={submit} className="mt-8 rounded-2xl border bg-card p-5">
         <fieldset className="border-0 p-0">
           <legend className="text-sm font-medium">{t("cash.kindLabel")}</legend>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {KINDS.map((k) => (
               <label
                 key={k.value}
@@ -159,6 +161,7 @@ function Caisse() {
         <EntriesList title={t("cash.in")} empty={t("cash.emptyIn")} rows={book.entries} onDelete={remove} />
         <List title={t("cash.out")} empty={t("cash.emptyOut")} rows={book.expenses} sign="−" onDelete={remove} />
         <List title={t("cash.purchases")} empty={t("cash.emptyPurchases")} rows={book.purchases} sign="−" onDelete={remove} />
+        <List title={t("cash.employees")} empty={t("cash.emptyEmployees")} rows={book.employees} sign="−" onDelete={remove} />
       </div>
     </div>
   );
@@ -195,6 +198,7 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
   line(`${t("cash.in")} : ${eur(s.inTotal)}`, 11);
   line(`${t("cash.out")} : ${eur(s.outTotal)}`, 11);
   line(`${t("cash.purchases")} : ${eur(s.purchaseTotal)}`, 11);
+  line(`${t("cash.employees")} : ${eur(s.employeeTotal)}`, 11);
   line(`${t("cash.net")} : ${eur(s.net)}`, 12, true); y += 4;
   const section = (title: string, rows: CashEntry[], sign: string, empty: string) => {
     line(title, 12, true); y += 1;
@@ -205,6 +209,7 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
   section(t("cash.in"), book.entries, "+", t("cash.emptyIn"));
   section(t("cash.out"), book.expenses, "-", t("cash.emptyOut"));
   section(t("cash.purchases"), book.purchases, "-", t("cash.emptyPurchases"));
+  section(t("cash.employees"), book.employees, "-", t("cash.emptyEmployees"));
   doc.save(`caisse-vcampro-${month}.pdf`);
 }
 

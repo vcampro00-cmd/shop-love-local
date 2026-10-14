@@ -43,6 +43,13 @@
       "when": 1791982882662,
       "tag": "0005_expenses_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791985848707,
+      "tag": "0006_expenses_salaire",
+      "breakpoints": true
     }
   ]
 }

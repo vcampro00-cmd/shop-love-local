@@ -30,17 +30,19 @@ export const getCashBook = createServerFn({ method: "GET" })
     const manual: CashEntry[] = [];
     const sortieRows: CashEntry[] = [];
     const purchaseRows: CashEntry[] = [];
+    const employeeRows: CashEntry[] = [];
     for (const e of expenses.data ?? []) {
       const row: CashEntry = { id: e.id, date: e.spent_on, label: e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"] };
       if (e.kind === "entree") manual.push(row);
       else if (e.kind === "achat") purchaseRows.push(row);
+      else if (e.kind === "salaire") employeeRows.push(row);
       else sortieRows.push(row);
     }
     const entries = [...autoEntries, ...manual].sort((a, b) => b.date.localeCompare(a.date));
-    return { entries, expenses: sortieRows, purchases: purchaseRows };
+    return { entries, expenses: sortieRows, purchases: purchaseRows, employees: employeeRows };
   });
 
-const KINDS = z.enum(["entree", "sortie", "achat"]);
+const KINDS = z.enum(["entree", "sortie", "achat", "salaire"]);
 
 export const addExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

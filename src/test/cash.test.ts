@@ -15,6 +15,7 @@ describe("summarizeCash", () => {
       entries: [entry("auto-1", 320), entry("manual-1", 100, "entree")],
       expenses: [entry("out-1", 30, "sortie")],
       purchases: [entry("buy-1", 150, "achat")],
+      employees: [],
     };
     const s = summarizeCash(book);
     expect(s.inTotal).toBe(420);
@@ -24,7 +25,7 @@ describe("summarizeCash", () => {
   });
 
   it("an empty book nets to zero", () => {
-    const s = summarizeCash({ entries: [], expenses: [], purchases: [] });
+    const s = summarizeCash({ entries: [], expenses: [], purchases: [], employees: [] });
     expect(s.net).toBe(0);
   });
 
@@ -33,8 +34,20 @@ describe("summarizeCash", () => {
       entries: [],
       expenses: [],
       purchases: [entry("buy-1", 150, "achat"), entry("buy-2", 300, "achat")],
+      employees: [],
     });
     expect(s.net).toBe(-450);
+  });
+
+  it("subtract salaries paid to the employee from the net", () => {
+    const s = summarizeCash({
+      entries: [entry("auto-1", 320)],
+      expenses: [],
+      purchases: [],
+      employees: [entry("salary-1", 80, "salaire"), entry("salary-2", 40, "salaire")],
+    });
+    expect(s.employeeTotal).toBe(120);
+    expect(s.net).toBe(200);
   });
 });
 
@@ -47,9 +60,10 @@ describe("caisse mensuelle", () => {
     ],
     expenses: [{ id: "c", date: "2026-09-15", label: "z", amount: 20, kind: "sortie" as const }],
     purchases: [],
+    employees: [{ id: "d", date: "2026-10-05", label: "salaire", amount: 60, kind: "salaire" as const }],
   };
   it("repart de zéro le 1er du mois", () => {
-    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(100);
+    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(40);
   });
   it("garde le mois précédent consultable", () => {
     expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(30);
