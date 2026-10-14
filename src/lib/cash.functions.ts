@@ -60,7 +60,7 @@ export const addExpense = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    let row: Record<string, unknown> = { label: data.label, amount: data.amount, spent_on: data.spent_on, kind: data.kind };
+    let row: { label: string; amount: number; spent_on: string; kind: string; employee_id?: string; units?: number; unit_price?: number } = { label: data.label, amount: data.amount, spent_on: data.spent_on, kind: data.kind };
     if (data.kind === "salaire" && data.employee_id) {
       if (!data.units || !data.unit_price) throw new Error("Indiquez le nombre d'unités et le prix par unité.");
       const { data: emp } = await context.supabase.from("employees").select("id, name").eq("id", data.employee_id).maybeSingle();
