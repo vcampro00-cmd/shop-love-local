@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Plus, Truck, Store, CreditCard } from "lucide-react";
 import hero from "@/assets/hero.jpg";
-import { products, brl } from "@/lib/products";
+import { products, brl, APP_PLAN_LABEL } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 
