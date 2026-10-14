@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { salaryAmount, type CashBook, type CashEntry } from "@/lib/cash";
+import type { CashBook, CashEntry } from "@/lib/cash";
 
 type Ctx = { supabase: any; userId: string };
 
