@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { addExpense, deleteExpense, getCashBook } from "@/lib/cash.functions";
 import { summarizeCash, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
@@ -30,6 +30,12 @@ const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
 
 type Kind = "entree" | "sortie" | "achat";
+
+const KINDS: { value: Kind; key: string }[] = [
+  { value: "entree", key: "cash.kind.in" },
+  { value: "sortie", key: "cash.kind.out" },
+  { value: "achat", key: "cash.kind.purchase" },
+];
 
 function Caisse() {
   const t = useText();
