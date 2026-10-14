@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { KeyRound, Save, Sparkles } from "lucide-react";
 import { DEFAULTS, EDITOR_GROUPS } from "@/lib/content.defaults";
-import { saveSiteTexts } from "@/lib/content.functions";
+import { checkEditCode, saveSiteTexts } from "@/lib/content.functions";
 import { siteTextsQueryOptions } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,11 +36,27 @@ function Editor() {
   const [code, setCode] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const check = useServerFn(checkEditCode);
+  const [unlocked, setUnlocked] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(CODE_KEY);
-    if (stored) setCode(stored);
+    // Le code n'est plus mémorisé : il faut le taper à chaque visite.
+    localStorage.removeItem(CODE_KEY);
   }, []);
+
+  async function unlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setChecking(true);
+    try {
+      const r = await check({ data: { code: code.trim() } });
+      if (r.ok) setUnlocked(true);
+      else toast.error("Code d'accès incorrect.");
+    } finally {
+      setChecking(false);
+    }
+  }
 
   const touched = useMemo(() => Object.keys(values).length, [values]);
 
@@ -65,7 +81,6 @@ function Editor() {
     setSaving(true);
     try {
       const result = await save({ data: { code: code.trim(), texts } });
-      localStorage.setItem(CODE_KEY, code.trim());
       queryClient.invalidateQueries({ queryKey: siteTextsQueryOptions.queryKey });
       setValues({});
       toast.success(`${result.saved} texte(s) enregistré(s).`);
@@ -75,6 +90,19 @@ function Editor() {
       setSaving(false);
     }
   }
+
+  if (!unlocked)
+    return (
+      <form onSubmit={unlock} className="mx-auto max-w-md px-4 py-24">
+        <h1 className="text-2xl font-bold">Espace <span className="text-brand">propriétaire</span></h1>
+        <p className="mt-2 text-sm text-muted-foreground">Entrez votre code d'accès pour continuer.</p>
+        <div className="mt-6 space-y-4 rounded-3xl border bg-card p-6">
+          <Label htmlFor="unlock-code" className="flex items-center gap-2"><KeyRound className="h-4 w-4 text-accent" /> Code d'accès</Label>
+          <Input id="unlock-code" type="password" autoFocus value={code} onChange={(e) => setCode(e.target.value)} autoComplete="current-password" maxLength={80} />
+          <Button type="submit" size="lg" className="w-full bg-brand shadow-glow" disabled={checking}>{checking ? "…" : "Entrer"}</Button>
+        </div>
+      </form>
+    );
 
   return (
     <form onSubmit={submit} className="mx-auto max-w-3xl px-4 py-12">
