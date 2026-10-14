@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { getOrder } from "@/lib/orders.functions";
+import { getOrder, confirmPayment } from "@/lib/orders.functions";
+import { getStripeEnvironment } from "@/lib/stripe";
 import { brl, getProduct } from "@/lib/products";
 import { useText, numFromText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -13,6 +16,9 @@ const orderQueryOptions = (id: string) =>
   });
 
 export const Route = createFileRoute("/_authenticated/pedido/$id")({
+  validateSearch: (search: Record<string, unknown>): { session_id?: string } => ({
+    session_id: typeof search.session_id === "string" ? search.session_id : undefined,
+  }),
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderQueryOptions(params.id)),
   head: () => ({
     meta: [
@@ -32,6 +38,16 @@ function Confirmed() {
   const { id } = Route.useParams();
   const { data: order } = useSuspenseQuery(orderQueryOptions(id));
   const t = useText();
+  const { session_id } = Route.useSearch();
+  const confirm = useServerFn(confirmPayment);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!session_id || order.payment_status !== "en_attente") return;
+    confirm({ data: { id, sessionId: session_id, environment: getStripeEnvironment() } })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["order", id] }))
+      .catch(() => {});
+  }, [session_id, id, order.payment_status, confirm, queryClient]);
 
   const fee = numFromText(t("delivery.fee"), 0);
 
@@ -45,6 +61,16 @@ function Confirmed() {
       <p className="mt-1 text-sm text-muted-foreground">
         {t("account.orderStatus")} : <span className="font-medium text-foreground">{t(`status.${order.status}`)}</span>
       </p>
+
+      <p className="mt-1 text-sm text-muted-foreground">
+        {t(`pay.status.${order.payment_status}`)} · {order.payment_plan === "split" ? t("pay.split") : t("pay.full")} · {brl(order.amount_paid)} / {brl(order.total)}
+        {order.second_charge_due_at && <> · {t("pay.secondOn")} {new Date(order.second_charge_due_at).toLocaleDateString("fr-FR")}</>}
+      </p>
+      {order.payment_status === "en_attente" && !session_id && (
+        <Button asChild className="mt-4 bg-brand shadow-glow">
+          <Link to="/paiement/$id" params={{ id }}>{t("pay.payNow")}</Link>
+        </Button>
+      )}
 
       <div className="mt-8 space-y-4 rounded-2xl border bg-card p-5 text-left text-sm">
         <div>
