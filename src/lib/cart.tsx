@@ -1,3 +1,4 @@
+import type React from "react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getProduct } from "./products";
 
@@ -12,7 +13,9 @@ type Ctx = {
   subtotal: number;
 };
 
-const CartContext = createContext<Ctx | null>(null);
+// Shared on globalThis so hot reloads never create a second, disconnected context.
+const g = globalThis as unknown as { __vcamproCart?: React.Context<Ctx | null> };
+const CartContext = (g.__vcamproCart ??= createContext<Ctx | null>(null));
 const KEY = "vcampro-cart";
 
 export function cartSubtotal(lines: CartLine[]) {
