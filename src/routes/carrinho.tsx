@@ -46,7 +46,10 @@ function Cart() {
   function pay(e: React.FormEvent) {
     e.preventDefault();
     const r = (method === "entrega" ? deliverySchema : pickupSchema).safeParse(form);
-    if (!r.success) return toast.error(r.error.issues[0].message);
+    if (!r.success) {
+      toast.error(r.error.issues[0]?.message ?? "Verifique os dados");
+      return;
+    }
     const id = "VC" + Date.now().toString().slice(-6);
     clear();
     navigate({ to: "/pedido/$id", params: { id }, search: { m: method, t: total } });
