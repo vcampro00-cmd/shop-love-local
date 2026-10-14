@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { addExpense, deleteExpense, getCashBook } from "@/lib/cash.functions";
+import { summarizeCash, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -14,10 +15,10 @@ export const Route = createFileRoute("/_authenticated/caisse")({
   head: () => ({
     meta: [
       { title: "Caisse — Vcampro" },
-      { name: "description", content: "Entrées et sorties d'argent de la boutique Vcampro." },
+      { name: "description", content: "Entrées, sorties et gains nets de la boutique Vcampro." },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Caisse — Vcampro" },
-      { property: "og:description", content: "Entrées et sorties d'argent de la boutique." },
+      { property: "og:description", content: "Entrées, sorties et gains nets de la boutique." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -28,11 +29,14 @@ export const Route = createFileRoute("/_authenticated/caisse")({
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
 
+type Kind = "entree" | "sortie" | "achat";
+
 function Caisse() {
   const t = useText();
   const qc = useQueryClient();
   const add = useServerFn(addExpense);
   const del = useServerFn(deleteExpense);
+  const [kind, setKind] = useState<Kind>("entree");
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(today());
@@ -45,8 +49,7 @@ function Caisse() {
   if (isPending)
     return <p className="mx-auto max-w-md px-4 py-24 text-center text-muted-foreground">{t("admin.loading")}</p>;
 
-  const inSum = data.entries.reduce((s, e) => s + e.amount, 0);
-  const outSum = data.expenses.reduce((s, e) => s + e.amount, 0);
+  const s = summarizeCash(data);
 
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
@@ -57,7 +60,7 @@ function Caisse() {
     }
     setBusy(true);
     try {
-      await add({ data: { label, amount: value, spent_on: date } });
+      await add({ data: { label, amount: value, spent_on: date, kind } });
       setLabel(""); setAmount(""); setDate(today());
       await qc.invalidateQueries({ queryKey: ["cash-book"] });
     } catch (e) {
@@ -76,13 +79,24 @@ function Caisse() {
       <h1 className="text-3xl font-bold">{t("cash.title")}</h1>
       <p className="mt-2 text-muted-foreground">{t("cash.intro")}</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <Stat label={t("cash.in")} value={brl(inSum)} />
-        <Stat label={t("cash.out")} value={brl(outSum)} />
-        <Stat label={t("cash.balance")} value={brl(inSum - outSum)} strong />
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label={t("cash.in")} value={brl(s.inTotal)} />
+        <Stat label={t("cash.out")} value={brl(s.outTotal)} />
+        <Stat label={t("cash.purchases")} value={brl(s.purchaseTotal)} />
+        <Stat label={t("cash.net")} value={brl(s.net)} strong />
       </div>
 
-      <form onSubmit={submit} className="mt-8 grid gap-3 rounded-2xl border bg-card p-5 sm:grid-cols-[1fr_140px_160px_auto]">
+      <form onSubmit={submit} className="mt-8 grid gap-3 rounded-2xl border bg-card p-5 sm:grid-cols-[180px_1fr_140px_160px_auto]">
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as Kind)}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          aria-label={t("cash.kindLabel")}
+        >
+          <option value="entree">{t("cash.kind.in")}</option>
+          <option value="sortie">{t("cash.kind.out")}</option>
+          <option value="achat">{t("cash.kind.purchase")}</option>
+        </select>
         <Input placeholder={t("cash.labelPlaceholder")} value={label} onChange={(e) => setLabel(e.target.value)} maxLength={200} />
         <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
         <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -90,8 +104,9 @@ function Caisse() {
       </form>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <List title={t("cash.in")} empty={t("cash.emptyIn")} rows={data.entries} sign="+" />
+        <EntriesList title={t("cash.in")} empty={t("cash.emptyIn")} rows={data.entries} onDelete={remove} />
         <List title={t("cash.out")} empty={t("cash.emptyOut")} rows={data.expenses} sign="−" onDelete={remove} />
+        <List title={t("cash.purchases")} empty={t("cash.emptyPurchases")} rows={data.purchases} sign="−" onDelete={remove} />
       </div>
     </div>
   );
@@ -106,7 +121,40 @@ function Stat({ label, value, strong }: { label: string; value: string; strong?:
   );
 }
 
-function List({ title, empty, rows, sign, onDelete }: { title: string; empty: string; rows: { id: string; date: string; label: string; amount: number }[]; sign: string; onDelete?: (id: string) => void }) {
+function EntriesList({ title, empty, rows, onDelete }: { title: string; empty: string; rows: CashEntry[]; onDelete: (id: string) => void }) {
+  return (
+    <section className="rounded-2xl border bg-card p-5">
+      <h2 className="font-semibold">{title}</h2>
+      {rows.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-border">
+          {rows.map((r) => (
+            <li key={r.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <div className="min-w-0">
+                <p className="truncate">
+                  {r.label}
+                  {r.kind === "entree" && <span className="ml-2 text-xs text-muted-foreground">(manuel)</span>}
+                </p>
+                <p className="text-xs text-muted-foreground">{fmtDate(r.date)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">+ {brl(r.amount)}</span>
+                {r.kind === "entree" && (
+                  <button type="button" aria-label="Supprimer" onClick={() => onDelete(r.id)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function List({ title, empty, rows, sign, onDelete }: { title: string; empty: string; rows: CashEntry[]; sign: string; onDelete: (id: string) => void }) {
   return (
     <section className="rounded-2xl border bg-card p-5">
       <h2 className="font-semibold">{title}</h2>
@@ -122,11 +170,9 @@ function List({ title, empty, rows, sign, onDelete }: { title: string; empty: st
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">{sign} {brl(r.amount)}</span>
-                {onDelete && (
-                  <button type="button" aria-label="Supprimer" onClick={() => onDelete(r.id)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
+                <button type="button" aria-label="Supprimer" onClick={() => onDelete(r.id)} className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </li>
           ))}
