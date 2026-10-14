@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useText } from "@/lib/content";
 
 export const Route = createFileRoute("/como-funciona")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Comment commander — Vcampro" },

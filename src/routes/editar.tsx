@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/editar")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Espace propriétaire — Vcampro" },

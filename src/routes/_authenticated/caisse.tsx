@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/caisse")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Caisse — Vcampro" },

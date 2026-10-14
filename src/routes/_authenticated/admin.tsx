@@ -11,6 +11,7 @@ import { useText } from "@/lib/content";
 const STATUS_VALUES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Commandes reçues — Vcampro" },

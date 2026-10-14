@@ -8,6 +8,7 @@ import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/paiement/$id")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Paiement de la commande — Vcampro" },

@@ -80,6 +80,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  staticData: { sitemap: false },
   // Les textes écrits par le propriétaire sont lus une fois ici, avant l'affichage de toute page.
   loader: ({ context }) => context.queryClient.ensureQueryData(siteTextsQueryOptions),
   head: () => ({

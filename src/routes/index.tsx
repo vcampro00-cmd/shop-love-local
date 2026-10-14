@@ -9,6 +9,7 @@ import { useText, numFromText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Vcampro — Boutique en ligne" },

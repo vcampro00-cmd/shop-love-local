@@ -12,6 +12,7 @@ const myOrdersQueryOptions = queryOptions({
 });
 
 export const Route = createFileRoute("/_authenticated/mes-commandes")({
+  staticData: { sitemap: false },
   loader: ({ context }) => context.queryClient.ensureQueryData(myOrdersQueryOptions),
   head: () => ({
     meta: [
