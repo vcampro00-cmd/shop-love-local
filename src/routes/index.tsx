@@ -69,7 +69,9 @@ function Shop() {
                   <img src={p.image} alt={name} loading="lazy" width={p.imageW} height={p.imageH} className="h-32 w-auto shrink-0 object-contain drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]" />
                   <div>
                     <h3 className="text-lg font-bold">{name}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{t(`product.${p.id}.description`)}</p>
+                    {t(`product.${p.id}.description`) && (
+                      <p className="mt-1 text-sm text-muted-foreground">{t(`product.${p.id}.description`)}</p>
+                    )}
                   </div>
                 </div>
                 <div className="mt-6 flex items-center justify-between">
