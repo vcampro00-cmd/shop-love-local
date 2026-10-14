@@ -31,7 +31,7 @@ export const getCashBook = createServerFn({ method: "GET" })
     const sortieRows: CashEntry[] = [];
     const purchaseRows: CashEntry[] = [];
     for (const e of expenses.data ?? []) {
-      const row: CashEntry = { id: e.id, date: e.spent_on, label: e.label, amount: Number(e.amount), kind: e.kind };
+      const row: CashEntry = { id: e.id, date: e.spent_on, label: e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"] };
       if (e.kind === "entree") manual.push(row);
       else if (e.kind === "achat") purchaseRows.push(row);
       else sortieRows.push(row);
