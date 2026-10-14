@@ -29,6 +29,13 @@
       "when": 1791978221088,
       "tag": "0003_add_order_delivery_method",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791981373907,
+      "tag": "0004_add_expenses",
+      "breakpoints": true
     }
   ]
 }
