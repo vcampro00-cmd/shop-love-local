@@ -28,7 +28,8 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="border-t py-8 text-center text-sm text-muted-foreground">
-      © Vcampro — Achetez en ligne, faites-vous livrer ou retirez sur place.
+      <p>© Vcampro — Achetez en ligne, faites-vous livrer ou retirez sur place.</p>
+      <p className="mt-2">Abonnement à l'application : 20 € par semaine.</p>
     </footer>
   );
 }

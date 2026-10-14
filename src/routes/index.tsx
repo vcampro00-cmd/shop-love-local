@@ -69,6 +69,7 @@ function Shop() {
             </article>
           ))}
         </div>
+        <p className="mt-6 rounded-2xl border bg-secondary p-4 text-sm text-muted-foreground">Remarque : {APP_PLAN_LABEL}.</p>
       </section>
     </div>
   );
