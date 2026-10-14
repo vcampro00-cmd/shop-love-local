@@ -16,6 +16,7 @@ import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as ComoFuncionaRouteImport } from './routes/como-funciona'
 import { Route as EditarRouteImport } from './routes/editar'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCaisseRouteImport } from './routes/_authenticated/caisse'
 import { Route as AuthenticatedMesCommandesRouteImport } from './routes/_authenticated/mes-commandes'
@@ -57,6 +58,11 @@ const EditarRoute = EditarRouteImport.update({
 const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
   id: '/reinitialiser-mot-de-passe',
   path: '/reinitialiser-mot-de-passe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/como-funciona': typeof ComoFuncionaRoute
   '/editar': typeof EditarRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/como-funciona': typeof ComoFuncionaRoute
   '/editar': typeof EditarRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/como-funciona': typeof ComoFuncionaRoute
   '/editar': typeof EditarRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/caisse': typeof AuthenticatedCaisseRoute
   '/_authenticated/mes-commandes': typeof AuthenticatedMesCommandesRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/como-funciona'
     | '/editar'
     | '/reinitialiser-mot-de-passe'
+    | '/sitemap.xml'
     | '/admin'
     | '/caisse'
     | '/mes-commandes'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/como-funciona'
     | '/editar'
     | '/reinitialiser-mot-de-passe'
+    | '/sitemap.xml'
     | '/admin'
     | '/caisse'
     | '/mes-commandes'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/como-funciona'
     | '/editar'
     | '/reinitialiser-mot-de-passe'
+    | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/caisse'
     | '/_authenticated/mes-commandes'
@@ -214,6 +226,7 @@ export interface RootRouteChildren {
   ComoFuncionaRoute: typeof ComoFuncionaRoute
   EditarRoute: typeof EditarRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicCronSecondPaymentsRoute: typeof ApiPublicCronSecondPaymentsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -268,6 +281,13 @@ declare module '@tanstack/react-router' {
       path: '/reinitialiser-mot-de-passe'
       fullPath: '/reinitialiser-mot-de-passe'
       preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -356,6 +376,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComoFuncionaRoute: ComoFuncionaRoute,
   EditarRoute: EditarRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicCronSecondPaymentsRoute: ApiPublicCronSecondPaymentsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
