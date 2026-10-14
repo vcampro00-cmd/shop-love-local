@@ -1,6 +1,6 @@
 import type React from "react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { getProduct } from "./products";
+import { useText, numFromText } from "./content";
 
 export type CartLine = { id: string; qty: number };
 
@@ -18,11 +18,12 @@ const g = globalThis as unknown as { __vcamproCart?: React.Context<Ctx | null> }
 const CartContext = (g.__vcamproCart ??= createContext<Ctx | null>(null));
 const KEY = "vcampro-cart";
 
-export function cartSubtotal(lines: CartLine[]) {
-  return lines.reduce((s, l) => s + (getProduct(l.id)?.price ?? 0) * l.qty, 0);
+export function cartSubtotal(lines: CartLine[], priceOf: (id: string) => number) {
+  return lines.reduce((s, l) => s + priceOf(l.id) * l.qty, 0);
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const t = useText();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -54,7 +55,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setQty,
         clear: () => setLines([]),
         count: lines.reduce((s, l) => s + l.qty, 0),
-        subtotal: cartSubtotal(lines),
+        subtotal: cartSubtotal(lines, (id) => numFromText(t(`product.${id}.price`), 0)),
       }}
     >
       {children}
