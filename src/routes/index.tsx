@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Plus, Truck, CreditCard } from "lucide-react";
+import { Plus, Truck, CreditCard, Store } from "lucide-react";
 import heroPhones from "@/assets/hero-phones.png";
 import logo from "@/assets/vcampro-logo.png";
 import { products, brl } from "@/lib/products";
@@ -29,6 +29,7 @@ function Shop() {
   const cards = [
     { i: CreditCard, t: t("home.card1Title"), d: t("home.card1Text") },
     { i: Truck, t: t("home.card2Title"), d: t("home.card2Text") },
+    { i: Store, t: t("home.card3Title"), d: t("home.card3Text") },
   ];
 
   return (
