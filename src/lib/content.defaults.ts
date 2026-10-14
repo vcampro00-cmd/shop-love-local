@@ -153,6 +153,20 @@ export const DEFAULTS: Record<string, string> = {
   "admin.items": "Articles",
   "admin.status": "Situation",
 
+  // Caisse
+  "cash.title": "Caisse",
+  "cash.intro": "Les entrées sont comptées toutes seules à chaque paiement reçu. Ajoutez vos dépenses à la main.",
+  "cash.in": "Entrées",
+  "cash.out": "Sorties",
+  "cash.balance": "Solde",
+  "cash.labelPlaceholder": "Dépense (ex. : achat de téléphones)",
+  "cash.amountPlaceholder": "Montant €",
+  "cash.add": "Ajouter la sortie",
+  "cash.invalid": "Indiquez une description et un montant valide.",
+  "cash.confirmDelete": "Supprimer cette sortie ?",
+  "cash.emptyIn": "Aucun paiement reçu pour le moment.",
+  "cash.emptyOut": "Aucune sortie enregistrée.",
+
   // Situations d'une commande
   "status.nouveau": "Nouvelle",
   "status.prepare": "En préparation",
@@ -346,6 +360,23 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("admin.notes", "Bloc remarques"),
       text("admin.items", "Bloc articles"),
       text("admin.status", "Menu situation"),
+    ],
+  },
+  {
+    title: "Caisse",
+    fields: [
+      text("cash.title", "Titre de la page"),
+      long("cash.intro", "Phrase sous le titre"),
+      text("cash.in", "Entrées"),
+      text("cash.out", "Sorties"),
+      text("cash.balance", "Solde"),
+      text("cash.labelPlaceholder", "Champ description"),
+      text("cash.amountPlaceholder", "Champ montant"),
+      text("cash.add", "Bouton ajouter"),
+      long("cash.invalid", "Erreur de saisie"),
+      text("cash.confirmDelete", "Confirmation de suppression"),
+      text("cash.emptyIn", "Aucune entrée — message"),
+      text("cash.emptyOut", "Aucune sortie — message"),
     ],
   },
   {
