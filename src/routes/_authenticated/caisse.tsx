@@ -58,9 +58,10 @@ function Caisse() {
     return <p className="mx-auto max-w-md px-4 py-24 text-center text-muted-foreground">{t("admin.loading")}</p>;
 
   const current = monthOf(new Date().toISOString());
-  const months = availableMonths(data, current);
+  const full = normalizeBook(data);
+  const months = availableMonths(full, current);
   const selected = month ?? current;
-  const book = filterBookByMonth(data, selected);
+  const book = filterBookByMonth(full, selected);
   const s = summarizeCash(book);
 
   async function submit(ev: React.FormEvent) {

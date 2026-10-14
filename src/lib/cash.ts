@@ -46,6 +46,16 @@ export function filterBookByMonth(book: CashBook, month: string): CashBook {
   return { entries: keep(book.entries), expenses: keep(book.expenses), purchases: keep(book.purchases), employees: keep(book.employees) };
 }
 
+/** Complète un livre de caisse partiel (ancienne forme en cache) avec des listes vides. */
+export function normalizeBook(book: Partial<CashBook> | null | undefined): CashBook {
+  return {
+    entries: book?.entries ?? [],
+    expenses: book?.expenses ?? [],
+    purchases: book?.purchases ?? [],
+    employees: book?.employees ?? [],
+  };
+}
+
 /** Mois disponibles (mois courant inclus), du plus récent au plus ancien. */
 export function availableMonths(book: CashBook, current: string): string[] {
   const set = new Set<string>([current]);
