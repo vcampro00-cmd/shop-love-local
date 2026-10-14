@@ -31,6 +31,7 @@ export function SiteHeader() {
             <>
               <Link to="/mes-commandes" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>{t("account.menu")}</Link>
               {isAdmin && <Link to="/admin" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>{t("admin.title")}</Link>}
+              {isAdmin && <Link to="/caisse" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>{t("cash.title")}</Link>}
               <button type="button" onClick={signOut} className="hidden text-xs text-muted-foreground underline decoration-dotted underline-offset-4 hover:text-foreground sm:inline">
                 {t("account.signOut")}
               </button>

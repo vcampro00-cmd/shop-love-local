@@ -7,3 +7,4 @@
 - [ ] Passer les paiements du mode test au mode réel — bloqué : il faut finaliser les coordonnées de l'entreprise et le compte bancaire dans l'onglet de paiement.
 - [ ] Connexion avec Google, s'il la veut pour ses clients.
 - [ ] Le client veut réécrire lui-même la description du Duo Android dans `/editar`.
+- Caisse: entrées automatiques (paiements reçus) + sorties manuelles — fait
