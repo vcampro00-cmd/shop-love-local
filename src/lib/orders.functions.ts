@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULTS } from "./content.defaults";
 import { numFromText } from "./content";
-import { computeTotals, isKnownProduct, makeOrderRef, splitPayment, type CartItem } from "./pricing";
+import { canPayInTwoTimes, computeTotals, isKnownProduct, makeOrderRef, splitPayment, type CartItem } from "./pricing";
 import { createStripeClient, getStripeErrorMessage } from "./stripe.server";
 
 const ORDER_STATUSES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
