@@ -92,7 +92,7 @@ function Cart() {
           postal_code: form.cep,
           notes: form.notes.trim() || undefined,
           items: lines.map((l) => ({ id: l.id, qty: l.qty })),
-          plan,
+          plan: effectivePlan,
           delivery_method: method,
         },
       });
@@ -191,7 +191,7 @@ function Cart() {
         {user && (
           <fieldset className="mt-5 space-y-2 text-sm">
             <legend className="mb-2 font-bold">{t("pay.choose")}</legend>
-            {(["full", "split"] as const).map((p) => (
+            {(["full", "split"] as const).filter((p) => p !== "split" || twoTimesAllowed).map((p) => (
               <label key={p} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${plan === p ? "border-primary bg-primary/10" : ""}`}>
                 <input type="radio" name="plan" className="mt-1" checked={plan === p} onChange={() => setPlan(p)} />
                 <span>
