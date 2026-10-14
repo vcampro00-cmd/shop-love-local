@@ -19,7 +19,7 @@ export const DEFAULTS: Record<string, string> = {
   // Fiche iPhone SE 2020
   "product.iphone-se-2020.name": "iPhone SE 2020",
   "product.iphone-se-2020.tag": "Apple",
-  "product.iphone-se-2020.description": 'Écran 4,7", puce A13 Bionic, Touch ID.',
+  "product.iphone-se-2020.description": "Téléphone dédié à Uber et Bolt, fonctionnel et pratique.",
   "product.iphone-se-2020.price": "300",
 
   // Fiche Clone Deliveroo
