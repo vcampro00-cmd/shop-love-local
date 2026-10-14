@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -6,6 +7,8 @@ import { Minus, Plus } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { getProduct, brl } from "@/lib/products";
 import { useText, numFromText } from "@/lib/content";
+import { useAccount, rememberIntendedPath } from "@/lib/auth";
+import { createOrder } from "@/lib/orders.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,7 +39,10 @@ function Cart() {
   const { lines, setQty, subtotal, clear } = useCart();
   const navigate = useNavigate();
   const t = useText();
+  const { user, loading } = useAccount();
+  const placeOrder = useServerFn(createOrder);
   const [form, setForm] = useState({ name: "", phone: "", address: "", cep: "", notes: "" });
+  const [busy, setBusy] = useState(false);
 
   const fee = numFromText(t("delivery.fee"), 0);
   const total = subtotal + (subtotal > 0 ? fee : 0);
@@ -49,16 +55,37 @@ function Cart() {
       </div>
     );
 
-  function pay(e: React.FormEvent) {
+  async function pay(e: React.FormEvent) {
     e.preventDefault();
+    if (!user) {
+      rememberIntendedPath("/carrinho");
+      navigate({ to: "/auth" });
+      return;
+    }
     const r = schema.safeParse(form);
     if (!r.success) {
       toast.error(r.error.issues[0]?.message ?? "Vérifiez vos informations");
       return;
     }
-    const id = "VC" + Date.now().toString().slice(-6);
-    clear();
-    navigate({ to: "/pedido/$id", params: { id }, search: { t: total } });
+    setBusy(true);
+    try {
+      const order = await placeOrder({
+        data: {
+          name: form.name,
+          phone: form.phone,
+          address: form.address,
+          postal_code: form.cep,
+          notes: form.notes.trim() || undefined,
+          items: lines.map((l) => ({ id: l.id, qty: l.qty })),
+        },
+      });
+      clear();
+      navigate({ to: "/pedido/$id", params: { id: order.id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Commande impossible. Réessayez.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
@@ -91,14 +118,30 @@ function Cart() {
           </div>
         </section>
 
-        <section className="grid gap-4 rounded-2xl border bg-card p-5 sm:grid-cols-2">
-          <h2 className="text-xl font-bold sm:col-span-2">{t("cart.addressTitle")}</h2>
-          <div><Label>{t("form.name")}</Label><Input value={form.name} onChange={set("name")} maxLength={100} /></div>
-          <div><Label>{t("form.phone")}</Label><Input value={form.phone} onChange={set("phone")} maxLength={20} /></div>
-          <div className="sm:col-span-2"><Label>{t("form.address")}</Label><Input value={form.address} onChange={set("address")} maxLength={300} /></div>
-          <div><Label>{t("form.cep")}</Label><Input value={form.cep} onChange={set("cep")} maxLength={9} /></div>
-          <div className="sm:col-span-2"><Label>{t("form.notes")}</Label><Textarea value={form.notes} onChange={set("notes")} maxLength={500} placeholder={t("form.notesPlaceholder")} /></div>
-        </section>
+        {!loading && !user && (
+          <section className="rounded-2xl border bg-card p-6 text-center">
+            <h2 className="text-xl font-bold">{t("auth.needAccountTitle")}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t("auth.needAccountText")}</p>
+            <Button
+              size="lg"
+              className="mt-5 bg-brand shadow-glow"
+              onClick={() => { rememberIntendedPath("/carrinho"); navigate({ to: "/auth" }); }}
+            >
+              {t("auth.needAccountCta")}
+            </Button>
+          </section>
+        )}
+
+        {!loading && user && (
+          <section className="grid gap-4 rounded-2xl border bg-card p-5 sm:grid-cols-2">
+            <h2 className="text-xl font-bold sm:col-span-2">{t("cart.addressTitle")}</h2>
+            <div><Label>{t("form.name")}</Label><Input value={form.name} onChange={set("name")} maxLength={100} /></div>
+            <div><Label>{t("form.phone")}</Label><Input value={form.phone} onChange={set("phone")} maxLength={20} /></div>
+            <div className="sm:col-span-2"><Label>{t("form.address")}</Label><Input value={form.address} onChange={set("address")} maxLength={300} /></div>
+            <div><Label>{t("form.cep")}</Label><Input value={form.cep} onChange={set("cep")} maxLength={9} /></div>
+            <div className="sm:col-span-2"><Label>{t("form.notes")}</Label><Textarea value={form.notes} onChange={set("notes")} maxLength={500} placeholder={t("form.notesPlaceholder")} /></div>
+          </section>
+        )}
       </div>
 
       <aside className="h-fit rounded-3xl border bg-card p-6 lg:sticky lg:top-24">
@@ -108,7 +151,20 @@ function Cart() {
           <div className="flex justify-between"><span>{t("delivery.label")}</span><span>{brl(fee)}</span></div>
           <div className="flex justify-between border-t pt-3 text-lg font-bold"><span>{t("cart.total")}</span><span>{brl(total)}</span></div>
         </div>
-        <Button type="submit" size="lg" className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(total)}</Button>
+
+        {loading ? (
+          <Button size="lg" disabled className="mt-6 w-full bg-brand">{t("cart.pay")}</Button>
+        ) : user ? (
+          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(total)}</Button>
+        ) : (
+          <Button
+            size="lg"
+            className="mt-6 w-full bg-brand shadow-glow"
+            onClick={() => { rememberIntendedPath("/carrinho"); navigate({ to: "/auth" }); }}
+          >
+            {t("auth.needAccountCta")}
+          </Button>
+        )}
         <p className="mt-3 text-center text-xs text-muted-foreground">{t("cart.demoNote")}</p>
       </aside>
     </form>
