@@ -12,14 +12,17 @@ export function isKnownProduct(id: string): boolean {
 
 export type Totals = { subtotal: number; deliveryFee: number; total: number };
 
-/** Frais de livraison seulement quand le panier n'est pas vide. */
+export type DeliveryMethod = "livraison" | "retrait";
+
+/** Frais de livraison seulement quand le panier n'est pas vide et que le client choisit la livraison. */
 export function computeTotals(
   items: CartItem[],
   priceOf: (id: string) => number,
   deliveryFee: number,
+  method: DeliveryMethod = "livraison",
 ): Totals {
   const subtotal = items.reduce((sum, item) => sum + priceOf(item.id) * item.qty, 0);
-  const shipping = subtotal > 0 ? deliveryFee : 0;
+  const shipping = subtotal > 0 && method === "livraison" ? deliveryFee : 0;
   return { subtotal, deliveryFee: shipping, total: subtotal + shipping };
 }
 

@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ADD COLUMN delivery_method text NOT NULL DEFAULT 'livraison';
+COMMENT ON COLUMN public.orders.delivery_method IS 'livraison = entrega na morada (com taxa), retrait = retirada no local (sem taxa)';

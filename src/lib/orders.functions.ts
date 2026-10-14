@@ -28,6 +28,7 @@ export type Order = {
   delivery_fee: number;
   total: number;
   payment_plan: "full" | "split";
+  delivery_method: "livraison" | "retrait";
   payment_status: "en_attente" | "paye" | "acompte_paye" | "echec_solde";
   amount_paid: number;
   second_amount: number;
@@ -51,6 +52,7 @@ function toOrder(r: OrderRow): Order {
     delivery_fee: Number(r.delivery_fee),
     total: Number(r.total),
     payment_plan: r.payment_plan === "split" ? "split" : "full",
+    delivery_method: r.delivery_method === "retrait" ? "retrait" : "livraison",
     payment_status: r.payment_status as Order["payment_status"],
     amount_paid: Number(r.amount_paid),
     second_amount: Number(r.second_amount),
@@ -75,18 +77,25 @@ export const getAccount = createServerFn({ method: "GET" })
     isAdmin: await isAdmin(context.supabase, context.userId),
   }));
 
-const orderPayload = z.object({
-  name: z.string().trim().min(2, "Indiquez votre nom").max(100),
-  phone: z.string().trim().min(8, "Téléphone invalide").max(20),
-  address: z.string().trim().min(8, "Indiquez l'adresse complète").max(300),
-  postal_code: z.string().trim().min(4, "Code postal invalide").max(9),
-  notes: z.string().trim().max(500).optional(),
-  items: z
-    .array(z.object({ id: z.string().max(64), qty: z.number().int().min(1).max(20) }))
-    .min(1, "Votre panier est vide")
-    .max(20),
-  plan: z.enum(["full", "split"]).default("full"),
-});
+const orderPayload = z
+  .object({
+    name: z.string().trim().min(2, "Indiquez votre nom").max(100),
+    phone: z.string().trim().min(8, "Téléphone invalide").max(20),
+    address: z.string().trim().max(300).default(""),
+    postal_code: z.string().trim().max(9).default(""),
+    notes: z.string().trim().max(500).optional(),
+    items: z
+      .array(z.object({ id: z.string().max(64), qty: z.number().int().min(1).max(20) }))
+      .min(1, "Votre panier est vide")
+      .max(20),
+    plan: z.enum(["full", "split"]).default("full"),
+    delivery_method: z.enum(["livraison", "retrait"]).default("livraison"),
+  })
+  .superRefine((v, ctx) => {
+    if (v.delivery_method !== "livraison") return;
+    if (v.address.length < 8) ctx.addIssue({ code: "custom", path: ["address"], message: "Indiquez l'adresse complète" });
+    if (v.postal_code.length < 4) ctx.addIssue({ code: "custom", path: ["postal_code"], message: "Code postal invalide" });
+  });
 
 /** Enregistre une commande. Les prix sont relus et recalculés ici, pas dans le navigateur. */
 export const createOrder = createServerFn({ method: "POST" })
@@ -102,7 +111,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const priceOf = (id: string) =>
       numFromText(texts[`product.${id}.price`] ?? DEFAULTS[`product.${id}.price`] ?? "", 0);
     const fee = numFromText(texts["delivery.fee"] ?? DEFAULTS["delivery.fee"] ?? "", 0);
-    const totals = computeTotals(data.items, priceOf, fee);
+    const totals = computeTotals(data.items, priceOf, fee, data.delivery_method);
     if (totals.total <= 0) throw new Error("Commande impossible : vérifiez les articles du panier.");
 
     const bytes = new Uint8Array(8);
@@ -125,6 +134,7 @@ export const createOrder = createServerFn({ method: "POST" })
         delivery_fee: totals.deliveryFee,
         total: totals.total,
         payment_plan: data.plan,
+        delivery_method: data.delivery_method,
         second_amount: splitPayment(totals.total, data.plan).later,
       })
       .select("id, ref")
