@@ -34,3 +34,16 @@ describe("Référence de commande", () => {
     expect(isKnownProduct("redmi-note-11s")).toBe(false);
   });
 });
+
+import { splitPayment } from "@/lib/pricing";
+describe("paiement en 2 fois", () => {
+  it("iPhone 300 € : 150 € maintenant et 150 € dans une semaine", () => {
+    expect(splitPayment(300, "split")).toEqual({ now: 150, later: 150 });
+  });
+  it("en une fois : tout maintenant, rien ensuite", () => {
+    expect(splitPayment(300, "full")).toEqual({ now: 300, later: 0 });
+  });
+  it("le centime impair va sur le 1er paiement", () => {
+    expect(splitPayment(100.01, "split")).toEqual({ now: 50.01, later: 50 });
+  });
+});

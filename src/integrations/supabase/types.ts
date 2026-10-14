@@ -17,6 +17,7 @@ export type Database = {
       orders: {
         Row: {
           address: string
+          amount_paid: number
           created_at: string
           customer_email: string
           customer_id: string
@@ -25,16 +26,24 @@ export type Database = {
           items: Json
           name: string
           notes: string | null
+          payment_env: string | null
+          payment_plan: string
+          payment_status: string
           phone: string
           postal_code: string
           ref: string
+          second_amount: number
+          second_charge_due_at: string | null
           status: Database["public"]["Enums"]["order_status"]
+          stripe_customer_id: string | null
+          stripe_payment_method_id: string | null
           subtotal: number
           total: number
           updated_at: string
         }
         Insert: {
           address: string
+          amount_paid?: number
           created_at?: string
           customer_email: string
           customer_id: string
@@ -43,16 +52,24 @@ export type Database = {
           items?: Json
           name: string
           notes?: string | null
+          payment_env?: string | null
+          payment_plan?: string
+          payment_status?: string
           phone: string
           postal_code: string
           ref: string
+          second_amount?: number
+          second_charge_due_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_customer_id?: string | null
+          stripe_payment_method_id?: string | null
           subtotal: number
           total: number
           updated_at?: string
         }
         Update: {
           address?: string
+          amount_paid?: number
           created_at?: string
           customer_email?: string
           customer_id?: string
@@ -61,10 +78,17 @@ export type Database = {
           items?: Json
           name?: string
           notes?: string | null
+          payment_env?: string | null
+          payment_plan?: string
+          payment_status?: string
           phone?: string
           postal_code?: string
           ref?: string
+          second_amount?: number
+          second_charge_due_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_customer_id?: string | null
+          stripe_payment_method_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string

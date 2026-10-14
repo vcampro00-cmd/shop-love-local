@@ -18,7 +18,10 @@ import { Route as EditarRouteImport } from './routes/editar'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedMesCommandesRouteImport } from './routes/_authenticated/mes-commandes'
+import { Route as AuthenticatedPaiementIdRouteImport } from './routes/_authenticated/paiement.$id'
 import { Route as AuthenticatedPedidoIdRouteImport } from './routes/_authenticated/pedido.$id'
+import { Route as ApiPublicCronSecondPaymentsRouteImport } from './routes/api/public/cron/second-payments'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -65,11 +68,28 @@ const AuthenticatedMesCommandesRoute =
     path: '/mes-commandes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPaiementIdRoute = AuthenticatedPaiementIdRouteImport.update({
+  id: '/paiement/$id',
+  path: '/paiement/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPedidoIdRoute = AuthenticatedPedidoIdRouteImport.update({
   id: '/pedido/$id',
   path: '/pedido/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicCronSecondPaymentsRoute =
+  ApiPublicCronSecondPaymentsRouteImport.update({
+    id: '/api/public/cron/second-payments',
+    path: '/api/public/cron/second-payments',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,7 +100,10 @@ export interface FileRoutesByFullPath {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
+  '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,7 +114,10 @@ export interface FileRoutesByTo {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
+  '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,7 +130,10 @@ export interface FileRoutesById {
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/_authenticated/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/_authenticated/pedido/$id': typeof AuthenticatedPedidoIdRoute
+  '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,7 +146,10 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/admin'
     | '/mes-commandes'
+    | '/paiement/$id'
     | '/pedido/$id'
+    | '/api/public/cron/second-payments'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,7 +160,10 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/admin'
     | '/mes-commandes'
+    | '/paiement/$id'
     | '/pedido/$id'
+    | '/api/public/cron/second-payments'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -140,7 +175,10 @@ export interface FileRouteTypes {
     | '/reinitialiser-mot-de-passe'
     | '/_authenticated/admin'
     | '/_authenticated/mes-commandes'
+    | '/_authenticated/paiement/$id'
     | '/_authenticated/pedido/$id'
+    | '/api/public/cron/second-payments'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -151,6 +189,8 @@ export interface RootRouteChildren {
   ComoFuncionaRoute: typeof ComoFuncionaRoute
   EditarRoute: typeof EditarRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  ApiPublicCronSecondPaymentsRoute: typeof ApiPublicCronSecondPaymentsRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -218,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMesCommandesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/paiement/$id': {
+      id: '/_authenticated/paiement/$id'
+      path: '/paiement/$id'
+      fullPath: '/paiement/$id'
+      preLoaderRoute: typeof AuthenticatedPaiementIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pedido/$id': {
       id: '/_authenticated/pedido/$id'
       path: '/pedido/$id'
@@ -225,18 +272,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPedidoIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/cron/second-payments': {
+      id: '/api/public/cron/second-payments'
+      path: '/api/public/cron/second-payments'
+      fullPath: '/api/public/cron/second-payments'
+      preLoaderRoute: typeof ApiPublicCronSecondPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedMesCommandesRoute: typeof AuthenticatedMesCommandesRoute
+  AuthenticatedPaiementIdRoute: typeof AuthenticatedPaiementIdRoute
   AuthenticatedPedidoIdRoute: typeof AuthenticatedPedidoIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedMesCommandesRoute: AuthenticatedMesCommandesRoute,
+  AuthenticatedPaiementIdRoute: AuthenticatedPaiementIdRoute,
   AuthenticatedPedidoIdRoute: AuthenticatedPedidoIdRoute,
 }
 
@@ -251,6 +314,8 @@ const rootRouteChildren: RootRouteChildren = {
   ComoFuncionaRoute: ComoFuncionaRoute,
   EditarRoute: EditarRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  ApiPublicCronSecondPaymentsRoute: ApiPublicCronSecondPaymentsRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

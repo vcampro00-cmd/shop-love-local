@@ -7,6 +7,7 @@ import { Minus, Plus } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { getProduct, brl } from "@/lib/products";
 import { useText, numFromText } from "@/lib/content";
+import { splitPayment, type PaymentPlan } from "@/lib/pricing";
 import { useAccount, rememberIntendedPath } from "@/lib/auth";
 import { createOrder } from "@/lib/orders.functions";
 import { Button } from "@/components/ui/button";
@@ -43,9 +44,11 @@ function Cart() {
   const placeOrder = useServerFn(createOrder);
   const [form, setForm] = useState({ name: "", phone: "", address: "", cep: "", notes: "" });
   const [busy, setBusy] = useState(false);
+  const [plan, setPlan] = useState<PaymentPlan>("full");
 
   const fee = numFromText(t("delivery.fee"), 0);
   const total = subtotal + (subtotal > 0 ? fee : 0);
+  const parts = splitPayment(total, "split");
 
   if (lines.length === 0)
     return (
@@ -77,10 +80,11 @@ function Cart() {
           postal_code: form.cep,
           notes: form.notes.trim() || undefined,
           items: lines.map((l) => ({ id: l.id, qty: l.qty })),
+          plan,
         },
       });
       clear();
-      navigate({ to: "/pedido/$id", params: { id: order.id } });
+      navigate({ to: "/paiement/$id", params: { id: order.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Commande impossible. Réessayez.");
     } finally {
@@ -152,10 +156,27 @@ function Cart() {
           <div className="flex justify-between border-t pt-3 text-lg font-bold"><span>{t("cart.total")}</span><span>{brl(total)}</span></div>
         </div>
 
+        {user && (
+          <fieldset className="mt-5 space-y-2 text-sm">
+            <legend className="mb-2 font-bold">{t("pay.choose")}</legend>
+            {(["full", "split"] as const).map((p) => (
+              <label key={p} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${plan === p ? "border-primary bg-primary/10" : ""}`}>
+                <input type="radio" name="plan" className="mt-1" checked={plan === p} onChange={() => setPlan(p)} />
+                <span>
+                  <span className="block font-medium">{p === "full" ? `${t("pay.full")} — ${brl(total)}` : `${t("pay.split")} — 2 × ${brl(parts.now)}`}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {p === "full" ? t("pay.fullHint") : `${brl(parts.now)} ${t("pay.splitNow")}, ${brl(parts.later)} ${t("pay.splitLater")}`}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+
         {loading ? (
           <Button size="lg" disabled className="mt-6 w-full bg-brand">{t("cart.pay")}</Button>
         ) : user ? (
-          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(total)}</Button>
+          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(plan === "full" ? total : parts.now)}</Button>
         ) : (
           <Button
             size="lg"

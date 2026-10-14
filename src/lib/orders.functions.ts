@@ -5,7 +5,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULTS } from "./content.defaults";
 import { numFromText } from "./content";
-import { computeTotals, isKnownProduct, makeOrderRef, type CartItem } from "./pricing";
+import { computeTotals, isKnownProduct, makeOrderRef, splitPayment, type CartItem } from "./pricing";
+import { createStripeClient, getStripeErrorMessage } from "./stripe.server";
 
 const ORDER_STATUSES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
 
@@ -26,6 +27,11 @@ export type Order = {
   subtotal: number;
   delivery_fee: number;
   total: number;
+  payment_plan: "full" | "split";
+  payment_status: "en_attente" | "paye" | "acompte_paye" | "echec_solde";
+  amount_paid: number;
+  second_amount: number;
+  second_charge_due_at: string | null;
 };
 
 function toOrder(r: OrderRow): Order {
@@ -44,6 +50,11 @@ function toOrder(r: OrderRow): Order {
     subtotal: Number(r.subtotal),
     delivery_fee: Number(r.delivery_fee),
     total: Number(r.total),
+    payment_plan: r.payment_plan === "split" ? "split" : "full",
+    payment_status: r.payment_status as Order["payment_status"],
+    amount_paid: Number(r.amount_paid),
+    second_amount: Number(r.second_amount),
+    second_charge_due_at: r.second_charge_due_at,
   };
 }
 
@@ -74,6 +85,7 @@ const orderPayload = z.object({
     .array(z.object({ id: z.string().max(64), qty: z.number().int().min(1).max(20) }))
     .min(1, "Votre panier est vide")
     .max(20),
+  plan: z.enum(["full", "split"]).default("full"),
 });
 
 /** Enregistre une commande. Les prix sont relus et recalculés ici, pas dans le navigateur. */
@@ -112,6 +124,8 @@ export const createOrder = createServerFn({ method: "POST" })
         subtotal: totals.subtotal,
         delivery_fee: totals.deliveryFee,
         total: totals.total,
+        payment_plan: data.plan,
+        second_amount: splitPayment(totals.total, data.plan).later,
       })
       .select("id, ref")
       .single();
@@ -170,4 +184,75 @@ export const setOrderStatus = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("orders").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error("La situation n'a pas pu être enregistrée.");
     return { ok: true };
+  });
+
+const envSchema = z.enum(["sandbox", "live"]);
+
+/** Ouvre le paiement par carte d'une commande du client (montant relu en base). */
+export const startPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ id: z.string().uuid(), environment: envSchema, origin: z.string().url() }).parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ clientSecret: string } | { error: string }> => {
+    const { data: row } = await context.supabase.from("orders").select("*").eq("id", data.id).maybeSingle();
+    if (!row || row.customer_id !== context.userId) return { error: "Commande introuvable." };
+    if (row.payment_status !== "en_attente") return { error: "Cette commande est déjà payée." };
+    const order = toOrder(row);
+    const { now } = splitPayment(order.total, order.payment_plan);
+    const origin = new URL(data.origin).origin;
+    try {
+      const stripe = createStripeClient(data.environment);
+      const email = emailOf(context.claims);
+      const found = await stripe.customers.search({ query: `metadata['userId']:'${context.userId}'`, limit: 1 });
+      const customerId =
+        found.data[0]?.id ??
+        (await stripe.customers.create({ ...(email ? { email } : {}), metadata: { userId: context.userId } })).id;
+      const split = order.payment_plan === "split";
+      const label = split ? `Commande ${order.ref} — 1er paiement sur 2` : `Commande ${order.ref}`;
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        ui_mode: "embedded_page",
+        customer: customerId,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "eur",
+              unit_amount: Math.round(now * 100),
+              product_data: { name: label },
+            },
+          },
+        ],
+        payment_method_types: ["card"],
+        payment_intent_data: {
+          description: label,
+          metadata: { orderId: order.id },
+          ...(split && { setup_future_usage: "off_session" as const }),
+        },
+        metadata: { orderId: order.id, userId: context.userId, plan: order.payment_plan },
+        return_url: `${origin}/pedido/${order.id}?session_id={CHECKOUT_SESSION_ID}`,
+      });
+      return { clientSecret: session.client_secret ?? "" };
+    } catch (e) {
+      return { error: getStripeErrorMessage(e) };
+    }
+  });
+
+/** Au retour du paiement : enregistre le paiement si le webhook n'est pas encore passé. */
+export const confirmPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ id: z.string().uuid(), sessionId: z.string().regex(/^cs_[A-Za-z0-9_]+$/), environment: envSchema }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row } = await context.supabase.from("orders").select("id").eq("id", data.id).maybeSingle();
+    if (!row) return { ok: false };
+    try {
+      const { applyPaidSession } = await import("./payments.server");
+      await applyPaidSession(data.sessionId, data.environment);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: getStripeErrorMessage(e) };
+    }
   });

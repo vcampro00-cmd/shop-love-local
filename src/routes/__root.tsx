@@ -15,6 +15,7 @@ import { CartProvider } from "@/lib/cart";
 import { siteTextsQueryOptions } from "@/lib/content";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { Toaster } from "@/components/ui/sonner";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -141,6 +142,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <CartProvider>
         <div className="flex min-h-screen flex-col">
+          <PaymentTestModeBanner />
           <SiteHeader />
           <main className="flex-1"><Outlet /></main>
           <SiteFooter />

@@ -23,6 +23,22 @@ export function computeTotals(
   return { subtotal, deliveryFee: shipping, total: subtotal + shipping };
 }
 
+export type PaymentPlan = "full" | "split";
+
+/**
+ * Montant payé tout de suite et montant prélevé une semaine plus tard.
+ * En 2 fois : deux moitiés (au centime près, le centime en trop va sur le 1er paiement).
+ */
+export function splitPayment(total: number, plan: PaymentPlan): { now: number; later: number } {
+  if (plan === "full") return { now: total, later: 0 };
+  const cents = Math.round(total * 100);
+  const nowCents = Math.ceil(cents / 2);
+  return { now: nowCents / 100, later: (cents - nowCents) / 100 };
+}
+
+/** Le 2e prélèvement a lieu 7 jours après le 1er paiement. */
+export const SECOND_CHARGE_DELAY_DAYS = 7;
+
 // Alphabet sans I, O, 0, 1 : lisible quand on l'écrit à la main.
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
