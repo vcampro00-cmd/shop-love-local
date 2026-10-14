@@ -15,6 +15,6 @@ export const getProduct = (id: string) => products.find((p) => p.id === id);
 
 export const brl = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
 
-export function orderTotal(subtotal: number, method: "entrega" | "retirada") {
-  return subtotal + (method === "entrega" && subtotal > 0 ? DELIVERY_FEE : 0);
+export function orderTotal(subtotal: number) {
+  return subtotal + (subtotal > 0 ? DELIVERY_FEE : 0);
 }

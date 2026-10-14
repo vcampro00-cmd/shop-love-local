@@ -5,7 +5,7 @@ import { brl } from "@/lib/products";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/pedido/$id")({
-  validateSearch: z.object({ m: z.enum(["entrega", "retirada"]).catch("entrega"), t: z.number().catch(0) }),
+  validateSearch: z.object({ t: z.number().catch(0) }),
   head: () => ({
     meta: [
       { title: "Commande confirmée — Vcampro" },
@@ -22,16 +22,14 @@ export const Route = createFileRoute("/pedido/$id")({
 
 function Confirmed() {
   const { id } = Route.useParams();
-  const { m, t } = Route.useSearch();
+  const { t } = Route.useSearch();
   return (
     <div className="mx-auto max-w-lg px-4 py-24 text-center">
       <CheckCircle2 className="mx-auto h-16 w-16 text-accent" />
       <h1 className="mt-6 text-3xl font-bold">Commande reçue !</h1>
       <p className="mt-2 text-muted-foreground">Numéro de commande : <span className="font-bold text-foreground">{id}</span> · Total {brl(t)}</p>
       <div className="mt-8 rounded-2xl border bg-card p-5 text-left text-sm">
-        {m === "entrega"
-          ? "Votre commande sera préparée puis envoyée à l'adresse indiquée. Nous vous prévenons par téléphone à l'expédition."
-          : "Nous vous prévenons par téléphone quand la commande est prête. Pour la retirer, présentez le numéro de commande et une pièce d'identité."}
+        Votre commande sera préparée puis envoyée à l'adresse indiquée. Nous vous prévenons par téléphone à l'expédition.
       </div>
       <Button asChild className="mt-8 bg-brand"><Link to="/">Continuer mes achats</Link></Button>
     </div>

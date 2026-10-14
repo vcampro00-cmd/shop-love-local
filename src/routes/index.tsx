@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Plus, Truck, Store, CreditCard } from "lucide-react";
+import { Plus, Truck, CreditCard } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { products, brl, APP_PLAN_LABEL } from "@/lib/products";
 import { useCart } from "@/lib/cart";
@@ -10,9 +10,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Vcampro — Boutique en ligne" },
-      { name: "description", content: "Achetez chez Vcampro, payez en ligne et choisissez livraison ou retrait sur place." },
+      { name: "description", content: "Achetez chez Vcampro, payez en ligne et faites-vous livrer à votre adresse." },
       { property: "og:title", content: "Vcampro — Boutique en ligne" },
-      { property: "og:description", content: "Payez en ligne, livraison ou retrait sur place." },
+      { property: "og:description", content: "Payez en ligne et recevez votre commande à votre adresse." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -31,7 +31,7 @@ function Shop() {
           <h1 className="max-w-xl text-4xl font-bold leading-tight sm:text-6xl">
             Achetez en ligne chez <span className="text-brand">Vcampro</span>
           </h1>
-          <p className="mt-4 max-w-md text-muted-foreground">Payez sur le site et choisissez : livraison à votre adresse ou retrait sur place.</p>
+          <p className="mt-4 max-w-md text-muted-foreground">Payez sur le site et recevez votre commande à votre adresse.</p>
           <div className="mt-8 flex gap-3">
             <Button asChild size="lg" className="bg-brand shadow-glow"><a href="#produtos">Voir les téléphones</a></Button>
             <Button asChild size="lg" variant="outline"><Link to="/como-funciona">Comment ça marche</Link></Button>
@@ -43,7 +43,6 @@ function Shop() {
         {[
           { i: CreditCard, t: "Paiement en ligne", d: "Sécurisé, directement sur le site." },
           { i: Truck, t: "Livraison", d: "Reçue à votre adresse." },
-          { i: Store, t: "Retrait sur place", d: "Sans frais de livraison." },
         ].map(({ i: I, t, d }) => (
           <div key={t} className="flex items-center gap-3 rounded-2xl border bg-card p-4">
             <I className="h-5 w-5 text-accent" />
