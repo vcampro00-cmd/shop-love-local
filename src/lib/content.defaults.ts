@@ -19,7 +19,7 @@ export const DEFAULTS: Record<string, string> = {
   // Fiche iPhone SE 2020
   "product.iphone-se-2020.name": "iPhone SE 2020",
   "product.iphone-se-2020.tag": "Apple",
-  "product.iphone-se-2020.description": "Téléphone dédié à Uber et Bolt, fonctionnel et pratique. Le téléphone reste avec le chauffeur.",
+  "product.iphone-se-2020.description": "Téléphone dédié à Uber et Bolt, fonctionnel et pratique. Le téléphone reste avec le chauffeur. Abonnement de 20 € par semaine.",
   "product.iphone-se-2020.price": "300",
 
   // Fiche Clone Deliveroo
