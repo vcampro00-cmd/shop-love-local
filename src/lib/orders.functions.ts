@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
@@ -50,8 +51,8 @@ function emailOf(claims: unknown): string {
   return (claims as { email?: string }).email ?? "";
 }
 
-async function isAdmin(context: { supabase: { rpc: (fn: string, args: object) => Promise<{ data: unknown }> }; userId: string }) {
-  const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+async function isAdmin(client: SupabaseClient<Database>, userId: string) {
+  const { data } = await client.rpc("has_role", { _user_id: userId, _role: "admin" });
   return data === true;
 }
 
@@ -60,7 +61,7 @@ export const getAccount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ email: string; isAdmin: boolean }> => ({
     email: emailOf(context.claims),
-    isAdmin: await isAdmin(context),
+    isAdmin: await isAdmin(context.supabase, context.userId),
   }));
 
 const orderPayload = z.object({
@@ -148,7 +149,7 @@ export const getOrder = createServerFn({ method: "GET" })
 export const listAllOrders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Order[]> => {
-    if (!(await isAdmin(context))) throw new Error("Accès réservé au propriétaire.");
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
     const { data, error } = await context.supabase
       .from("orders")
       .select("*")
@@ -165,7 +166,7 @@ export const setOrderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => statusPayload.parse(input))
   .handler(async ({ data, context }) => {
-    if (!(await isAdmin(context))) throw new Error("Accès réservé au propriétaire.");
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
     const { error } = await context.supabase.from("orders").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error("La situation n'a pas pu être enregistrée.");
     return { ok: true };
