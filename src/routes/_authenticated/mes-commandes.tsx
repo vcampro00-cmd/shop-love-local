@@ -56,7 +56,10 @@ function MyOrders() {
                   {t("account.orderDate")} : {new Date(o.created_at).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })}
                 </p>
               </div>
-              <span className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{t(`status.${o.status}`)}</span>
+              <span className="flex flex-col items-end gap-1 text-xs">
+                <span className="rounded-full bg-secondary px-3 py-1 text-secondary-foreground">{t(`status.${o.status}`)}</span>
+                <span className="text-muted-foreground">{t(`pay.status.${o.payment_status}`)}</span>
+              </span>
             </div>
             <div className="mt-4 flex items-center justify-between gap-3">
               <span className="font-bold">{t("account.orderTotal")} : {brl(o.total)}</span>
