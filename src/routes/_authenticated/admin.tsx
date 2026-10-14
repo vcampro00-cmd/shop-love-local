@@ -1,0 +1,143 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { Inbox } from "lucide-react";
+import { listAllOrders, setOrderStatus, type Order } from "@/lib/orders.functions";
+import { brl, getProduct } from "@/lib/products";
+import { useText } from "@/lib/content";
+
+const STATUS_VALUES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
+
+export const Route = createFileRoute("/_authenticated/admin")({
+  head: () => ({
+    meta: [
+      { title: "Commandes reçues — Vcampro" },
+      { name: "description", content: "Les commandes passées sur la boutique Vcampro." },
+      { name: "robots", content: "noindex" },
+      { property: "og:title", content: "Commandes reçues — Vcampro" },
+      { property: "og:description", content: "Les commandes passées sur la boutique." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: AdminOrders,
+});
+
+function AdminOrders() {
+  const t = useText();
+  const queryClient = useQueryClient();
+  const changeStatus = useServerFn(setOrderStatus);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const { data, error, isPending } = useQuery({
+    queryKey: ["all-orders"],
+    queryFn: () => listAllOrders(),
+    retry: false,
+  });
+
+  if (error)
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center">
+        <h1 className="text-2xl font-bold">{t("admin.title")}</h1>
+        <p className="mt-2 text-muted-foreground">{t("admin.denied")}</p>
+      </div>
+    );
+
+  if (isPending)
+    return <p className="mx-auto max-w-md px-4 py-24 text-center text-muted-foreground">{t("admin.loading")}</p>;
+
+  if (data.length === 0)
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center">
+        <Inbox className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h1 className="mt-4 text-2xl font-bold">{t("admin.title")}</h1>
+        <p className="mt-2 text-muted-foreground">{t("admin.empty")}</p>
+      </div>
+    );
+
+  async function update(id: string, status: Order["status"]) {
+    setBusyId(id);
+    try {
+      await changeStatus({ data: { id, status } });
+      await queryClient.invalidateQueries({ queryKey: ["all-orders"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "La situation n'a pas pu être enregistrée.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-12">
+      <h1 className="text-3xl font-bold">{t("admin.title")}</h1>
+      <p className="mt-2 text-muted-foreground">{t("admin.intro")}</p>
+
+      <ul className="mt-6 space-y-4">
+        {data.map((o) => (
+          <li key={o.id} className="rounded-2xl border bg-card p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-lg font-bold">{o.ref}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("admin.date")} : {new Date(o.created_at).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })}
+                </p>
+              </div>
+              <span className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">
+                {t("admin.total")} : {brl(o.total)}
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
+              <div>
+                <p className="font-medium">{t("admin.customer")}</p>
+                <p className="text-muted-foreground">{o.name}</p>
+                <p className="text-muted-foreground">{o.customer_email}</p>
+                <p className="text-muted-foreground">{o.phone}</p>
+              </div>
+              <div>
+                <p className="font-medium">{t("admin.address")}</p>
+                <p className="text-muted-foreground">{o.address}</p>
+                <p className="text-muted-foreground">{o.postal_code}</p>
+                {o.notes && (
+                  <p className="mt-1 text-muted-foreground">
+                    <span className="font-medium text-foreground">{t("admin.notes")} :</span> {o.notes}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="font-medium">{t("admin.items")}</p>
+                <ul className="mt-1 space-y-1">
+                  {o.items.map((item) => {
+                    const p = getProduct(item.id);
+                    const name = t(`product.${item.id}.name`);
+                    return (
+                      <li key={item.id} className="flex items-center gap-2 text-muted-foreground">
+                        {p && <img src={p.image} alt={name} width={p.imageW} height={p.imageH} className="h-8 w-auto object-contain" />}
+                        {name} × {item.qty}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+
+            <label className="mt-4 flex items-center gap-3 text-sm">
+              <span className="font-medium">{t("admin.status")}</span>
+              <select
+                value={o.status}
+                disabled={busyId === o.id}
+                onChange={(e) => update(o.id, e.target.value as Order["status"])}
+                className="rounded-xl border bg-background px-3 py-2 text-sm"
+              >
+                {STATUS_VALUES.map((s) => (
+                  <option key={s} value={s}>{t(`status.${s}`)}</option>
+                ))}
+              </select>
+            </label>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
