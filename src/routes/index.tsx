@@ -1,24 +1,75 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { Plus, Truck, Store, CreditCard } from "lucide-react";
+import hero from "@/assets/hero.jpg";
+import { products, brl } from "@/lib/products";
+import { useCart } from "@/lib/cart";
+import { Button } from "@/components/ui/button";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Vcampro — Loja online" },
+      { name: "description", content: "Compre na Vcampro, pague pelo site e escolha entrega ou retirada no local." },
+      { property: "og:title", content: "Vcampro — Loja online" },
+      { property: "og:description", content: "Pague online e receba em casa ou retire no local." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Shop,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Shop() {
+  const { add } = useCart();
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div>
+      <section className="relative overflow-hidden">
+        <img src={hero} alt="Produtos Vcampro" width={1600} height={912} className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <div className="relative mx-auto max-w-6xl px-4 py-24 sm:py-32">
+          <h1 className="max-w-xl text-4xl font-bold leading-tight sm:text-6xl">
+            Compre online na <span className="text-brand">Vcampro</span>
+          </h1>
+          <p className="mt-4 max-w-md text-muted-foreground">Pague pelo site e escolha: entrega no seu endereço ou retirada no local.</p>
+          <div className="mt-8 flex gap-3">
+            <Button asChild size="lg" className="bg-brand shadow-glow"><a href="#produtos">Ver produtos</a></Button>
+            <Button asChild size="lg" variant="outline"><Link to="/como-funciona">Como funciona</Link></Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-6xl gap-4 px-4 py-8 sm:grid-cols-3">
+        {[
+          { i: CreditCard, t: "Pagamento online", d: "Seguro, direto no site." },
+          { i: Truck, t: "Entrega", d: "Receba no seu endereço." },
+          { i: Store, t: "Retirada no local", d: "Sem taxa de entrega." },
+        ].map(({ i: I, t, d }) => (
+          <div key={t} className="flex items-center gap-3 rounded-2xl border bg-card p-4">
+            <I className="h-5 w-5 text-accent" />
+            <div><p className="font-medium">{t}</p><p className="text-sm text-muted-foreground">{d}</p></div>
+          </div>
+        ))}
+      </section>
+
+      <section id="produtos" className="mx-auto max-w-6xl px-4 pb-20 pt-8">
+        <h2 className="mb-6 text-2xl font-bold">Produtos</h2>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((p) => (
+            <article key={p.id} className="flex flex-col rounded-3xl border bg-card p-6 transition hover:border-primary">
+              <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{p.tag}</span>
+              <h3 className="mt-4 text-lg font-bold">{p.name}</h3>
+              <p className="mt-1 flex-1 text-sm text-muted-foreground">{p.description}</p>
+              <div className="mt-6 flex items-center justify-between">
+                <span className="text-xl font-bold">{brl(p.price)}</span>
+                <Button size="sm" onClick={() => { add(p.id); toast.success(`${p.name} adicionado ao carrinho`); }}>
+                  <Plus className="h-4 w-4" /> Adicionar
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
