@@ -31,6 +31,13 @@ export const DEFAULTS: Record<string, string> = {
   // Livraison
   "delivery.fee": "5",
   "delivery.label": "Livraison",
+  "delivery.methodTitle": "Livraison ou retrait ?",
+  "delivery.shipping": "Livraison à domicile",
+  "delivery.shippingHint": "Vous recevez la commande à l'adresse indiquée.",
+  "delivery.pickup": "Retrait sur place",
+  "delivery.pickupHint": "Vous récupérez la commande sur place, sans frais de livraison.",
+  "delivery.method.livraison": "Livraison à domicile",
+  "delivery.method.retrait": "Retrait sur place",
 
   // Comment ça marche
   "steps.titleA": "Comment",
@@ -195,8 +202,18 @@ export const EDITOR_GROUPS: EditorGroup[] = [
     ],
   },
   {
-    title: "Livraison",
-    fields: [money("delivery.fee", "Frais de livraison en euros"), text("delivery.label", "Nom de la ligne au panier")],
+    title: "Livraison et retrait",
+    fields: [
+      money("delivery.fee", "Frais de livraison en euros"),
+      text("delivery.label", "Nom de la ligne au panier"),
+      text("delivery.methodTitle", "Choix livraison/retrait — titre"),
+      text("delivery.shipping", "Option livraison"),
+      text("delivery.shippingHint", "Option livraison — explication"),
+      text("delivery.pickup", "Option retrait sur place"),
+      text("delivery.pickupHint", "Option retrait — explication"),
+      text("delivery.method.livraison", "Nom « livraison » sur la commande"),
+      text("delivery.method.retrait", "Nom « retrait » sur la commande"),
+    ],
   },
   {
     title: "Page « Comment ça marche »",

@@ -103,8 +103,13 @@ function AdminOrders() {
               </div>
               <div>
                 <p className="font-medium">{t("admin.address")}</p>
-                <p className="text-muted-foreground">{o.address}</p>
-                <p className="text-muted-foreground">{o.postal_code}</p>
+                <p className="text-muted-foreground">{t(`delivery.method.${o.delivery_method}`)}</p>
+                {o.delivery_method === "livraison" && (
+                  <>
+                    <p className="text-muted-foreground">{o.address}</p>
+                    <p className="text-muted-foreground">{o.postal_code}</p>
+                  </>
+                )}
                 {o.notes && (
                   <p className="mt-1 text-muted-foreground">
                     <span className="font-medium text-foreground">{t("admin.notes")} :</span> {o.notes}

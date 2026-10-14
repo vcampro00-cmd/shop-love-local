@@ -104,7 +104,13 @@ function Confirmed() {
           <p className="mt-1 text-muted-foreground">
             {order.name} · {order.phone}
             <br />
-            {order.address}, {order.postal_code}
+            {t(`delivery.method.${order.delivery_method}`)}
+            {order.delivery_method === "livraison" && (
+              <>
+                <br />
+                {order.address}, {order.postal_code}
+              </>
+            )}
           </p>
           {order.notes && (
             <p className="mt-2 text-muted-foreground">
