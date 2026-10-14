@@ -16,6 +16,7 @@ const orderQueryOptions = (id: string) =>
   });
 
 export const Route = createFileRoute("/_authenticated/pedido/$id")({
+  staticData: { sitemap: false },
   validateSearch: (search: Record<string, unknown>): { session_id?: string | undefined } => ({
     session_id: typeof search["session_id"] === "string" ? search["session_id"] : undefined,
   }),

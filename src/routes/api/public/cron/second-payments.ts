@@ -3,6 +3,7 @@ import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import { chargeDueInstallments } from "@/lib/payments.server";
 
 export const Route = createFileRoute("/api/public/cron/second-payments")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {
