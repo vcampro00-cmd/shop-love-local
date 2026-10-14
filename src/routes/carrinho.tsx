@@ -13,7 +13,6 @@ import { createOrder } from "@/lib/orders.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/carrinho")({
   head: () => ({
@@ -49,7 +48,7 @@ function Cart() {
   const t = useText();
   const { user, loading } = useAccount();
   const placeOrder = useServerFn(createOrder);
-  const [form, setForm] = useState({ name: "", phone: "", address: "", cep: "", notes: "" });
+  const [form, setForm] = useState({ name: "", phone: "", address: "", cep: "" });
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PaymentPlan>("full");
   const [method, setMethod] = useState<DeliveryMethod>("livraison");
@@ -90,7 +89,6 @@ function Cart() {
           phone: form.phone,
           address: form.address,
           postal_code: form.cep,
-          notes: form.notes.trim() || undefined,
           items: lines.map((l) => ({ id: l.id, qty: l.qty })),
           plan: effectivePlan,
           delivery_method: method,
@@ -175,7 +173,6 @@ function Cart() {
                 <div><Label>{t("form.cep")}</Label><Input value={form.cep} onChange={set("cep")} maxLength={9} /></div>
               </>
             )}
-            <div className="sm:col-span-2"><Label>{t("form.notes")}</Label><Textarea value={form.notes} onChange={set("notes")} maxLength={500} placeholder={t("form.notesPlaceholder")} /></div>
           </section>
         )}
       </div>
