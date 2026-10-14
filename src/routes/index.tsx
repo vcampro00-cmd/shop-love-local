@@ -25,7 +25,7 @@ function Shop() {
   return (
     <div>
       <section className="relative overflow-hidden">
-        <img src={hero} alt="iPhone SE 2020 et Redmi Note 11S" width={1600} height={912} className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <img src={hero} alt="iPhone SE 2020 et deux téléphones Android Clone Deliveroo" width={1600} height={912} className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="relative mx-auto max-w-6xl px-4 py-24 sm:py-32">
           <h1 className="max-w-xl text-4xl font-bold leading-tight sm:text-6xl">
@@ -53,7 +53,7 @@ function Shop() {
 
       <section id="produtos" className="mx-auto max-w-6xl px-4 pb-20 pt-8">
         <h2 className="mb-6 text-2xl font-bold">Téléphones</h2>
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p) => (
             <article key={p.id} className="flex flex-col rounded-3xl border bg-card p-6 transition hover:border-primary">
               <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{p.tag}</span>
