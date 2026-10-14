@@ -11,6 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { CartProvider } from "@/lib/cart";
+import { siteTextsQueryOptions } from "@/lib/content";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
