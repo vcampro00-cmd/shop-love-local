@@ -1,13 +1,11 @@
 import iphoneSeImg from "@/assets/iphone-se-2020.png";
-import clone1Img from "@/assets/clone-deliveroo-1.png";
-import clone2Img from "@/assets/clone-deliveroo-2.png";
+import cloneImg from "@/assets/clone-deliveroo.png";
 
-export type Product = { id: string; name: string; description: string; price: number; tag: string; image: string };
+export type Product = { id: string; name: string; description: string; price: number; tag: string; image: string; imageW: number; imageH: number };
 
 export const products: Product[] = [
-  { id: "iphone-se-2020", name: "iPhone SE 2020", description: "Écran 4,7\", puce A13 Bionic, Touch ID.", price: 300, tag: "Apple", image: iphoneSeImg },
-  { id: "clone-deliveroo-1", name: "Clone Deliveroo 1", description: "Android 13, écran 6,5\", batterie 5000 mAh.", price: 300, tag: "Android", image: clone1Img },
-  { id: "clone-deliveroo-2", name: "Clone Deliveroo 2", description: "Android 13, écran 6,6\", batterie 5000 mAh.", price: 300, tag: "Android", image: clone2Img },
+  { id: "iphone-se-2020", name: "iPhone SE 2020", description: "Écran 4,7\", puce A13 Bionic, Touch ID.", price: 300, tag: "Apple", image: iphoneSeImg, imageW: 701, imageH: 1005 },
+  { id: "clone-deliveroo", name: "Clone Deliveroo", description: "Deux téléphones Android livrés ensemble, prêts à l'emploi.", price: 380, tag: "Android ×2", image: cloneImg, imageW: 1151, imageH: 951 },
 ];
 
 // Abonnement à l'application : 20 € par semaine.
