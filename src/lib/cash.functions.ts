@@ -62,10 +62,9 @@ export const addExpense = createServerFn({ method: "POST" })
     await assertAdmin(context);
     let row: { label: string; amount: number; spent_on: string; kind: string; employee_id?: string; units?: number; unit_price?: number } = { label: data.label, amount: data.amount, spent_on: data.spent_on, kind: data.kind };
     if (data.kind === "salaire" && data.employee_id) {
-      if (!data.units || !data.unit_price) throw new Error("Indiquez le nombre d'unités et le prix par unité.");
       const { data: emp } = await context.supabase.from("employees").select("id, name").eq("id", data.employee_id).maybeSingle();
       if (!emp) throw new Error("Employé introuvable.");
-      row = { ...row, label: emp.name, employee_id: emp.id, units: data.units, unit_price: data.unit_price, amount: salaryAmount(data.units, data.unit_price) };
+      row = { ...row, label: emp.name, employee_id: emp.id };
     }
     const { error } = await context.supabase.from("expenses").insert(row);
     if (error) throw new Error("La ligne n'a pas pu être enregistrée.");

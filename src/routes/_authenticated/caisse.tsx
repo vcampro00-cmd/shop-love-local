@@ -93,12 +93,12 @@ function Caisse() {
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
     if (kind === "salaire") {
-      const u = Math.round(num(units)), r = num(rate);
-      if (!empId || !(u > 0) || !(r > 0)) { toast.error(t("cash.invalid")); return; }
+      const value = num(amount);
+      if (!empId || !(value > 0)) { toast.error(t("cash.invalid")); return; }
       setBusy(true);
       try {
-        await add({ data: { label: "salaire", amount: salaryAmount(u, r), spent_on: date, kind, employee_id: empId, units: u, unit_price: r } });
-        setUnits(""); setDate(today());
+        await add({ data: { label: "salaire", amount: value, spent_on: date, kind, employee_id: empId } });
+        setAmount(""); setDate(today());
         await qc.invalidateQueries({ queryKey: ["cash-book"] });
       } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
       finally { setBusy(false); }
