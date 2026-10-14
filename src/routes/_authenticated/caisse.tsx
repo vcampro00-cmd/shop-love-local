@@ -3,9 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Download, Trash2 } from "lucide-react";
 import { addExpense, deleteExpense, getCashBook } from "@/lib/cash.functions";
-import { summarizeCash, type CashEntry } from "@/lib/cash";
+import { availableMonths, filterBookByMonth, monthOf, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,7 @@ function Caisse() {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(today());
   const [busy, setBusy] = useState(false);
+  const [month, setMonth] = useState<string | null>(null);
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
 
@@ -55,7 +56,11 @@ function Caisse() {
   if (isPending)
     return <p className="mx-auto max-w-md px-4 py-24 text-center text-muted-foreground">{t("admin.loading")}</p>;
 
-  const s = summarizeCash(data);
+  const current = monthOf(new Date().toISOString());
+  const months = availableMonths(data, current);
+  const selected = month ?? current;
+  const book = filterBookByMonth(data, selected);
+  const s = summarizeCash(book);
 
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
@@ -84,6 +89,23 @@ function Caisse() {
     <div className="mx-auto max-w-5xl px-4 py-12">
       <h1 className="text-3xl font-bold">{t("cash.title")}</h1>
       <p className="mt-2 text-muted-foreground">{t("cash.intro")}</p>
+
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <label className="text-sm font-medium" htmlFor="cash-month">{t("cash.month")}</label>
+        <select
+          id="cash-month"
+          value={selected}
+          onChange={(e) => setMonth(e.target.value)}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm capitalize"
+        >
+          {months.map((m) => (
+            <option key={m} value={m}>{monthLabel(m)}{m === current ? ` (${t("cash.currentMonth")})` : ""}</option>
+          ))}
+        </select>
+        <Button type="button" variant="outline" onClick={() => exportPdf(book, selected, t)}>
+          <Download className="h-4 w-4" /> {t("cash.pdf")}
+        </Button>
+      </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label={t("cash.in")} value={brl(s.inTotal)} />
@@ -134,12 +156,57 @@ function Caisse() {
       </form>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <EntriesList title={t("cash.in")} empty={t("cash.emptyIn")} rows={data.entries} onDelete={remove} />
-        <List title={t("cash.out")} empty={t("cash.emptyOut")} rows={data.expenses} sign="−" onDelete={remove} />
-        <List title={t("cash.purchases")} empty={t("cash.emptyPurchases")} rows={data.purchases} sign="−" onDelete={remove} />
+        <EntriesList title={t("cash.in")} empty={t("cash.emptyIn")} rows={book.entries} onDelete={remove} />
+        <List title={t("cash.out")} empty={t("cash.emptyOut")} rows={book.expenses} sign="−" onDelete={remove} />
+        <List title={t("cash.purchases")} empty={t("cash.emptyPurchases")} rows={book.purchases} sign="−" onDelete={remove} />
       </div>
     </div>
   );
+}
+
+function monthLabel(m: string) {
+  const [y, mo] = m.split("-").map(Number);
+  return new Date(y, mo - 1, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+}
+
+const eur = (n: number) => n.toFixed(2).replace(".", ",") + " EUR";
+
+async function exportPdf(book: CashBook, month: string, t: (k: string) => string) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF();
+  const s = summarizeCash(book);
+  let y = 20;
+  const line = (txt: string, size = 10, bold = false) => {
+    if (y > 280) { doc.addPage(); y = 20; }
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    doc.text(txt, 14, y);
+    y += size * 0.55;
+  };
+  const row = (r: CashEntry, sign: string) => {
+    if (y > 280) { doc.addPage(); y = 20; }
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.text(fmtDate(r.date), 14, y);
+    doc.text(r.label.slice(0, 70), 40, y);
+    doc.text(`${sign} ${eur(r.amount)}`, 196, y, { align: "right" });
+    y += 6;
+  };
+  line(`Vcampro — ${t("cash.title")}`, 18, true); y += 2;
+  line(monthLabel(month), 13); y += 4;
+  line(`${t("cash.in")} : ${eur(s.inTotal)}`, 11);
+  line(`${t("cash.out")} : ${eur(s.outTotal)}`, 11);
+  line(`${t("cash.purchases")} : ${eur(s.purchaseTotal)}`, 11);
+  line(`${t("cash.net")} : ${eur(s.net)}`, 12, true); y += 4;
+  const section = (title: string, rows: CashEntry[], sign: string, empty: string) => {
+    line(title, 12, true); y += 1;
+    if (rows.length === 0) line(empty);
+    rows.forEach((r) => row(r, sign));
+    y += 4;
+  };
+  section(t("cash.in"), book.entries, "+", t("cash.emptyIn"));
+  section(t("cash.out"), book.expenses, "-", t("cash.emptyOut"));
+  section(t("cash.purchases"), book.purchases, "-", t("cash.emptyPurchases"));
+  doc.save(`caisse-vcampro-${month}.pdf`);
 }
 
 function Stat({ label, value, strong }: { label: string; value: string; strong?: boolean }) {

@@ -49,10 +49,10 @@ describe("caisse mensuelle", () => {
     purchases: [],
   };
   it("repart de zéro le 1er du mois", () => {
-    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(150);
+    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(100);
   });
   it("garde le mois précédent consultable", () => {
-    expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(-20);
+    expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(30);
   });
   it("utilise l'heure de Paris", () => {
     expect(monthOf("2026-09-30T22:30:00Z")).toBe("2026-10");

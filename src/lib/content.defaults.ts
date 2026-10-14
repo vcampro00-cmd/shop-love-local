@@ -172,6 +172,9 @@ export const DEFAULTS: Record<string, string> = {
   "cash.emptyIn": "Aucune entrée pour le moment.",
   "cash.emptyOut": "Aucune sortie enregistrée.",
   "cash.emptyPurchases": "Aucun achat de téléphones enregistré.",
+  "cash.month": "Mois",
+  "cash.currentMonth": "en cours",
+  "cash.pdf": "Télécharger en PDF",
 
   // Situations d'une commande
   "status.nouveau": "Nouvelle",
@@ -388,6 +391,9 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("cash.emptyIn", "Aucune entrée — message"),
       text("cash.emptyOut", "Aucune sortie — message"),
       text("cash.emptyPurchases", "Aucun achat — message"),
+      text("cash.month", "Sélecteur de mois"),
+      text("cash.currentMonth", "Mention du mois en cours"),
+      text("cash.pdf", "Bouton PDF"),
     ],
   },
   {
