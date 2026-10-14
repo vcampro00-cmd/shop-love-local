@@ -62,7 +62,7 @@ function OrderNotification({
 
 export const template = {
   component: OrderNotification,
-  subject: (data: Record<string, any>) => `Nouvelle commande ${data.ref ?? ''} — ${data.total ?? ''}`.trim(),
+  subject: (data: Record<string, any>) => `Nouvelle commande ${data['ref'] ?? ''} — ${data['total'] ?? ''}`.trim(),
   displayName: 'Nouvelle commande (avis au propriétaire)',
   to: 'vcampro00@gmail.com',
   previewData: {},
