@@ -43,10 +43,17 @@ describe("Référence de commande", () => {
   });
 });
 
-import { splitPayment } from "@/lib/pricing";
+import { splitPayment, canPayInTwoTimes } from "@/lib/pricing";
 describe("paiement en 2 fois", () => {
   it("iPhone 300 € : 150 € maintenant et 150 € dans une semaine", () => {
     expect(splitPayment(300, "split")).toEqual({ now: 150, later: 150 });
+  });
+  it("l'iPhone 7 GPS Manager se paie uniquement en une fois", () => {
+    expect(canPayInTwoTimes([{ id: "iphone-7-gps-manager", qty: 1 }])).toBe(false);
+  });
+  it("les autres téléphones acceptent le paiement en 2 fois", () => {
+    expect(canPayInTwoTimes([{ id: "iphone-se-2020", qty: 1 }])).toBe(true);
+    expect(canPayInTwoTimes([{ id: "clone-deliveroo", qty: 1 }])).toBe(true);
   });
   it("en une fois : tout maintenant, rien ensuite", () => {
     expect(splitPayment(300, "full")).toEqual({ now: 300, later: 0 });

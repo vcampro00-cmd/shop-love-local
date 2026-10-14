@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULTS } from "./content.defaults";
 import { numFromText } from "./content";
-import { computeTotals, isKnownProduct, makeOrderRef, splitPayment, type CartItem } from "./pricing";
+import { canPayInTwoTimes, computeTotals, isKnownProduct, makeOrderRef, splitPayment, type CartItem } from "./pricing";
 import { createStripeClient, getStripeErrorMessage } from "./stripe.server";
 
 const ORDER_STATUSES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
@@ -105,6 +105,9 @@ export const createOrder = createServerFn({ method: "POST" })
     for (const item of data.items) {
       if (!isKnownProduct(item.id)) throw new Error("Cet article n'est plus en vente.");
     }
+    // L'iPhone 7 GPS Manager se paie en une seule fois : on refuse le 2 fois côté serveur.
+    if (data.plan === "split" && !canPayInTwoTimes(data.items))
+      throw new Error("Cet article se paie en une seule fois.");
 
     const { readSiteTexts } = await import("./site-texts.server");
     const texts = await readSiteTexts();

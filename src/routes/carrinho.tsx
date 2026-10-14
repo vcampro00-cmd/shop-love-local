@@ -7,7 +7,7 @@ import { Minus, Plus } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { getProduct, brl } from "@/lib/products";
 import { useText, numFromText } from "@/lib/content";
-import { splitPayment, type PaymentPlan, type DeliveryMethod } from "@/lib/pricing";
+import { canPayInTwoTimes, splitPayment, type PaymentPlan, type DeliveryMethod } from "@/lib/pricing";
 import { useAccount, rememberIntendedPath } from "@/lib/auth";
 import { createOrder } from "@/lib/orders.functions";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,9 @@ function Cart() {
   const shipping = subtotal > 0 && method === "livraison" ? fee : 0;
   const total = subtotal + shipping;
   const parts = splitPayment(total, "split");
+  // Certains téléphones (ex. iPhone 7 GPS Manager) se paient uniquement en une fois.
+  const twoTimesAllowed = canPayInTwoTimes(lines);
+  const effectivePlan: PaymentPlan = twoTimesAllowed ? plan : "full";
 
   if (lines.length === 0)
     return (
@@ -89,7 +92,7 @@ function Cart() {
           postal_code: form.cep,
           notes: form.notes.trim() || undefined,
           items: lines.map((l) => ({ id: l.id, qty: l.qty })),
-          plan,
+          plan: effectivePlan,
           delivery_method: method,
         },
       });
@@ -188,7 +191,7 @@ function Cart() {
         {user && (
           <fieldset className="mt-5 space-y-2 text-sm">
             <legend className="mb-2 font-bold">{t("pay.choose")}</legend>
-            {(["full", "split"] as const).map((p) => (
+            {(["full", "split"] as const).filter((p) => p !== "split" || twoTimesAllowed).map((p) => (
               <label key={p} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${plan === p ? "border-primary bg-primary/10" : ""}`}>
                 <input type="radio" name="plan" className="mt-1" checked={plan === p} onChange={() => setPlan(p)} />
                 <span>
@@ -205,7 +208,7 @@ function Cart() {
         {loading ? (
           <Button size="lg" disabled className="mt-6 w-full bg-brand">{t("cart.pay")}</Button>
         ) : user ? (
-          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(plan === "full" ? total : parts.now)}</Button>
+          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(effectivePlan === "full" ? total : parts.now)}</Button>
         ) : (
           <Button
             size="lg"

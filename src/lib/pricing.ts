@@ -28,6 +28,14 @@ export function computeTotals(
 
 export type PaymentPlan = "full" | "split";
 
+/** Téléphones qui se paient uniquement en une fois (jamais en 2 fois). */
+export const FULL_PAYMENT_ONLY_IDS = ["iphone-7-gps-manager"] as const;
+
+/** Le paiement en 2 fois n'est proposé que si aucun article « une seule fois » n'est dans le panier. */
+export function canPayInTwoTimes(items: CartItem[]): boolean {
+  return !items.some((item) => (FULL_PAYMENT_ONLY_IDS as readonly string[]).includes(item.id));
+}
+
 /**
  * Montant payé tout de suite et montant prélevé une semaine plus tard.
  * En 2 fois : deux moitiés (au centime près, le centime en trop va sur le 1er paiement).
