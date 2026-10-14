@@ -32,6 +32,13 @@ export const Route = createFileRoute("/_authenticated/pedido/$id")({
     ],
   }),
   component: Confirmed,
+  errorComponent: () => (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="text-2xl font-bold">Commande introuvable</h1>
+      <p className="mt-2 text-muted-foreground">Cette commande n'existe pas ou a été supprimée.</p>
+      <Button asChild className="mt-6"><Link to="/mes-commandes">Mes commandes</Link></Button>
+    </div>
+  ),
 });
 
 function Confirmed() {
