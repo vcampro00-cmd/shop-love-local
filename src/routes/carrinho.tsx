@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Minus, Plus, Truck, Store } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { getProduct, brl, orderTotal, DELIVERY_FEE } from "@/lib/products";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/carrinho")({
   head: () => ({
     meta: [
       { title: "Panier et paiement — Vcampro" },
-      { name: "description", content: "Vérifiez votre panier, choisissez livraison ou retrait et payez." },
+      { name: "description", content: "Vérifiez votre panier, indiquez votre adresse de livraison et payez en ligne." },
       { property: "og:title", content: "Panier — Vcampro" },
       { property: "og:description", content: "Finalisez votre achat chez Vcampro." },
       { property: "og:type", content: "website" },
@@ -24,16 +24,18 @@ export const Route = createFileRoute("/carrinho")({
   component: Cart,
 });
 
-const base = { name: z.string().trim().min(2, "Indiquez votre nom").max(100), phone: z.string().trim().min(8, "Téléphone invalide").max(20) };
-const deliverySchema = z.object({ ...base, address: z.string().trim().min(8, "Indiquez l'adresse complète").max(300), cep: z.string().trim().min(4, "Code postal invalide").max(9) });
-const pickupSchema = z.object(base);
+const schema = z.object({
+  name: z.string().trim().min(2, "Indiquez votre nom").max(100),
+  phone: z.string().trim().min(8, "Téléphone invalide").max(20),
+  address: z.string().trim().min(8, "Indiquez l'adresse complète").max(300),
+  cep: z.string().trim().min(4, "Code postal invalide").max(9),
+});
 
 function Cart() {
   const { lines, setQty, subtotal, clear } = useCart();
   const navigate = useNavigate();
-  const [method, setMethod] = useState<"entrega" | "retirada">("entrega");
   const [form, setForm] = useState({ name: "", phone: "", address: "", cep: "", notes: "" });
-  const total = orderTotal(subtotal, method);
+  const total = orderTotal(subtotal);
 
   if (lines.length === 0)
     return (
@@ -45,14 +47,14 @@ function Cart() {
 
   function pay(e: React.FormEvent) {
     e.preventDefault();
-    const r = (method === "entrega" ? deliverySchema : pickupSchema).safeParse(form);
+    const r = schema.safeParse(form);
     if (!r.success) {
       toast.error(r.error.issues[0]?.message ?? "Vérifiez vos informations");
       return;
     }
     const id = "VC" + Date.now().toString().slice(-6);
     clear();
-    navigate({ to: "/pedido/$id", params: { id }, search: { m: method, t: total } });
+    navigate({ to: "/pedido/$id", params: { id }, search: { t: total } });
   }
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
@@ -80,26 +82,12 @@ function Cart() {
           </div>
         </section>
 
-        <section>
-          <h2 className="mb-4 text-xl font-bold">Comment souhaitez-vous recevoir ?</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {([["entrega", Truck, "Livraison à domicile", `Frais de ${brl(DELIVERY_FEE)}`], ["retirada", Store, "Retrait sur place", "Gratuit"]] as const).map(([v, I, t, d]) => (
-              <button type="button" key={v} onClick={() => setMethod(v)} className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${method === v ? "border-primary bg-secondary shadow-glow" : "bg-card"}`}>
-                <I className="h-5 w-5 text-accent" /><div><p className="font-medium">{t}</p><p className="text-sm text-muted-foreground">{d}</p></div>
-              </button>
-            ))}
-          </div>
-        </section>
-
         <section className="grid gap-4 rounded-2xl border bg-card p-5 sm:grid-cols-2">
+          <h2 className="text-xl font-bold sm:col-span-2">Adresse de livraison</h2>
           <div><Label>Nom</Label><Input value={form.name} onChange={set("name")} maxLength={100} /></div>
           <div><Label>Téléphone</Label><Input value={form.phone} onChange={set("phone")} maxLength={20} /></div>
-          {method === "entrega" && (
-            <>
-              <div className="sm:col-span-2"><Label>Adresse (rue, numéro, ville)</Label><Input value={form.address} onChange={set("address")} maxLength={300} /></div>
-              <div><Label>Code postal</Label><Input value={form.cep} onChange={set("cep")} maxLength={9} /></div>
-            </>
-          )}
+          <div className="sm:col-span-2"><Label>Adresse (rue, numéro, ville)</Label><Input value={form.address} onChange={set("address")} maxLength={300} /></div>
+          <div><Label>Code postal</Label><Input value={form.cep} onChange={set("cep")} maxLength={9} /></div>
           <div className="sm:col-span-2"><Label>Remarques sur la commande</Label><Textarea value={form.notes} onChange={set("notes")} maxLength={500} placeholder="Ex. : couleur préférée, code d'accès..." /></div>
         </section>
       </div>
@@ -108,7 +96,7 @@ function Cart() {
         <h2 className="text-xl font-bold">Récapitulatif</h2>
         <div className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between"><span>Sous-total</span><span>{brl(subtotal)}</span></div>
-          <div className="flex justify-between"><span>{method === "entrega" ? "Livraison" : "Retrait"}</span><span>{method === "entrega" ? brl(DELIVERY_FEE) : "Gratuit"}</span></div>
+          <div className="flex justify-between"><span>Livraison</span><span>{brl(DELIVERY_FEE)}</span></div>
           <div className="flex justify-between border-t pt-3 text-lg font-bold"><span>Total</span><span>{brl(total)}</span></div>
         </div>
         <Button type="submit" size="lg" className="mt-6 w-full bg-brand shadow-glow">Payer {brl(total)}</Button>

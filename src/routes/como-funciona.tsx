@@ -5,7 +5,7 @@ export const Route = createFileRoute("/como-funciona")({
   head: () => ({
     meta: [
       { title: "Comment commander — Vcampro" },
-      { name: "description", content: "Étapes pour commander chez Vcampro : panier, paiement, livraison ou retrait." },
+      { name: "description", content: "Étapes pour commander chez Vcampro : panier, adresse de livraison et paiement en ligne." },
       { property: "og:title", content: "Comment commander — Vcampro" },
       { property: "og:description", content: "Comprenez comment passer commande chez Vcampro." },
       { property: "og:type", content: "article" },
@@ -17,10 +17,10 @@ export const Route = createFileRoute("/como-funciona")({
 
 const steps = [
   { t: "Choisissez vos téléphones", d: "Ajoutez au panier les téléphones souhaités et ajustez les quantités." },
-  { t: "Livraison ou retrait", d: `Faites-vous livrer à votre adresse (frais de ${brl(DELIVERY_FEE)}) ou retirez gratuitement sur place.` },
-  { t: "Remplissez vos informations", d: "Indiquez nom, téléphone et, pour la livraison, l'adresse complète." },
+  { t: "Livraison à votre adresse", d: `Faites-vous livrer à l'adresse indiquée (frais de ${brl(DELIVERY_FEE)}).` },
+  { t: "Remplissez vos informations", d: "Indiquez nom, téléphone et adresse complète de livraison." },
   { t: "Payez sur le site", d: "Réglez votre commande en ligne en toute sécurité." },
-  { t: "Suivez votre commande", d: "Vous recevez un numéro de commande. Nous vous prévenons quand elle est prête ou en route." },
+  { t: "Suivez votre commande", d: "Vous recevez un numéro de commande. Nous vous prévenons quand elle est en route." },
 ];
 
 function HowItWorks() {
@@ -36,10 +36,6 @@ function HowItWorks() {
           </li>
         ))}
       </ol>
-      <div className="mt-10 rounded-2xl border bg-secondary p-5 text-sm">
-        <p className="font-bold">Retrait sur place</p>
-        <p className="mt-1 text-muted-foreground">Présentez votre numéro de commande et une pièce d'identité. L'adresse et les horaires de retrait figurent dans la confirmation.</p>
-      </div>
     </div>
   );
 }
