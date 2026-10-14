@@ -4,8 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, Trash2 } from "lucide-react";
-import { addExpense, deleteExpense, getCashBook } from "@/lib/cash.functions";
-import { availableMonths, filterBookByMonth, monthOf, normalizeBook, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
+import { addEmployee, addExpense, deleteEmployee, deleteExpense, getCashBook } from "@/lib/cash.functions";
+import { availableMonths, filterBookByMonth, monthOf, normalizeBook, salaryAmount, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,13 @@ function Caisse() {
   const [date, setDate] = useState(today());
   const [busy, setBusy] = useState(false);
   const [month, setMonth] = useState<string | null>(null);
+  const addEmp = useServerFn(addEmployee);
+  const delEmp = useServerFn(deleteEmployee);
+  const [empName, setEmpName] = useState("");
+  const [empRate, setEmpRate] = useState("");
+  const [empId, setEmpId] = useState("");
+  const [units, setUnits] = useState("");
+  const [rate, setRate] = useState("");
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
 
@@ -63,9 +70,40 @@ function Caisse() {
   const selected = month ?? current;
   const book = filterBookByMonth(full, selected);
   const s = summarizeCash(book);
+  const staff = full.staff ?? [];
+  const num = (v: string) => Number(v.replace(",", "."));
+
+  async function submitEmployee(ev: React.FormEvent) {
+    ev.preventDefault();
+    const r = num(empRate || "0");
+    if (!empName.trim() || !(r >= 0)) { toast.error(t("cash.invalid")); return; }
+    try {
+      await addEmp({ data: { name: empName, unit_price: r } });
+      setEmpName(""); setEmpRate("");
+      await qc.invalidateQueries({ queryKey: ["cash-book"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
+  }
+
+  async function removeEmployee(id: string) {
+    if (!confirm(t("cash.confirmDelete"))) return;
+    try { await delEmp({ data: { id } }); await qc.invalidateQueries({ queryKey: ["cash-book"] }); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
+  }
 
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
+    if (kind === "salaire") {
+      const u = Math.round(num(units)), r = num(rate);
+      if (!empId || !(u > 0) || !(r > 0)) { toast.error(t("cash.invalid")); return; }
+      setBusy(true);
+      try {
+        await add({ data: { label: "salaire", amount: salaryAmount(u, r), spent_on: date, kind, employee_id: empId, units: u, unit_price: r } });
+        setUnits(""); setDate(today());
+        await qc.invalidateQueries({ queryKey: ["cash-book"] });
+      } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
+      finally { setBusy(false); }
+      return;
+    }
     const value = Number(amount.replace(",", "."));
     if (!label.trim() || !(value > 0)) {
       toast.error(t("cash.invalid"));
@@ -150,12 +188,60 @@ function Caisse() {
           </div>
         </fieldset>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_140px_160px_auto]">
-          <Input placeholder={t("cash.labelPlaceholder")} value={label} onChange={(e) => setLabel(e.target.value)} maxLength={200} />
-          <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <Button type="submit" disabled={busy}>{t("cash.add")}</Button>
+        {kind === "salaire" ? (
+          staff.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">{t("cash.staffEmpty")}</p>
+          ) : (
+            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_120px_130px_150px_auto]">
+              <select
+                aria-label={t("cash.staffPick")}
+                value={empId}
+                onChange={(e) => { setEmpId(e.target.value); const emp = staff.find((x) => x.id === e.target.value); if (emp && emp.unitPrice > 0) setRate(String(emp.unitPrice)); }}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">{t("cash.staffPick")}</option>
+                {staff.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+              </select>
+              <Input placeholder={t("cash.units")} inputMode="numeric" value={units} onChange={(e) => setUnits(e.target.value)} />
+              <Input placeholder={t("cash.staffUnitPrice")} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Button type="submit" disabled={busy}>
+                {t("cash.add")}{num(units) > 0 && num(rate) > 0 ? ` (${brl(salaryAmount(Math.round(num(units)), num(rate)))})` : ""}
+              </Button>
+            </div>
+          )
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_140px_160px_auto]">
+            <Input placeholder={t("cash.labelPlaceholder")} value={label} onChange={(e) => setLabel(e.target.value)} maxLength={200} />
+            <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Button type="submit" disabled={busy}>{t("cash.add")}</Button>
+          </div>
+        )}
+      </form>
+
+      <form onSubmit={submitEmployee} className="mt-6 rounded-2xl border bg-card p-5">
+        <h2 className="font-semibold">{t("cash.staffTitle")}</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_160px_auto]">
+          <Input placeholder={t("cash.staffName")} value={empName} onChange={(e) => setEmpName(e.target.value)} maxLength={100} />
+          <Input placeholder={t("cash.staffUnitPrice")} inputMode="decimal" value={empRate} onChange={(e) => setEmpRate(e.target.value)} />
+          <Button type="submit" variant="outline">{t("cash.staffAdd")}</Button>
         </div>
+        {staff.length > 0 && (
+          <ul className="mt-3 divide-y divide-border">
+            {staff.map((x) => (
+              <li key={x.id} className="flex items-center justify-between py-2 text-sm">
+                <span className="font-medium">{x.name}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-muted-foreground">{brl(x.unitPrice)} {t("cash.perUnit")}</span>
+                  <button type="button" aria-label="Supprimer" onClick={() => removeEmployee(x.id)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </form>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -190,7 +276,7 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
     if (y > 280) { doc.addPage(); y = 20; }
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     doc.text(fmtDate(r.date), 14, y);
-    doc.text(r.label.slice(0, 70), 40, y);
+    doc.text((r.units != null && r.unitPrice != null ? `${r.label} (${r.units} x ${eur(r.unitPrice)})` : r.label).slice(0, 70), 40, y);
     doc.text(`${sign} ${eur(r.amount)}`, 196, y, { align: "right" });
     y += 6;
   };
@@ -268,7 +354,10 @@ function List({ title, empty, rows, sign, onDelete }: { title: string; empty: st
             <li key={r.id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <div className="min-w-0">
                 <p className="truncate">{r.label}</p>
-                <p className="text-xs text-muted-foreground">{fmtDate(r.date)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {fmtDate(r.date)}
+                  {r.units != null && r.unitPrice != null && ` · ${r.units} × ${brl(r.unitPrice)}`}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">{sign} {brl(r.amount)}</span>

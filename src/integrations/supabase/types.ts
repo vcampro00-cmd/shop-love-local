@@ -14,30 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      employees: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          unit_price?: number
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
           created_at: string
+          employee_id: string | null
           id: string
           kind: string
           label: string
           spent_on: string
+          unit_price: number | null
+          units: number | null
         }
         Insert: {
           amount: number
           created_at?: string
+          employee_id?: string | null
           id?: string
           kind?: string
           label: string
           spent_on?: string
+          unit_price?: number | null
+          units?: number | null
         }
         Update: {
           amount?: number
           created_at?: string
+          employee_id?: string | null
           id?: string
           kind?: string
           label?: string
           spent_on?: string
+          unit_price?: number | null
+          units?: number | null
         }
         Relationships: []
       }
