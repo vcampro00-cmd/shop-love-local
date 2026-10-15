@@ -33,6 +33,8 @@ function AdminOrders() {
   const changeStatus = useServerFn(setOrderStatus);
   const runAction = useServerFn(orderAction);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [readyFor, setReadyFor] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
 
   const { data, error, isPending } = useQuery({
     queryKey: ["all-orders"],
@@ -60,11 +62,11 @@ function AdminOrders() {
       </div>
     );
 
-  async function act(id: string, action: "accept" | "refuse" | "ready" | "delete") {
+  async function act(id: string, action: "accept" | "refuse" | "ready" | "delete", msg?: string) {
     if (action === "delete" && !window.confirm(t("admin.deleteConfirm"))) return;
     setBusyId(id);
     try {
-      const r = await runAction({ data: { id, action } });
+      const r = await runAction({ data: { id, action, ...(msg ? { message: msg } : {}) } });
       if (action !== "delete") {
         if (r.emailed) toast.success(t("admin.emailSent"));
         else toast.warning(t("admin.emailFailed"));
@@ -172,7 +174,7 @@ function AdminOrders() {
                 <Check className="mr-1 h-4 w-4" />{t("admin.accept")}
               </Button>
               {o.delivery_method === "retrait" && (
-                <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => act(o.id, "ready")}>
+                <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => { setReadyFor(readyFor === o.id ? null : o.id); setMessage(""); }}>
                   <MapPin className="mr-1 h-4 w-4" />{t("admin.ready")}
                 </Button>
               )}
@@ -183,6 +185,28 @@ function AdminOrders() {
                 <Trash2 className="mr-1 h-4 w-4" />{t("admin.delete")}
               </Button>
             </div>
+
+            {readyFor === o.id && (
+              <div className="mt-4 space-y-2 rounded-xl border bg-background p-4">
+                <p className="text-sm font-medium">{t("admin.readyMessageLabel")}</p>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={6}
+                  maxLength={3000}
+                  placeholder={t("admin.readyMessagePlaceholder")}
+                  className="w-full rounded-xl border bg-background px-3 py-2 text-sm"
+                />
+                <Button
+                  size="sm"
+                  className="bg-brand"
+                  disabled={busyId === o.id || message.trim().length < 2}
+                  onClick={async () => { await act(o.id, "ready", message.trim()); setReadyFor(null); }}
+                >
+                  {t("admin.readySend")}
+                </Button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
