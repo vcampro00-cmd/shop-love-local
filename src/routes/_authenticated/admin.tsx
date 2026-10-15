@@ -243,7 +243,7 @@ function AdminOrders() {
                 <p className="text-sm font-medium">{t("admin.readyMessageLabel")}</p>
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => onMessageChange(e.target.value)}
                   rows={6}
                   maxLength={3000}
                   spellCheck
