@@ -27,6 +27,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminOrders,
 });
 
+function tabOf(status: Order["status"]): "pending" | "done" | "refused" {
+  if (status === "livre") return "done";
+  if (status === "annule") return "refused";
+  return "pending";
+}
+
 function AdminOrders() {
   const t = useText();
   const queryClient = useQueryClient();
@@ -35,6 +41,7 @@ function AdminOrders() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [readyFor, setReadyFor] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [tab, setTab] = useState<"pending" | "done" | "refused">("pending");
 
   const { data, error, isPending } = useQuery({
     queryKey: ["all-orders"],
@@ -96,8 +103,30 @@ function AdminOrders() {
       <h1 className="text-3xl font-bold">{t("admin.title")}</h1>
       <p className="mt-2 text-muted-foreground">{t("admin.intro")}</p>
 
+      <div className="mt-6 flex flex-wrap gap-2" role="tablist">
+        {(["pending", "done", "refused"] as const).map((k) => {
+          const count = data.filter((o) => tabOf(o.status) === k).length;
+          return (
+            <button
+              key={k}
+              role="tab"
+              aria-selected={tab === k}
+              onClick={() => setTab(k)}
+              className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium ${tab === k ? "bg-brand text-primary-foreground" : "bg-card text-muted-foreground"}`}
+            >
+              {t(`admin.tab.${k}`)}
+              <span className={`rounded-full px-2 py-0.5 text-xs ${k === "pending" && count > 0 ? "bg-destructive text-destructive-foreground" : "bg-secondary text-secondary-foreground"}`}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {data.filter((o) => tabOf(o.status) === tab).length === 0 && (
+        <p className="mt-6 text-muted-foreground">{t("admin.tab.empty")}</p>
+      )}
+
       <ul className="mt-6 space-y-4">
-        {data.map((o) => (
+        {data.filter((o) => tabOf(o.status) === tab).map((o) => (
           <li key={o.id} className="rounded-2xl border bg-card p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
