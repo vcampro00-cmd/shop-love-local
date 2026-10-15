@@ -3,9 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Download, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, deleteEmployee, deleteExpense, getCashBook } from "@/lib/cash.functions";
-import { availableMonths, employeeTotals, filterBookByMonth, monthOf, normalizeBook, stripeFee, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
+import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
+import { addEmployee, addExpense, addReminder, createReminderLink, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
+import { availableMonths, employeeTotals, filterBookByMonth, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -54,8 +54,17 @@ function Caisse() {
   const delEmp = useServerFn(deleteEmployee);
   const [empName, setEmpName] = useState("");
   const [empId, setEmpId] = useState("");
+  const addRem = useServerFn(addReminder);
+  const delRem = useServerFn(deleteReminder);
+  const makeLink = useServerFn(createReminderLink);
+  const [remName, setRemName] = useState("");
+  const [remPhone, setRemPhone] = useState("");
+  const [remAmount, setRemAmount] = useState("");
+  const [remNote, setRemNote] = useState("");
+  const [remBusy, setRemBusy] = useState<string | null>(null);
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
+  const { data: reminders = [] } = useQuery({ queryKey: ["reminders"], queryFn: () => listReminders(), retry: false });
 
   if (error)
     return <p className="mx-auto max-w-md px-4 py-24 text-center text-muted-foreground">{t("admin.denied")}</p>;
