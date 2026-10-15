@@ -266,6 +266,9 @@ function Caisse() {
                   <span className="font-medium">{x.name}</span>
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{brl(paid)}</span>
+                    <Button type="button" size="sm" variant="outline" onClick={() => exportPayslip(full.employees.filter((r) => r.label === x.name), x.name, t)}>
+                      <Download className="h-4 w-4" /> {t("cash.payslip")}
+                    </Button>
                     <button type="button" aria-label="Supprimer" onClick={() => removeEmployee(x.id)} className="text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-4 w-4" />
                     </button>
