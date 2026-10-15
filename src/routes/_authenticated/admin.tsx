@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
 import { listAllOrders, orderAction, setOrderStatus, type Order } from "@/lib/orders.functions";
+import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
 import { brl, getProduct } from "@/lib/products";
 import { useText } from "@/lib/content";
@@ -38,10 +39,27 @@ function AdminOrders() {
   const queryClient = useQueryClient();
   const changeStatus = useServerFn(setOrderStatus);
   const runAction = useServerFn(orderAction);
+  const correct = useServerFn(correctText);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [readyFor, setReadyFor] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const correctTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tab, setTab] = useState<"pending" | "done" | "refused">("pending");
+
+  /** Corrige l'orthographe et la ponctuation automatiquement, 1,5 s après la dernière frappe. */
+  function onMessageChange(value: string) {
+    setMessage(value);
+    if (correctTimer.current) clearTimeout(correctTimer.current);
+    const snapshot = value;
+    if (snapshot.trim().length < 3) return;
+    correctTimer.current = setTimeout(async () => {
+      try {
+        const res = await correct({ data: { text: snapshot } });
+        // Ne remplace le texte que si le propriétaire n'a pas continué à écrire entre-temps.
+        if ("corrected" in res) setMessage((cur) => (cur === snapshot ? res.corrected : cur));
+      } catch { /* correcteur indisponible : on garde le texte tel quel */ }
+    }, 1500);
+  }
 
   const { data, error, isPending } = useQuery({
     queryKey: ["all-orders"],
@@ -225,7 +243,7 @@ function AdminOrders() {
                 <p className="text-sm font-medium">{t("admin.readyMessageLabel")}</p>
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => onMessageChange(e.target.value)}
                   rows={6}
                   maxLength={3000}
                   spellCheck
