@@ -125,7 +125,7 @@ export async function applyPaidReminder(sessionId: string, env: StripeEnv): Prom
     day: "2-digit",
   }).format(new Date());
   const { error: ins } = await db.from("expenses").insert({
-    label: `Paiement convenu — ${data[0].name}`,
+    label: `Paiement convenu — ${data[0]!.name}`,
     amount,
     spent_on: today,
     kind: "entree",
