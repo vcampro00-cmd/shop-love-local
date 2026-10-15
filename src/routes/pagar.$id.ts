@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // Lien court envoyé sur WhatsApp : vcampro.shop/pagar/<id du rappel>.
 // Le montant vient toujours du rappel enregistré, jamais de l'URL.
 export const Route = createFileRoute("/pagar/$id")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       GET: async ({ params, request }) => {
