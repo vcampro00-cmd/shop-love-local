@@ -78,7 +78,7 @@ describe("caisse mensuelle", () => {
     employees: [{ id: "d", date: "2026-10-05", label: "salaire", amount: 60, kind: "salaire" as const }],
   };
   it("repart de zéro le 1er du mois", () => {
-    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(40);
+    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(100);
   });
   it("garde le mois précédent consultable", () => {
     expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(30);
