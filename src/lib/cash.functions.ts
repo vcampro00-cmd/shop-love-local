@@ -127,7 +127,7 @@ export const addReminder = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { error } = await context.supabase.from("payment_reminders").insert(data);
+    const { error } = await context.supabase.from("payment_reminders").insert({ name: data.name, phone: data.phone, amount: data.amount, note: data.note, due_date: data.dueDate });
     if (error) throw new Error("Le rappel n'a pas pu être enregistré.");
     return { ok: true };
   });
