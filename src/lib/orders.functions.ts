@@ -229,6 +229,7 @@ export const setOrderStatus = createServerFn({ method: "POST" })
 const actionPayload = z.object({
   id: z.string().uuid(),
   action: z.enum(["accept", "refuse", "ready", "delete"]),
+  message: z.string().trim().max(3000).optional(),
 });
 
 /** Actions du propriétaire sur une commande, avec e-mail au client. */
@@ -257,7 +258,7 @@ export const orderAction = createServerFn({ method: "POST" })
       const { sendTemplateEmail } = await import("./email-templates/send-email");
       const r = await sendTemplateEmail("order-update", row.customer_email, {
         idempotencyKey: `order-update-${kind}-${row.id}-${Date.now()}`,
-        templateData: { kind, ref: row.ref, name: row.name },
+        templateData: { kind, ref: row.ref, name: row.name, message: data.message ?? "" },
       });
       return { ok: true, emailed: r.sent };
     } catch (e) {
