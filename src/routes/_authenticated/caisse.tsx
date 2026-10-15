@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, deleteEmployee, deleteExpense, getCashBook } from "@/lib/cash.functions";
-import { availableMonths, employeeTotals, filterBookByMonth, monthOf, normalizeBook, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
+import { availableMonths, employeeTotals, filterBookByMonth, monthOf, normalizeBook, stripeFee, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -324,7 +324,9 @@ function EntriesList({ title, empty, rows, onDelete }: { title: string; empty: s
                   {r.label}
                   {r.kind === "entree" && <span className="ml-2 text-xs text-muted-foreground">(manuel)</span>}
                 </p>
-                <p className="text-xs text-muted-foreground">{fmtDate(r.date)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {fmtDate(r.date)} · −{brl(stripeFee(r.amount))} Stripe
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">+ {brl(r.amount)}</span>
