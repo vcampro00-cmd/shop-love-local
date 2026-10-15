@@ -39,7 +39,7 @@ describe("summarizeCash", () => {
     expect(s.net).toBe(-450);
   });
 
-  it("subtract salaries paid to the employee from the net", () => {
+  it("keeps salaries out of the net but still totals them", () => {
     const s = summarizeCash({
       entries: [entry("auto-1", 320)],
       expenses: [],
@@ -47,7 +47,22 @@ describe("summarizeCash", () => {
       employees: [entry("salary-1", 80, "salaire"), entry("salary-2", 40, "salaire")],
     });
     expect(s.employeeTotal).toBe(120);
-    expect(s.net).toBe(200);
+    expect(s.net).toBe(320);
+  });
+});
+
+import { employeeTotals } from "@/lib/cash";
+describe("employeeTotals", () => {
+  it("sums payments per employee name", () => {
+    const rows = [
+      { id: "1", date: "2026-10-01", label: "Ana", amount: 80, kind: "salaire" as const },
+      { id: "2", date: "2026-10-02", label: "Bruno", amount: 40, kind: "salaire" as const },
+      { id: "3", date: "2026-10-03", label: "Ana", amount: 20, kind: "salaire" as const },
+    ];
+    expect(employeeTotals(rows)).toEqual([
+      { name: "Ana", total: 100 },
+      { name: "Bruno", total: 40 },
+    ]);
   });
 });
 
@@ -63,7 +78,7 @@ describe("caisse mensuelle", () => {
     employees: [{ id: "d", date: "2026-10-05", label: "salaire", amount: 60, kind: "salaire" as const }],
   };
   it("repart de zéro le 1er du mois", () => {
-    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(40);
+    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(100);
   });
   it("garde le mois précédent consultable", () => {
     expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(30);
