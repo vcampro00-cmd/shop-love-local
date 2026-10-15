@@ -148,25 +148,8 @@ export const createReminderLink = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid(), origin: z.string().url() }).parse(i))
   .handler(async ({ data, context }): Promise<{ url: string } | { error: string }> => {
     await assertAdmin(context);
-    const { data: row } = await context.supabase.from("payment_reminders").select("id, name, amount, payment_link").eq("id", data.id).maybeSingle();
+    const { data: row } = await context.supabase.from("payment_reminders").select("id").eq("id", data.id).maybeSingle();
     if (!row) return { error: "Rappel introuvable." };
-    if (row.payment_link) return { url: row.payment_link };
-    const origin = new URL(data.origin).origin;
-    try {
-      const stripe = createStripeClient("sandbox");
-      const session = await stripe.checkout.sessions.create({
-        mode: "payment",
-        line_items: [
-          { quantity: 1, price_data: { currency: "eur", unit_amount: Math.round(Number(row.amount) * 100), product_data: { name: `Paiement convenu — ${row.name}` } } },
-        ],
-        payment_method_types: ["card"],
-        success_url: `${origin}/?paiement=ok`,
-        cancel_url: `${origin}/?paiement=annule`,
-      });
-      if (!session.url) return { error: "Lien indisponible." };
-      await context.supabase.from("payment_reminders").update({ payment_link: session.url }).eq("id", row.id);
-      return { url: session.url };
-    } catch (e) {
-      return { error: getStripeErrorMessage(e) };
-    }
+    // Lien court sur le site ; la page /pagar ouvre le paiement Stripe au montant enregistré.
+    return { url: `${new URL(data.origin).origin}/pagar/${row.id}` };
   });
