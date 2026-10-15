@@ -20,6 +20,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCaisseRouteImport } from './routes/_authenticated/caisse'
 import { Route as AuthenticatedMesCommandesRouteImport } from './routes/_authenticated/mes-commandes'
+import { Route as PagarIdRouteImport } from './routes/pagar.$id'
 import { Route as AuthenticatedPaiementIdRouteImport } from './routes/_authenticated/paiement.$id'
 import { Route as AuthenticatedPedidoIdRouteImport } from './routes/_authenticated/pedido.$id'
 import { Route as ApiPublicCronSecondPaymentsRouteImport } from './routes/api/public/cron/second-payments'
@@ -81,6 +82,11 @@ const AuthenticatedMesCommandesRoute =
     path: '/mes-commandes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const PagarIdRoute = PagarIdRouteImport.update({
+  id: '/pagar/$id',
+  path: '/pagar/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedPaiementIdRoute = AuthenticatedPaiementIdRouteImport.update({
   id: '/paiement/$id',
   path: '/paiement/$id',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/pagar/$id': typeof PagarIdRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/pagar/$id': typeof PagarIdRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/caisse': typeof AuthenticatedCaisseRoute
   '/_authenticated/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/pagar/$id': typeof PagarIdRoute
   '/_authenticated/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/_authenticated/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/caisse'
     | '/mes-commandes'
+    | '/pagar/$id'
     | '/paiement/$id'
     | '/pedido/$id'
     | '/api/public/cron/second-payments'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/caisse'
     | '/mes-commandes'
+    | '/pagar/$id'
     | '/paiement/$id'
     | '/pedido/$id'
     | '/api/public/cron/second-payments'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/caisse'
     | '/_authenticated/mes-commandes'
+    | '/pagar/$id'
     | '/_authenticated/paiement/$id'
     | '/_authenticated/pedido/$id'
     | '/api/public/cron/second-payments'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   EditarRoute: typeof EditarRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  PagarIdRoute: typeof PagarIdRoute
   ApiPublicCronSecondPaymentsRoute: typeof ApiPublicCronSecondPaymentsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMesCommandesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/pagar/$id': {
+      id: '/pagar/$id'
+      path: '/pagar/$id'
+      fullPath: '/pagar/$id'
+      preLoaderRoute: typeof PagarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/paiement/$id': {
       id: '/_authenticated/paiement/$id'
       path: '/paiement/$id'
@@ -377,6 +397,7 @@ const rootRouteChildren: RootRouteChildren = {
   EditarRoute: EditarRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  PagarIdRoute: PagarIdRoute,
   ApiPublicCronSecondPaymentsRoute: ApiPublicCronSecondPaymentsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
