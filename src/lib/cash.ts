@@ -19,6 +19,7 @@ export type Reminder = {
   phone: string;
   amount: number;
   note: string;
+  dueDate: string | null;
   paymentLink: string | null;
   createdAt: string;
 };
