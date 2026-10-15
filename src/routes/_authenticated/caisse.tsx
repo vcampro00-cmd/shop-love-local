@@ -61,6 +61,7 @@ function Caisse() {
   const [remPhone, setRemPhone] = useState("");
   const [remAmount, setRemAmount] = useState("");
   const [remNote, setRemNote] = useState("");
+  const [remDate, setRemDate] = useState(today());
   const [remBusy, setRemBusy] = useState<string | null>(null);
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
@@ -136,10 +137,10 @@ function Caisse() {
     ev.preventDefault();
     const value = num(remAmount);
     const digits = whatsappDigits(remPhone);
-    if (!remName.trim() || !(value > 0) || digits.length < 8) { toast.error(t("cash.invalid")); return; }
+    if (!remName.trim() || !(value > 0) || digits.length < 8 || !remDate) { toast.error(t("cash.invalid")); return; }
     try {
-      await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote } });
-      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote("");
+      await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate } });
+      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today());
       await qc.invalidateQueries({ queryKey: ["reminders"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
   }
