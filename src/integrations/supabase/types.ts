@@ -155,6 +155,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_reminders: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          name: string
+          note: string
+          payment_link: string | null
+          phone: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          name: string
+          note?: string
+          payment_link?: string | null
+          phone: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string
+          payment_link?: string | null
+          phone?: string
+        }
+        Relationships: []
+      }
       site_texts: {
         Row: {
           key: string
