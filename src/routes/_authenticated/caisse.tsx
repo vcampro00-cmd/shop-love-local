@@ -402,6 +402,19 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
   section(t("cash.out"), book.expenses, "-", t("cash.emptyOut"));
   section(t("cash.purchases"), book.purchases, "-", t("cash.emptyPurchases"));
   section(t("cash.employees"), book.employees, "-", t("cash.emptyEmployees"));
+  // Rodapé em todas as páginas
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(168, 85, 247);
+    doc.setLineWidth(0.4);
+    doc.line(14, 285, 196, 285);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`VCAMPRO — vcampro.shop — ${i}/${pages}`, 105, 290, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  }
   doc.save(`caisse-vcampro-${month}.pdf`);
 }
 
