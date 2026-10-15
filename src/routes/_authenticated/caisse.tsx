@@ -293,7 +293,10 @@ function Caisse() {
             {reminders.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{r.name} — {brl(r.amount)}</p>
+                  <p className="truncate font-medium">
+                    {r.name} — {brl(r.amount)}
+                    {r.paid && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">PAYÉ</span>}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">+{r.phone}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
