@@ -12,6 +12,33 @@ export type CashEntry = {
 
 export type Employee = { id: string; name: string; unitPrice: number };
 
+/** Rappel de paiement convenu de vive voix, envoyé à la main via le WhatsApp du propriétaire. */
+export type Reminder = {
+  id: string;
+  name: string;
+  phone: string;
+  amount: number;
+  note: string;
+  paymentLink: string | null;
+  createdAt: string;
+};
+
+/** Numéro WhatsApp au format international, chiffres uniquement (33… pour la France). */
+export function whatsappDigits(phone: string): string {
+  let d = phone.replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (d.startsWith("0") && d.length === 10) d = `33${d.slice(1)}`;
+  return d;
+}
+
+/** Message du rappel : {nom}, {montant} et {lien} sont remplacés par les valeurs du rappel. */
+export function reminderMessage(template: string, r: { name: string; amount: number }, link: string): string {
+  return template
+    .replaceAll("{nom}", r.name)
+    .replaceAll("{montant}", r.amount.toFixed(2).replace(".", ","))
+    .replaceAll("{lien}", link);
+}
+
 /** Salaire payé à l'unité : nombre d'unités × prix par unité, arrondi au centime. */
 export function salaryAmount(units: number, unitPrice: number): number {
   return Math.round(units * unitPrice * 100) / 100;
