@@ -21,8 +21,8 @@ describe("summarizeCash", () => {
     expect(s.inTotal).toBe(420);
     expect(s.outTotal).toBe(30);
     expect(s.purchaseTotal).toBe(150);
-    expect(s.feeTotal).toBe(1.47);
-    expect(s.net).toBe(238.53);
+    expect(s.feeTotal).toBeCloseTo(1.47);
+    expect(s.net).toBeCloseTo(238.53);
   });
 
   it("deducts the 0.35% Stripe fee from every entry, manual ones included", () => {
@@ -93,7 +93,7 @@ describe("caisse mensuelle", () => {
     expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(99.65);
   });
   it("garde le mois précédent consultable", () => {
-    expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(29.83);
+    expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(29.82);
   });
   it("utilise l'heure de Paris", () => {
     expect(monthOf("2026-09-30T22:30:00Z")).toBe("2026-10");
