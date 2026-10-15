@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, deleteEmployee, deleteExpense, getCashBook } from "@/lib/cash.functions";
-import { availableMonths, filterBookByMonth, monthOf, normalizeBook, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
+import { availableMonths, employeeTotals, filterBookByMonth, monthOf, normalizeBook, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -69,6 +69,7 @@ function Caisse() {
   const book = filterBookByMonth(full, selected);
   const s = summarizeCash(book);
   const staff = full.staff ?? [];
+  const empTotals = employeeTotals(book.employees);
   const num = (v: string) => Number(v.replace(",", "."));
 
   async function submitEmployee(ev: React.FormEvent) {
@@ -144,11 +145,10 @@ function Caisse() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label={t("cash.in")} value={brl(s.inTotal)} />
         <Stat label={t("cash.out")} value={brl(s.outTotal)} />
         <Stat label={t("cash.purchases")} value={brl(s.purchaseTotal)} />
-        <Stat label={t("cash.employees")} value={brl(s.employeeTotal)} />
         <Stat label={t("cash.net")} value={brl(s.net)} strong />
       </div>
 
@@ -224,16 +224,20 @@ function Caisse() {
         </div>
         {staff.length > 0 && (
           <ul className="mt-3 divide-y divide-border">
-            {staff.map((x) => (
-              <li key={x.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="font-medium">{x.name}</span>
-                <div className="flex items-center gap-3">
-                  <button type="button" aria-label="Supprimer" onClick={() => removeEmployee(x.id)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </li>
-            ))}
+            {staff.map((x) => {
+              const paid = empTotals.find((e) => e.name === x.name)?.total ?? 0;
+              return (
+                <li key={x.id} className="flex items-center justify-between py-2 text-sm">
+                  <span className="font-medium">{x.name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{brl(paid)}</span>
+                    <button type="button" aria-label="Supprimer" onClick={() => removeEmployee(x.id)} className="text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </form>
@@ -279,7 +283,7 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
   line(`${t("cash.in")} : ${eur(s.inTotal)}`, 11);
   line(`${t("cash.out")} : ${eur(s.outTotal)}`, 11);
   line(`${t("cash.purchases")} : ${eur(s.purchaseTotal)}`, 11);
-  line(`${t("cash.employees")} : ${eur(s.employeeTotal)}`, 11);
+  for (const e of employeeTotals(book.employees)) line(`${e.name} : ${eur(e.total)}`, 11);
   line(`${t("cash.net")} : ${eur(s.net)}`, 12, true); y += 4;
   const section = (title: string, rows: CashEntry[], sign: string, empty: string) => {
     line(title, 12, true); y += 1;
