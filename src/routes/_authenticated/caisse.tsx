@@ -421,6 +421,82 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
   doc.save(`caisse-vcampro-${month}.pdf`);
 }
 
+async function exportPayslip(rows: CashEntry[], name: string, t: (k: string) => string) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF();
+  const logo = await loadLogoDataUrl();
+  let y = 20;
+  if (logo) {
+    const h = 22;
+    const w = (logo.width / logo.height) * h;
+    doc.addImage(logo.data, "PNG", (210 - w) / 2, y, w, h);
+    y += h + 6;
+  }
+  doc.setDrawColor(168, 85, 247);
+  doc.setLineWidth(0.8);
+  doc.line(14, y, 196, y);
+  y += 10;
+  const brk = () => { if (y > 275) { doc.addPage(); y = 20; } };
+  doc.setFont("helvetica", "bold"); doc.setFontSize(18);
+  doc.text(t("cash.payslipTitle").toUpperCase(), 14, y); y += 9;
+  doc.setFontSize(12);
+  doc.text(`EMPLOYÉ : ${name.toUpperCase()}`, 14, y); y += 6;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.text(`ÉMIS LE ${fmtDate(new Date().toISOString().slice(0, 10))}`, 14, y); y += 10;
+
+  const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+  const byMonth = new Map<string, CashEntry[]>();
+  for (const r of sorted) {
+    const m = monthOf(r.date);
+    byMonth.set(m, [...(byMonth.get(m) ?? []), r]);
+  }
+  let total = 0;
+  if (sorted.length === 0) { doc.text("AUCUN PAIEMENT ENREGISTRÉ.", 14, y); y += 8; }
+  for (const [m, list] of byMonth) {
+    brk();
+    doc.setFillColor(243, 232, 255);
+    doc.rect(14, y - 5, 182, 8, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.text(monthLabel(m).toUpperCase(), 16, y);
+    y += 8;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    let sub = 0;
+    for (const r of list) {
+      brk();
+      doc.text(fmtDate(r.date), 18, y);
+      doc.text("PAIEMENT", 50, y);
+      doc.text(eur(r.amount), 196, y, { align: "right" });
+      sub += r.amount; y += 6;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.text(`SOUS-TOTAL ${monthLabel(m).toUpperCase()}`, 50, y);
+    doc.text(eur(sub), 196, y, { align: "right" });
+    total += sub; y += 10;
+  }
+  brk();
+  doc.setDrawColor(168, 85, 247); doc.setLineWidth(0.6);
+  doc.line(14, y - 4, 196, y - 4);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+  doc.text("TOTAL REÇU", 14, y + 2);
+  doc.text(eur(total), 196, y + 2, { align: "right" });
+  y += 20; brk();
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.text("SIGNATURE EMPLOYEUR", 14, y);
+  doc.text("SIGNATURE EMPLOYÉ", 120, y);
+  doc.line(14, y + 14, 90, y + 14);
+  doc.line(120, y + 14, 196, y + 14);
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(168, 85, 247); doc.setLineWidth(0.4);
+    doc.line(14, 285, 196, 285);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(120, 120, 120);
+    doc.text(`VCAMPRO — vcampro.shop — ${i}/${pages}`, 105, 290, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  }
+  doc.save(`fiche-paie-${name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`);
+}
+
 function Stat({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className={`rounded-2xl border p-5 ${strong ? "bg-primary/10 border-primary/40" : "bg-card"}`}>
