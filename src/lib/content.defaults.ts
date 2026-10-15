@@ -154,6 +154,13 @@ export const DEFAULTS: Record<string, string> = {
   "admin.notes": "Remarques",
   "admin.items": "Articles",
   "admin.status": "Situation",
+  "admin.accept": "Valider la commande",
+  "admin.refuse": "Refuser",
+  "admin.delete": "Supprimer",
+  "admin.ready": "Prévenir : prête à retirer",
+  "admin.deleteConfirm": "Supprimer définitivement cette commande ?",
+  "admin.emailSent": "E-mail envoyé au client.",
+  "admin.emailFailed": "Action enregistrée, mais l'e-mail n'a pas pu partir.",
 
   // Caisse
   "cash.title": "Caisse",
@@ -384,6 +391,13 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("admin.notes", "Bloc remarques"),
       text("admin.items", "Bloc articles"),
       text("admin.status", "Menu situation"),
+      text("admin.accept", "Bouton valider"),
+      text("admin.refuse", "Bouton refuser"),
+      text("admin.delete", "Bouton supprimer"),
+      text("admin.ready", "Bouton prête à retirer"),
+      long("admin.deleteConfirm", "Question avant suppression"),
+      text("admin.emailSent", "Message e-mail envoyé"),
+      long("admin.emailFailed", "Message e-mail non envoyé"),
     ],
   },
   {
