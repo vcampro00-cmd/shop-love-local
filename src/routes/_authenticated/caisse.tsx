@@ -151,28 +151,12 @@ function Caisse() {
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
 
-  async function sendWhatsApp(r: { id: string; name: string; phone: string; amount: number; dueDate: string | null; paymentLink: string | null }) {
-    // Ouvrir l'onglet tout de suite (clic direct) : sinon le navigateur bloque la fenêtre ouverte après l'attente du lien.
-    const win = window.open("", "_blank");
-    setRemBusy(r.id);
-    try {
-      let link = r.paymentLink;
-      if (!link) {
-        const res = await makeLink({ data: { id: r.id, origin: window.location.origin } });
-        if ("error" in res) { win?.close(); toast.error(res.error || t("cash.reminderLinkError")); return; }
-        link = res.url;
-        await qc.invalidateQueries({ queryKey: ["reminders"] });
-      }
-      const msg = reminderMessage(t("cash.reminderMessage"), r, link);
-      const url = `https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(msg)}`;
-      if (win) win.location.href = url;
-      else window.open(url, "_blank", "noopener");
-    } catch (e) {
-      win?.close();
-      toast.error(e instanceof Error ? e.message : t("cash.reminderLinkError"));
-    } finally {
-      setRemBusy(null);
-    }
+  function sendWhatsApp(r: { id: string; name: string; phone: string; amount: number; dueDate: string | null; paymentLink: string | null }) {
+    // Toujours le lien court du site (/pagar/...) : jamais l'ancien lien Stripe enregistré.
+    const link = `${window.location.origin}/pagar/${r.id}`;
+    const msg = reminderMessage(t("cash.reminderMessage"), r, link);
+    const url = `https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank", "noopener");
   }
 
   return (
