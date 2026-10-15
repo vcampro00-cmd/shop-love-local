@@ -122,6 +122,7 @@ export const addReminder = createServerFn({ method: "POST" })
       phone: z.string().trim().min(6).max(20),
       amount: z.number().positive().max(1_000_000),
       note: z.string().trim().max(300).default(""),
+      dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
