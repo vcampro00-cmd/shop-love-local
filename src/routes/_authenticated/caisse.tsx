@@ -145,8 +145,9 @@ function Caisse() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label={t("cash.in")} value={brl(s.inTotal)} />
+        <Stat label={t("cash.stripeFees")} value={brl(s.feeTotal)} />
         <Stat label={t("cash.out")} value={brl(s.outTotal)} />
         <Stat label={t("cash.purchases")} value={brl(s.purchaseTotal)} />
         <Stat label={t("cash.net")} value={brl(s.net)} strong />
@@ -281,6 +282,7 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
   line(`Vcampro — ${t("cash.title")}`, 18, true); y += 2;
   line(monthLabel(month), 13); y += 4;
   line(`${t("cash.in")} : ${eur(s.inTotal)}`, 11);
+  line(`${t("cash.stripeFees")} : ${eur(s.feeTotal)}`, 11);
   line(`${t("cash.out")} : ${eur(s.outTotal)}`, 11);
   line(`${t("cash.purchases")} : ${eur(s.purchaseTotal)}`, 11);
   for (const e of employeeTotals(book.employees)) line(`${e.name} : ${eur(e.total)}`, 11);
