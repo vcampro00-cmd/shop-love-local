@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { CashBook, CashEntry } from "@/lib/cash";
+import type { CashBook, CashEntry, Reminder } from "@/lib/cash";
+import { createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 type Ctx = { supabase: any; userId: string };
 
@@ -100,4 +101,71 @@ export const deleteEmployee = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("employees").delete().eq("id", data.id);
     if (error) throw new Error("L'employé n'a pas pu être supprimé.");
     return { ok: true };
+  });
+
+// ---- Rappels de paiement (envoyés à la main via le WhatsApp du propriétaire) ----
+
+export const listReminders = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Reminder[]> => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, payment_link, created_at").order("created_at", { ascending: false });
+    if (error) throw new Error("Impossible d'afficher les rappels.");
+    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", paymentLink: r.payment_link, createdAt: r.created_at }));
+  });
+
+export const addReminder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({
+      name: z.string().trim().min(1).max(100),
+      phone: z.string().trim().min(6).max(20),
+      amount: z.number().positive().max(1_000_000),
+      note: z.string().trim().max(300).default(""),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase.from("payment_reminders").insert(data);
+    if (error) throw new Error("Le rappel n'a pas pu être enregistré.");
+    return { ok: true };
+  });
+
+export const deleteReminder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase.from("payment_reminders").delete().eq("id", data.id);
+    if (error) throw new Error("Le rappel n'a pas pu être supprimé.");
+    return { ok: true };
+  });
+
+/** Crée (ou renvoie) le lien de paiement par carte du rappel, au montant exact saisi. */
+export const createReminderLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid(), origin: z.string().url() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ url: string } | { error: string }> => {
+    await assertAdmin(context);
+    const { data: row } = await context.supabase.from("payment_reminders").select("id, name, amount, payment_link").eq("id", data.id).maybeSingle();
+    if (!row) return { error: "Rappel introuvable." };
+    if (row.payment_link) return { url: row.payment_link };
+    const origin = new URL(data.origin).origin;
+    try {
+      const stripe = createStripeClient("sandbox");
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        line_items: [
+          { quantity: 1, price_data: { currency: "eur", unit_amount: Math.round(Number(row.amount) * 100), product_data: { name: `Paiement convenu — ${row.name}` } } },
+        ],
+        payment_method_types: ["card"],
+        success_url: `${origin}/?paiement=ok`,
+        cancel_url: `${origin}/?paiement=annule`,
+      });
+      if (!session.url) return { error: "Lien indisponible." };
+      await context.supabase.from("payment_reminders").update({ payment_link: session.url }).eq("id", row.id);
+      return { url: session.url };
+    } catch (e) {
+      return { error: getStripeErrorMessage(e) };
+    }
   });
