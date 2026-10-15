@@ -57,6 +57,13 @@
       "when": 1791986929242,
       "tag": "0007_employees",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792086401970,
+      "tag": "0008_orders_admin_delete",
+      "breakpoints": true
     }
   ]
 }

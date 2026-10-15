@@ -226,6 +226,46 @@ export const setOrderStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const actionPayload = z.object({
+  id: z.string().uuid(),
+  action: z.enum(["accept", "refuse", "ready", "delete"]),
+});
+
+/** Actions du propriétaire sur une commande, avec e-mail au client. */
+export const orderAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => actionPayload.parse(input))
+  .handler(async ({ data, context }): Promise<{ ok: true; emailed: boolean }> => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
+    const { data: row } = await context.supabase.from("orders").select("*").eq("id", data.id).maybeSingle();
+    if (!row) throw new Error("Commande introuvable.");
+
+    if (data.action === "delete") {
+      const { error } = await context.supabase.from("orders").delete().eq("id", data.id);
+      if (error) throw new Error("La commande n'a pas pu être supprimée.");
+      return { ok: true, emailed: false };
+    }
+
+    const status = data.action === "accept" ? "prepare" : data.action === "refuse" ? "annule" : null;
+    if (status) {
+      const { error } = await context.supabase.from("orders").update({ status }).eq("id", data.id);
+      if (error) throw new Error("La situation n'a pas pu être enregistrée.");
+    }
+
+    const kind = data.action === "accept" ? "accepted" : data.action === "refuse" ? "refused" : "ready";
+    try {
+      const { sendTemplateEmail } = await import("./email-templates/send-email");
+      const r = await sendTemplateEmail("order-update", row.customer_email, {
+        idempotencyKey: `order-update-${kind}-${row.id}-${Date.now()}`,
+        templateData: { kind, ref: row.ref, name: row.name },
+      });
+      return { ok: true, emailed: r.sent };
+    } catch (e) {
+      console.error("order-update email failed", e);
+      return { ok: true, emailed: false };
+    }
+  });
+
 const envSchema = z.enum(["sandbox", "live"]);
 
 /** Ouvre le paiement par carte d'une commande du client (montant relu en base). */
