@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, addReminder, createReminderLink, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
-import { availableMonths, employeeTotals, filterBookByMonth, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
+import { availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
