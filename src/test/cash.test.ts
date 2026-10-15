@@ -21,7 +21,19 @@ describe("summarizeCash", () => {
     expect(s.inTotal).toBe(420);
     expect(s.outTotal).toBe(30);
     expect(s.purchaseTotal).toBe(150);
-    expect(s.net).toBe(240);
+    expect(s.feeTotal).toBeCloseTo(1.47);
+    expect(s.net).toBeCloseTo(238.53);
+  });
+
+  it("deducts the 0.35% Stripe fee from every entry, manual ones included", () => {
+    const s = summarizeCash({
+      entries: [entry("auto-1", 300), entry("manual-1", 200, "entree")],
+      expenses: [],
+      purchases: [],
+      employees: [],
+    });
+    expect(s.feeTotal).toBe(1.75);
+    expect(s.net).toBe(498.25);
   });
 
   it("an empty book nets to zero", () => {
@@ -47,7 +59,7 @@ describe("summarizeCash", () => {
       employees: [entry("salary-1", 80, "salaire"), entry("salary-2", 40, "salaire")],
     });
     expect(s.employeeTotal).toBe(120);
-    expect(s.net).toBe(320);
+    expect(s.net).toBe(318.88);
   });
 });
 
@@ -78,10 +90,10 @@ describe("caisse mensuelle", () => {
     employees: [{ id: "d", date: "2026-10-05", label: "salaire", amount: 60, kind: "salaire" as const }],
   };
   it("repart de zéro le 1er du mois", () => {
-    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(100);
+    expect(summarizeCash(filterBookByMonth(book, "2026-10")).net).toBe(99.65);
   });
   it("garde le mois précédent consultable", () => {
-    expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(30);
+    expect(summarizeCash(filterBookByMonth(book, "2026-09")).net).toBe(29.82);
   });
   it("utilise l'heure de Paris", () => {
     expect(monthOf("2026-09-30T22:30:00Z")).toBe("2026-10");

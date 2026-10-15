@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, deleteEmployee, deleteExpense, getCashBook } from "@/lib/cash.functions";
-import { availableMonths, employeeTotals, filterBookByMonth, monthOf, normalizeBook, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
+import { availableMonths, employeeTotals, filterBookByMonth, monthOf, normalizeBook, stripeFee, summarizeCash, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -145,8 +145,9 @@ function Caisse() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label={t("cash.in")} value={brl(s.inTotal)} />
+        <Stat label={t("cash.stripeFees")} value={brl(s.feeTotal)} />
         <Stat label={t("cash.out")} value={brl(s.outTotal)} />
         <Stat label={t("cash.purchases")} value={brl(s.purchaseTotal)} />
         <Stat label={t("cash.net")} value={brl(s.net)} strong />
@@ -281,6 +282,7 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
   line(`Vcampro — ${t("cash.title")}`, 18, true); y += 2;
   line(monthLabel(month), 13); y += 4;
   line(`${t("cash.in")} : ${eur(s.inTotal)}`, 11);
+  line(`${t("cash.stripeFees")} : ${eur(s.feeTotal)}`, 11);
   line(`${t("cash.out")} : ${eur(s.outTotal)}`, 11);
   line(`${t("cash.purchases")} : ${eur(s.purchaseTotal)}`, 11);
   for (const e of employeeTotals(book.employees)) line(`${e.name} : ${eur(e.total)}`, 11);
@@ -322,7 +324,9 @@ function EntriesList({ title, empty, rows, onDelete }: { title: string; empty: s
                   {r.label}
                   {r.kind === "entree" && <span className="ml-2 text-xs text-muted-foreground">(manuel)</span>}
                 </p>
-                <p className="text-xs text-muted-foreground">{fmtDate(r.date)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {fmtDate(r.date)} · −{brl(stripeFee(r.amount))} Stripe
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">+ {brl(r.amount)}</span>

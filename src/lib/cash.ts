@@ -26,21 +26,31 @@ export type CashBook = {
   staff?: Employee[];
 };
 
+/** Commission Stripe prélevée sur chaque entrée (vente du site ou entrée manuelle). */
+export const STRIPE_FEE_RATE = 0.0035;
+
+/** Commission Stripe sur un montant, arrondie au centime. */
+export function stripeFee(amount: number): number {
+  return Math.round(amount * STRIPE_FEE_RATE * 100) / 100;
+}
+
 export type CashSummary = {
   inTotal: number;
   outTotal: number;
   purchaseTotal: number;
   employeeTotal: number;
+  feeTotal: number;
   net: number;
 };
 
-/** Gains nets = entrées (auto + manuelles) − sorties − achats de téléphones. Les salaires n'entrent pas dans le calcul : ils servent seulement au suivi, employé par employé. */
+/** Gains nets = entrées (auto + manuelles) − commission Stripe − sorties − achats de téléphones. Les salaires n'entrent pas dans le calcul : ils servent seulement au suivi, employé par employé. */
 export function summarizeCash(book: CashBook): CashSummary {
   const inTotal = book.entries.reduce((s, e) => s + e.amount, 0);
   const outTotal = book.expenses.reduce((s, e) => s + e.amount, 0);
   const purchaseTotal = book.purchases.reduce((s, e) => s + e.amount, 0);
   const employeeTotal = book.employees.reduce((s, e) => s + e.amount, 0);
-  return { inTotal, outTotal, purchaseTotal, employeeTotal, net: inTotal - outTotal - purchaseTotal };
+  const feeTotal = book.entries.reduce((s, e) => s + stripeFee(e.amount), 0);
+  return { inTotal, outTotal, purchaseTotal, employeeTotal, feeTotal, net: inTotal - feeTotal - outTotal - purchaseTotal };
 }
 
 /** Total payé à chaque employé (le libellé d'un salaire est le nom de l'employé), du plus payé au moins payé. */
