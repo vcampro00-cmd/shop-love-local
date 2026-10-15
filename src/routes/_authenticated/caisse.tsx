@@ -132,6 +132,43 @@ function Caisse() {
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
 
+  async function submitReminder(ev: React.FormEvent) {
+    ev.preventDefault();
+    const value = num(remAmount);
+    const digits = whatsappDigits(remPhone);
+    if (!remName.trim() || !(value > 0) || digits.length < 8) { toast.error(t("cash.invalid")); return; }
+    try {
+      await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote } });
+      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote("");
+      await qc.invalidateQueries({ queryKey: ["reminders"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
+  }
+
+  async function removeReminder(id: string) {
+    if (!confirm(t("cash.confirmDelete"))) return;
+    try { await delRem({ data: { id } }); await qc.invalidateQueries({ queryKey: ["reminders"] }); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
+  }
+
+  async function sendWhatsApp(r: { id: string; name: string; phone: string; amount: number; paymentLink: string | null }) {
+    setRemBusy(r.id);
+    try {
+      let link = r.paymentLink;
+      if (!link) {
+        const res = await makeLink({ data: { id: r.id, origin: window.location.origin } });
+        if ("error" in res) { toast.error(res.error || t("cash.reminderLinkError")); return; }
+        link = res.url;
+        await qc.invalidateQueries({ queryKey: ["reminders"] });
+      }
+      const msg = reminderMessage(t("cash.reminderMessage"), r, link);
+      window.open(`https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("cash.reminderLinkError"));
+    } finally {
+      setRemBusy(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <h1 className="text-3xl font-bold">{t("cash.title")}</h1>
