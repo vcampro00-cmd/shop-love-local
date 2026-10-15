@@ -3,8 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Inbox } from "lucide-react";
-import { listAllOrders, setOrderStatus, type Order } from "@/lib/orders.functions";
+import { Check, Inbox, MapPin, Trash2, X } from "lucide-react";
+import { listAllOrders, orderAction, setOrderStatus, type Order } from "@/lib/orders.functions";
+import { Button } from "@/components/ui/button";
 import { brl, getProduct } from "@/lib/products";
 import { useText } from "@/lib/content";
 
@@ -30,6 +31,7 @@ function AdminOrders() {
   const t = useText();
   const queryClient = useQueryClient();
   const changeStatus = useServerFn(setOrderStatus);
+  const runAction = useServerFn(orderAction);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const { data, error, isPending } = useQuery({
@@ -57,6 +59,23 @@ function AdminOrders() {
         <p className="mt-2 text-muted-foreground">{t("admin.empty")}</p>
       </div>
     );
+
+  async function act(id: string, action: "accept" | "refuse" | "ready" | "delete") {
+    if (action === "delete" && !window.confirm(t("admin.deleteConfirm"))) return;
+    setBusyId(id);
+    try {
+      const r = await runAction({ data: { id, action } });
+      if (action !== "delete") {
+        if (r.emailed) toast.success(t("admin.emailSent"));
+        else toast.warning(t("admin.emailFailed"));
+      }
+      await queryClient.invalidateQueries({ queryKey: ["all-orders"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action impossible.");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function update(id: string, status: Order["status"]) {
     setBusyId(id);
@@ -147,6 +166,23 @@ function AdminOrders() {
                 ))}
               </select>
             </label>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button size="sm" className="bg-brand" disabled={busyId === o.id} onClick={() => act(o.id, "accept")}>
+                <Check className="mr-1 h-4 w-4" />{t("admin.accept")}
+              </Button>
+              {o.delivery_method === "retrait" && (
+                <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => act(o.id, "ready")}>
+                  <MapPin className="mr-1 h-4 w-4" />{t("admin.ready")}
+                </Button>
+              )}
+              <Button size="sm" variant="outline" disabled={busyId === o.id} onClick={() => act(o.id, "refuse")}>
+                <X className="mr-1 h-4 w-4" />{t("admin.refuse")}
+              </Button>
+              <Button size="sm" variant="destructive" disabled={busyId === o.id} onClick={() => act(o.id, "delete")}>
+                <Trash2 className="mr-1 h-4 w-4" />{t("admin.delete")}
+              </Button>
+            </div>
           </li>
         ))}
       </ul>
