@@ -163,6 +163,8 @@ export type Database = {
           id: string
           name: string
           note: string
+          paid_at: string | null
+          paid_session_id: string | null
           payment_link: string | null
           phone: string
         }
@@ -173,6 +175,8 @@ export type Database = {
           id?: string
           name: string
           note?: string
+          paid_at?: string | null
+          paid_session_id?: string | null
           payment_link?: string | null
           phone: string
         }
@@ -183,6 +187,8 @@ export type Database = {
           id?: string
           name?: string
           note?: string
+          paid_at?: string | null
+          paid_session_id?: string | null
           payment_link?: string | null
           phone?: string
         }

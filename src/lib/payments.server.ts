@@ -96,3 +96,39 @@ export async function chargeDueInstallments(): Promise<{ charged: number; failed
   }
   return { charged, failed };
 }
+
+/**
+ * Paiement d'un rappel (lien court /pagar/<id>) : marque le rappel payé
+ * et crédite la caisse d'une entrée automatique, une seule fois.
+ */
+export async function applyPaidReminder(sessionId: string, env: StripeEnv): Promise<void> {
+  const stripe = createStripeClient(env);
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const reminderId = session.metadata?.['reminderId'];
+  if (!reminderId || session.payment_status !== "paid") return;
+
+  const db = await admin();
+  // Claim idempotent : on marque le rappel payé une seule fois.
+  const { data, error } = await db
+    .from("payment_reminders")
+    .update({ paid_session_id: session.id, paid_at: new Date().toISOString() })
+    .eq("id", reminderId)
+    .is("paid_session_id", null)
+    .select("id, name");
+  if (error || !data?.length) return; // déjà traité ou rappel supprimé
+
+  const amount = Math.round((session.amount_total ?? 0)) / 100;
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const { error: ins } = await db.from("expenses").insert({
+    label: `Paiement convenu — ${data[0].name}`,
+    amount,
+    spent_on: today,
+    kind: "entree",
+  });
+  if (ins) console.error("Cash entry for reminder payment failed", ins);
+}

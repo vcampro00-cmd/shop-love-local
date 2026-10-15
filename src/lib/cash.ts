@@ -21,6 +21,8 @@ export type Reminder = {
   note: string;
   dueDate: string | null;
   paymentLink: string | null;
+  /** Vrai dès que le client a payé via le lien : l'entrée est alors créditée en caisse. */
+  paid?: boolean;
   createdAt: string;
 };
 

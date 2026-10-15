@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
-import { applyPaidSession } from "@/lib/payments.server";
+import { applyPaidSession, applyPaidReminder } from "@/lib/payments.server";
 
 export const Route = createFileRoute("/api/public/payments/webhook")({
   staticData: { sitemap: false },
@@ -15,7 +15,12 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
         try {
           const event = await verifyWebhook(request, env);
           if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
-            await applyPaidSession(event.data.object.id, env);
+            // Paiement d'un rappel (lien /pagar) → caisse ; sinon commande classique.
+            if (event.data.object?.metadata?.reminderId) {
+              await applyPaidReminder(event.data.object.id, env);
+            } else {
+              await applyPaidSession(event.data.object.id, env);
+            }
           }
           return Response.json({ received: true });
         } catch (e) {

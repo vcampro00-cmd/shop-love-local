@@ -21,6 +21,8 @@ export const Route = createFileRoute("/pagar/$id")({
             line_items: [{ quantity: 1, price_data: { currency: "eur", unit_amount: Math.round(Number(row.amount) * 100), product_data: { name: `Paiement convenu — ${row.name}` } } }],
             payment_method_types: ["card"],
             payment_intent_data: { description: `Paiement convenu — ${row.name}` },
+            // Relie la session au rappel : le webhook crédite la caisse au paiement.
+            metadata: { reminderId: row.id },
             success_url: `${origin}/?paiement=ok`,
             cancel_url: `${origin}/?paiement=annule`,
           });
