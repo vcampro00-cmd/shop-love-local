@@ -16,16 +16,17 @@ export const getCashBook = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<CashBook> => {
     await assertAdmin(context);
     const [orders, expenses, staff] = await Promise.all([
-      context.supabase.from("orders").select("id, ref, name, amount_paid, updated_at").gt("amount_paid", 0).order("updated_at", { ascending: false }),
+      context.supabase.from("orders").select("id, ref, name, amount_paid, total, status, updated_at").or("amount_paid.gt.0,status.eq.livre").order("updated_at", { ascending: false }),
       context.supabase.from("expenses").select("id, label, amount, spent_on, kind, units, unit_price").order("spent_on", { ascending: false }).order("created_at", { ascending: false }),
       context.supabase.from("employees").select("id, name, unit_price").order("created_at"),
     ]);
     if (orders.error || expenses.error || staff.error) throw new Error("Impossible d'afficher la caisse.");
+    // A concluded sale ("livre") counts in full, even when paid on site at pickup.
     const autoEntries: CashEntry[] = (orders.data ?? []).map((o: any) => ({
       id: o.id,
       date: o.updated_at,
       label: `${o.ref} — ${o.name}`,
-      amount: Number(o.amount_paid),
+      amount: o.status === "livre" ? Math.max(Number(o.total), Number(o.amount_paid)) : Number(o.amount_paid),
       kind: "auto",
     }));
     const manual: CashEntry[] = [];

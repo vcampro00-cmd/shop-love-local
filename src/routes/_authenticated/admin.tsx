@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Inbox, MapPin, Trash2, X } from "lucide-react";
+import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
 import { listAllOrders, orderAction, setOrderStatus, type Order } from "@/lib/orders.functions";
 import { Button } from "@/components/ui/button";
 import { brl, getProduct } from "@/lib/products";
@@ -173,6 +173,11 @@ function AdminOrders() {
               <Button size="sm" className="bg-brand" disabled={busyId === o.id} onClick={() => act(o.id, "accept")}>
                 <Check className="mr-1 h-4 w-4" />{t("admin.accept")}
               </Button>
+              {o.status !== "livre" && o.status !== "annule" && (
+                <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => update(o.id, "livre")}>
+                  <CheckCheck className="mr-1 h-4 w-4" />{t("admin.complete")}
+                </Button>
+              )}
               {o.delivery_method === "retrait" && (
                 <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => { setReadyFor(readyFor === o.id ? null : o.id); setMessage(""); }}>
                   <MapPin className="mr-1 h-4 w-4" />{t("admin.ready")}
