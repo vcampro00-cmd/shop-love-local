@@ -329,11 +329,46 @@ function monthLabel(m: string) {
 
 const eur = (n: number) => n.toFixed(2).replace(".", ",") + " EUR";
 
+async function loadLogoDataUrl(): Promise<{ data: string; width: number; height: number } | null> {
+  try {
+    const mod = await import("@/assets/vcampro-logo.png");
+    const res = await fetch(mod.default);
+    const blob = await res.blob();
+    const data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = data;
+    });
+    return { data, width: img.naturalWidth, height: img.naturalHeight };
+  } catch {
+    return null;
+  }
+}
+
 async function exportPdf(book: CashBook, month: string, t: (k: string) => string) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF();
   const s = summarizeCash(book);
+  const logo = await loadLogoDataUrl();
   let y = 20;
+  // Cabeçalho personalizado com a logo
+  if (logo) {
+    const h = 22;
+    const w = (logo.width / logo.height) * h;
+    doc.addImage(logo.data, "PNG", (210 - w) / 2, y, w, h);
+    y += h + 6;
+  }
+  doc.setDrawColor(168, 85, 247);
+  doc.setLineWidth(0.8);
+  doc.line(14, y, 196, y);
+  y += 8;
   const line = (txt: string, size = 10, bold = false) => {
     if (y > 280) { doc.addPage(); y = 20; }
     doc.setFont("helvetica", bold ? "bold" : "normal");
