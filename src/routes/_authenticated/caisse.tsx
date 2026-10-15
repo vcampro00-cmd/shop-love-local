@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, createReminderLink, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
 import { availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
@@ -56,13 +56,11 @@ function Caisse() {
   const [empId, setEmpId] = useState("");
   const addRem = useServerFn(addReminder);
   const delRem = useServerFn(deleteReminder);
-  const makeLink = useServerFn(createReminderLink);
   const [remName, setRemName] = useState("");
   const [remPhone, setRemPhone] = useState("");
   const [remAmount, setRemAmount] = useState("");
   const [remNote, setRemNote] = useState("");
   const [remDate, setRemDate] = useState(today());
-  const [remBusy, setRemBusy] = useState<string | null>(null);
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
   const { data: reminders = [] } = useQuery({ queryKey: ["reminders"], queryFn: () => listReminders(), retry: false });
@@ -299,7 +297,7 @@ function Caisse() {
                   <p className="truncate text-xs text-muted-foreground">+{r.phone}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button type="button" size="sm" variant="outline" disabled={remBusy === r.id} onClick={() => sendWhatsApp(r)}>
+                  <Button type="button" size="sm" variant="outline" onClick={() => sendWhatsApp(r)}>
                     <MessageCircle className="h-4 w-4" /> {t("cash.reminderSend")}
                   </Button>
                   <button type="button" aria-label="Supprimer" onClick={() => removeReminder(r.id)} className="text-muted-foreground hover:text-destructive">
