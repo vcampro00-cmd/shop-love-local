@@ -289,6 +289,38 @@ function Caisse() {
         )}
       </form>
 
+      <form onSubmit={submitReminder} className="mt-6 rounded-2xl border bg-card p-5">
+        <h2 className="font-semibold">{t("cash.remindersTitle")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("cash.remindersIntro")}</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_140px_auto]">
+          <Input placeholder={t("cash.reminderName")} value={remName} onChange={(e) => setRemName(e.target.value)} maxLength={100} />
+          <Input placeholder={t("cash.reminderPhone")} inputMode="tel" value={remPhone} onChange={(e) => setRemPhone(e.target.value)} maxLength={20} />
+          <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={remAmount} onChange={(e) => setRemAmount(e.target.value)} />
+          <Button type="submit" variant="outline">{t("cash.reminderAdd")}</Button>
+        </div>
+        <Input className="mt-3" placeholder={t("cash.reminderNote")} value={remNote} onChange={(e) => setRemNote(e.target.value)} maxLength={300} />
+        {reminders.length > 0 && (
+          <ul className="mt-3 divide-y divide-border">
+            {reminders.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{r.name} — {brl(r.amount)}</p>
+                  <p className="truncate text-xs text-muted-foreground">+{r.phone}{r.note ? ` · ${r.note}` : ""}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button type="button" size="sm" variant="outline" disabled={remBusy === r.id} onClick={() => sendWhatsApp(r)}>
+                    <MessageCircle className="h-4 w-4" /> {t("cash.reminderSend")}
+                  </Button>
+                  <button type="button" aria-label="Supprimer" onClick={() => removeReminder(r.id)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </form>
+
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         <EntriesList title={t("cash.in")} empty={t("cash.emptyIn")} rows={book.entries} onDelete={remove} />
         <List title={t("cash.out")} empty={t("cash.emptyOut")} rows={book.expenses} sign="−" onDelete={remove} />
