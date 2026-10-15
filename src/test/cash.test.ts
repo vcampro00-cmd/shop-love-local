@@ -106,3 +106,19 @@ describe("salaire à l'unité", () => {
     expect(salaryAmount(4, 12.5)).toBe(50);
   });
 });
+
+import { reminderMessage, whatsappDigits } from "@/lib/cash";
+
+describe("rappels WhatsApp", () => {
+  it("normalise un numéro français 06… en 336…", () => {
+    expect(whatsappDigits("06 12 34 56 78")).toBe("33612345678");
+  });
+  it("garde un numéro déjà international et retire le 00", () => {
+    expect(whatsappDigits("00336 12 34 56 78")).toBe("33612345678");
+    expect(whatsappDigits("+33 6 12 34 56 78")).toBe("33612345678");
+  });
+  it("remplace {nom}, {montant} et {lien} dans le message", () => {
+    const msg = reminderMessage("Bonjour {nom}, rappel de {montant} € : {lien}", { name: "Léa", amount: 150 }, "https://pay.example/x");
+    expect(msg).toBe("Bonjour Léa, rappel de 150,00 € : https://pay.example/x");
+  });
+});
