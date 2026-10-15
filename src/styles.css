@@ -90,7 +90,10 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    /* Tout le site en majuscules, sauf les champs de saisie (adresses e-mail, messages…). */
+    text-transform: uppercase;
   }
+  input, textarea, select { text-transform: none; }
   h1, h2, h3 { font-family: var(--font-display); }
 }
 

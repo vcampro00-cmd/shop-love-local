@@ -228,6 +228,8 @@ function AdminOrders() {
                   onChange={(e) => setMessage(e.target.value)}
                   rows={6}
                   maxLength={3000}
+                  spellCheck
+                  lang="fr"
                   placeholder={t("admin.readyMessagePlaceholder")}
                   className="w-full rounded-xl border bg-background px-3 py-2 text-sm"
                 />
