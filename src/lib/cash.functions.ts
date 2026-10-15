@@ -109,9 +109,9 @@ export const listReminders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Reminder[]> => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, payment_link, created_at").order("created_at", { ascending: false });
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at").order("created_at", { ascending: false });
     if (error) throw new Error("Impossible d'afficher les rappels.");
-    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", paymentLink: r.payment_link, createdAt: r.created_at }));
+    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, createdAt: r.created_at }));
   });
 
 export const addReminder = createServerFn({ method: "POST" })
@@ -122,11 +122,12 @@ export const addReminder = createServerFn({ method: "POST" })
       phone: z.string().trim().min(6).max(20),
       amount: z.number().positive().max(1_000_000),
       note: z.string().trim().max(300).default(""),
+      dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { error } = await context.supabase.from("payment_reminders").insert(data);
+    const { error } = await context.supabase.from("payment_reminders").insert({ name: data.name, phone: data.phone, amount: data.amount, note: data.note, due_date: data.dueDate });
     if (error) throw new Error("Le rappel n'a pas pu être enregistré.");
     return { ok: true };
   });

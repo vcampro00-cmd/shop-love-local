@@ -19,6 +19,7 @@ export type Reminder = {
   phone: string;
   amount: number;
   note: string;
+  dueDate: string | null;
   paymentLink: string | null;
   createdAt: string;
 };
@@ -31,11 +32,19 @@ export function whatsappDigits(phone: string): string {
   return d;
 }
 
-/** Message du rappel : {nom}, {montant} et {lien} sont remplacés par les valeurs du rappel. */
-export function reminderMessage(template: string, r: { name: string; amount: number }, link: string): string {
+/** Date "YYYY-MM-DD" affichée en français (ex. : 20/10/2026). */
+export function formatDueDate(date: string | null | undefined): string {
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return "";
+  const [y, m, d] = date.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+/** Message du rappel : {nom}, {montant}, {date} et {lien} sont remplacés par les valeurs du rappel. */
+export function reminderMessage(template: string, r: { name: string; amount: number; dueDate?: string | null }, link: string): string {
   return template
     .replaceAll("{nom}", r.name)
     .replaceAll("{montant}", r.amount.toFixed(2).replace(".", ","))
+    .replaceAll("{date}", formatDueDate(r.dueDate))
     .replaceAll("{lien}", link);
 }
 

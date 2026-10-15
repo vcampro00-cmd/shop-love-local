@@ -121,4 +121,9 @@ describe("rappels WhatsApp", () => {
     const msg = reminderMessage("Bonjour {nom}, rappel de {montant} € : {lien}", { name: "Léa", amount: 150 }, "https://pay.example/x");
     expect(msg).toBe("Bonjour Léa, rappel de 150,00 € : https://pay.example/x");
   });
+  it("remplace {date} par la date au format français, vide si absente", () => {
+    const msg = reminderMessage("{montant} € prévu le {date}", { name: "Léa", amount: 150, dueDate: "2026-10-20" }, "x");
+    expect(msg).toBe("150,00 € prévu le 20/10/2026");
+    expect(reminderMessage("le {date}", { name: "Léa", amount: 150, dueDate: null }, "x")).toBe("le ");
+  });
 });
