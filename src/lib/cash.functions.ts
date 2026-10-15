@@ -109,9 +109,9 @@ export const listReminders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Reminder[]> => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, payment_link, created_at").order("created_at", { ascending: false });
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at").order("created_at", { ascending: false });
     if (error) throw new Error("Impossible d'afficher les rappels.");
-    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", paymentLink: r.payment_link, createdAt: r.created_at }));
+    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, createdAt: r.created_at }));
   });
 
 export const addReminder = createServerFn({ method: "POST" })
