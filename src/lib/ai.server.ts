@@ -25,7 +25,7 @@ const INSTRUCTIONS =
 
 /** Corrige l'orthographe et la ponctuation d'un texte français via Lovable AI. Renvoie null si indisponible. */
 export async function correctFrenchText(text: string): Promise<string | null> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return null;
   const runIdFetch = createLovableAiGatewayRunIdFetch();
   const provider = createOpenAI({
