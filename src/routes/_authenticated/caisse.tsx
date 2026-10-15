@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, createReminderLink, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
 import { availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
@@ -56,13 +56,11 @@ function Caisse() {
   const [empId, setEmpId] = useState("");
   const addRem = useServerFn(addReminder);
   const delRem = useServerFn(deleteReminder);
-  const makeLink = useServerFn(createReminderLink);
   const [remName, setRemName] = useState("");
   const [remPhone, setRemPhone] = useState("");
   const [remAmount, setRemAmount] = useState("");
   const [remNote, setRemNote] = useState("");
   const [remDate, setRemDate] = useState(today());
-  const [remBusy, setRemBusy] = useState<string | null>(null);
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
   const { data: reminders = [] } = useQuery({ queryKey: ["reminders"], queryFn: () => listReminders(), retry: false });
@@ -151,28 +149,12 @@ function Caisse() {
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
 
-  async function sendWhatsApp(r: { id: string; name: string; phone: string; amount: number; dueDate: string | null; paymentLink: string | null }) {
-    // Ouvrir l'onglet tout de suite (clic direct) : sinon le navigateur bloque la fenêtre ouverte après l'attente du lien.
-    const win = window.open("", "_blank");
-    setRemBusy(r.id);
-    try {
-      let link = r.paymentLink;
-      if (!link) {
-        const res = await makeLink({ data: { id: r.id, origin: window.location.origin } });
-        if ("error" in res) { win?.close(); toast.error(res.error || t("cash.reminderLinkError")); return; }
-        link = res.url;
-        await qc.invalidateQueries({ queryKey: ["reminders"] });
-      }
-      const msg = reminderMessage(t("cash.reminderMessage"), r, link);
-      const url = `https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(msg)}`;
-      if (win) win.location.href = url;
-      else window.open(url, "_blank", "noopener");
-    } catch (e) {
-      win?.close();
-      toast.error(e instanceof Error ? e.message : t("cash.reminderLinkError"));
-    } finally {
-      setRemBusy(null);
-    }
+  function sendWhatsApp(r: { id: string; name: string; phone: string; amount: number; dueDate: string | null; paymentLink: string | null }) {
+    // Toujours le lien court du site (/pagar/...) : jamais l'ancien lien Stripe enregistré.
+    const link = `${window.location.origin}/pagar/${r.id}`;
+    const msg = reminderMessage(t("cash.reminderMessage"), r, link);
+    const url = `https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank", "noopener");
   }
 
   return (
@@ -315,7 +297,7 @@ function Caisse() {
                   <p className="truncate text-xs text-muted-foreground">+{r.phone}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button type="button" size="sm" variant="outline" disabled={remBusy === r.id} onClick={() => sendWhatsApp(r)}>
+                  <Button type="button" size="sm" variant="outline" onClick={() => sendWhatsApp(r)}>
                     <MessageCircle className="h-4 w-4" /> {t("cash.reminderSend")}
                   </Button>
                   <button type="button" aria-label="Supprimer" onClick={() => removeReminder(r.id)} className="text-muted-foreground hover:text-destructive">
