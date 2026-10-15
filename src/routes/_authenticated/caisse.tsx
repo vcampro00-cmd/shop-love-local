@@ -151,19 +151,24 @@ function Caisse() {
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
 
-  async function sendWhatsApp(r: { id: string; name: string; phone: string; amount: number; paymentLink: string | null }) {
+  async function sendWhatsApp(r: { id: string; name: string; phone: string; amount: number; dueDate: string | null; paymentLink: string | null }) {
+    // Ouvrir l'onglet tout de suite (clic direct) : sinon le navigateur bloque la fenêtre ouverte après l'attente du lien.
+    const win = window.open("", "_blank");
     setRemBusy(r.id);
     try {
       let link = r.paymentLink;
       if (!link) {
         const res = await makeLink({ data: { id: r.id, origin: window.location.origin } });
-        if ("error" in res) { toast.error(res.error || t("cash.reminderLinkError")); return; }
+        if ("error" in res) { win?.close(); toast.error(res.error || t("cash.reminderLinkError")); return; }
         link = res.url;
         await qc.invalidateQueries({ queryKey: ["reminders"] });
       }
       const msg = reminderMessage(t("cash.reminderMessage"), r, link);
-      window.open(`https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+      const url = `https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(msg)}`;
+      if (win) win.location.href = url;
+      else window.open(url, "_blank", "noopener");
     } catch (e) {
+      win?.close();
       toast.error(e instanceof Error ? e.message : t("cash.reminderLinkError"));
     } finally {
       setRemBusy(null);
@@ -293,10 +298,11 @@ function Caisse() {
       <form onSubmit={submitReminder} className="mt-6 rounded-2xl border bg-card p-5">
         <h2 className="font-semibold">{t("cash.remindersTitle")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("cash.remindersIntro")}</p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_140px_auto]">
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_140px_160px_auto]">
           <Input placeholder={t("cash.reminderName")} value={remName} onChange={(e) => setRemName(e.target.value)} maxLength={100} />
           <Input placeholder={t("cash.reminderPhone")} inputMode="tel" value={remPhone} onChange={(e) => setRemPhone(e.target.value)} maxLength={20} />
           <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={remAmount} onChange={(e) => setRemAmount(e.target.value)} />
+          <Input type="date" aria-label={t("cash.reminderDate")} value={remDate} onChange={(e) => setRemDate(e.target.value)} />
           <Button type="submit" variant="outline">{t("cash.reminderAdd")}</Button>
         </div>
         <Input className="mt-3" placeholder={t("cash.reminderNote")} value={remNote} onChange={(e) => setRemNote(e.target.value)} maxLength={300} />
@@ -306,7 +312,7 @@ function Caisse() {
               <li key={r.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{r.name} — {brl(r.amount)}</p>
-                  <p className="truncate text-xs text-muted-foreground">+{r.phone}{r.note ? ` · ${r.note}` : ""}</p>
+                  <p className="truncate text-xs text-muted-foreground">+{r.phone}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button type="button" size="sm" variant="outline" disabled={remBusy === r.id} onClick={() => sendWhatsApp(r)}>
