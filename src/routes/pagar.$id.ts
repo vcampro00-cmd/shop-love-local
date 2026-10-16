@@ -23,8 +23,8 @@ export const Route = createFileRoute("/pagar/$id")({
             payment_intent_data: { description: `Paiement convenu — ${row.name}` },
             // Relie la session au rappel : le webhook crédite la caisse au paiement.
             metadata: { reminderId: row.id },
-            success_url: `${origin}/?paiement=ok`,
-            cancel_url: `${origin}/?paiement=annule`,
+            success_url: `${origin}/paiement-recu?paiement=ok`,
+            cancel_url: `${origin}/paiement-recu?paiement=annule`,
           });
           if (!session.url) return new Response("Paiement indisponible.", { status: 503 });
           return Response.redirect(session.url, 303);
