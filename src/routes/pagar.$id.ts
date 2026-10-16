@@ -15,7 +15,10 @@ export const Route = createFileRoute("/pagar/$id")({
           .from("payment_reminders").select("id, name, amount").eq("id", params.id).maybeSingle();
         if (!row) return new Response("Lien de paiement introuvable.", { status: 404 });
         try {
-          const stripe = createStripeClient("sandbox");
+          // Real money on the published site; test mode only in the preview / local dev.
+          const host = new URL(request.url).hostname;
+          const isTest = host === "localhost" || host.includes("preview") || host.endsWith("-dev.lovable.app");
+          const stripe = createStripeClient(isTest ? "sandbox" : "live");
           const session = await stripe.checkout.sessions.create({
             mode: "payment",
             line_items: [{ quantity: 1, price_data: { currency: "eur", unit_amount: Math.round(Number(row.amount) * 100), product_data: { name: `Paiement convenu — ${row.name}` } } }],
