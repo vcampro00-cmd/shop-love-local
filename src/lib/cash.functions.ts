@@ -109,7 +109,8 @@ export const listReminders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Reminder[]> => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id").order("created_at", { ascending: false });
+    // Paid reminders disappear; the rest are sorted by due date (soonest first, undated last).
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id").is("paid_session_id", null).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
     if (error) throw new Error("Impossible d'afficher les rappels.");
     return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at }));
   });
