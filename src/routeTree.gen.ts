@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as ComoFuncionaRouteImport } from './routes/como-funciona'
 import { Route as EditarRouteImport } from './routes/editar'
+import { Route as PaiementRecuRouteImport } from './routes/paiement-recu'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -54,6 +55,11 @@ const ComoFuncionaRoute = ComoFuncionaRouteImport.update({
 const EditarRoute = EditarRouteImport.update({
   id: '/editar',
   path: '/editar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaiementRecuRoute = PaiementRecuRouteImport.update({
+  id: '/paiement-recu',
+  path: '/paiement-recu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/carrinho': typeof CarrinhoRoute
   '/como-funciona': typeof ComoFuncionaRoute
   '/editar': typeof EditarRoute
+  '/paiement-recu': typeof PaiementRecuRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/carrinho': typeof CarrinhoRoute
   '/como-funciona': typeof ComoFuncionaRoute
   '/editar': typeof EditarRoute
+  '/paiement-recu': typeof PaiementRecuRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/carrinho': typeof CarrinhoRoute
   '/como-funciona': typeof ComoFuncionaRoute
   '/editar': typeof EditarRoute
+  '/paiement-recu': typeof PaiementRecuRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/como-funciona'
     | '/editar'
+    | '/paiement-recu'
     | '/reinitialiser-mot-de-passe'
     | '/sitemap.xml'
     | '/admin'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/como-funciona'
     | '/editar'
+    | '/paiement-recu'
     | '/reinitialiser-mot-de-passe'
     | '/sitemap.xml'
     | '/admin'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/como-funciona'
     | '/editar'
+    | '/paiement-recu'
     | '/reinitialiser-mot-de-passe'
     | '/sitemap.xml'
     | '/_authenticated/admin'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   CarrinhoRoute: typeof CarrinhoRoute
   ComoFuncionaRoute: typeof ComoFuncionaRoute
   EditarRoute: typeof EditarRoute
+  PaiementRecuRoute: typeof PaiementRecuRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   PagarIdRoute: typeof PagarIdRoute
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/editar'
       fullPath: '/editar'
       preLoaderRoute: typeof EditarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/paiement-recu': {
+      id: '/paiement-recu'
+      path: '/paiement-recu'
+      fullPath: '/paiement-recu'
+      preLoaderRoute: typeof PaiementRecuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reinitialiser-mot-de-passe': {
@@ -395,6 +415,7 @@ const rootRouteChildren: RootRouteChildren = {
   CarrinhoRoute: CarrinhoRoute,
   ComoFuncionaRoute: ComoFuncionaRoute,
   EditarRoute: EditarRoute,
+  PaiementRecuRoute: PaiementRecuRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   PagarIdRoute: PagarIdRoute,
