@@ -3,8 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 // Page où Stripe renvoie le client après avoir payé un rappel via le lien /pagar.
 export const Route = createFileRoute("/paiement-recu")({
   staticData: { sitemap: false },
-  validateSearch: (search: Record<string, unknown>): { paiement?: string } => ({
-    paiement: search.paiement === "annule" ? "annule" : search.paiement === "ok" ? "ok" : undefined,
+  validateSearch: (search: Record<string, unknown>): { paiement?: string | undefined } => ({
+    paiement: search["paiement"] === "annule" ? "annule" : search["paiement"] === "ok" ? "ok" : undefined,
   }),
   head: () => ({
     meta: [
