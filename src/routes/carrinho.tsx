@@ -5,7 +5,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Minus, Plus } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { getProduct, brl } from "@/lib/products";
+import { brl } from "@/lib/products";
+import { useCatalog } from "@/lib/catalog";
 import { useText, numFromText } from "@/lib/content";
 import { canPayInTwoTimes, splitPayment, type PaymentPlan, type DeliveryMethod } from "@/lib/pricing";
 import { useAccount, rememberIntendedPath } from "@/lib/auth";
@@ -48,6 +49,7 @@ function Cart() {
   const { lines, setQty, subtotal, clear } = useCart();
   const navigate = useNavigate();
   const t = useText();
+  const catalog = useCatalog();
   const { user, loading } = useAccount();
   const placeOrder = useServerFn(createOrder);
   const [form, setForm] = useState({ name: "", phone: "", address: "", cep: "" });
@@ -64,7 +66,7 @@ function Cart() {
   const total = subtotal + shipping - discount;
   const parts = splitPayment(total, "split");
   // Certains téléphones (ex. iPhone 7 GPS Manager) se paient uniquement en une fois.
-  const twoTimesAllowed = canPayInTwoTimes(lines);
+  const twoTimesAllowed = canPayInTwoTimes(lines, catalog.fullOnlyIds);
   const effectivePlan: PaymentPlan = twoTimesAllowed ? plan : "full";
 
   if (lines.length === 0)
@@ -119,10 +121,10 @@ function Cart() {
           <h1 className="mb-4 text-3xl font-bold">{t("cart.title")}</h1>
           <div className="divide-y rounded-2xl border bg-card">
             {lines.map((l) => {
-              const p = getProduct(l.id);
+              const p = catalog.get(l.id);
               if (!p) return null;
-              const name = t(`product.${p.id}.name`);
-              const price = numFromText(t(`product.${p.id}.price`), 0);
+              const name = p.name;
+              const price = p.price;
               return (
                 <div key={l.id} className="flex items-center justify-between gap-4 p-4">
                   <div className="flex items-center gap-3">

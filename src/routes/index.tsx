@@ -3,9 +3,10 @@ import { toast } from "sonner";
 import { Plus, Truck, CreditCard, Store } from "lucide-react";
 import heroPhones from "@/assets/hero-phones.png";
 import logo from "@/assets/vcampro-logo.png";
-import { products, brl } from "@/lib/products";
+import { brl } from "@/lib/products";
+import { useCatalog } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
-import { useText, numFromText } from "@/lib/content";
+import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/")({
 function Shop() {
   const { add } = useCart();
   const t = useText();
+  const { list: products } = useCatalog();
 
   const cards = [
     { i: CreditCard, t: t("home.card1Title"), d: t("home.card1Text") },
@@ -66,17 +68,17 @@ function Shop() {
         <h2 className="mb-6 text-2xl font-bold">{t("home.productsTitle")}</h2>
         <div className="grid gap-5 sm:grid-cols-2">
           {products.map((p) => {
-            const name = t(`product.${p.id}.name`);
-            const price = numFromText(t(`product.${p.id}.price`), 0);
+            const name = p.name;
+            const price = p.price;
             return (
               <article key={p.id} className="flex flex-col rounded-3xl border bg-card p-6 transition hover:border-primary">
-                <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{t(`product.${p.id}.tag`)}</span>
+                <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{p.tag}</span>
                 <div className="mt-4 flex flex-1 items-center gap-4">
                   <img src={p.image} alt={name} loading="lazy" width={p.imageW} height={p.imageH} className="h-32 w-auto shrink-0 object-contain drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]" />
                   <div>
                     <h3 className="text-lg font-bold">{name}</h3>
-                    {t(`product.${p.id}.description`) && (
-                      <p className="mt-1 text-sm text-muted-foreground">{t(`product.${p.id}.description`)}</p>
+                    {p.description && (
+                      <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
                     )}
                   </div>
                 </div>

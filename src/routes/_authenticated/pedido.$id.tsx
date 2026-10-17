@@ -5,7 +5,8 @@ import { useEffect } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { getOrder, confirmPayment } from "@/lib/orders.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
-import { brl, getProduct } from "@/lib/products";
+import { brl } from "@/lib/products";
+import { useCatalog } from "@/lib/catalog";
 import { useText, numFromText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 
@@ -46,6 +47,7 @@ function Confirmed() {
   const { id } = Route.useParams();
   const { data: order } = useSuspenseQuery(orderQueryOptions(id));
   const t = useText();
+  const catalog = useCatalog();
   const { session_id } = Route.useSearch();
   const confirm = useServerFn(confirmPayment);
   const queryClient = useQueryClient();
@@ -85,9 +87,9 @@ function Confirmed() {
           <p className="font-bold">{t("account.orderItems")}</p>
           <ul className="mt-2 space-y-1">
             {order.items.map((item) => {
-              const p = getProduct(item.id);
-              const name = t(`product.${item.id}.name`);
-              const price = numFromText(t(`product.${item.id}.price`), 0);
+              const p = catalog.get(item.id);
+              const name = p?.name ?? item.id;
+              const price = p?.price ?? 0;
               return (
                 <li key={item.id} className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">

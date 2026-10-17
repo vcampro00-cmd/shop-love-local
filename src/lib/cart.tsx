@@ -1,6 +1,6 @@
 import type React from "react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { useText, numFromText } from "./content";
+import { useCatalog } from "./catalog";
 
 export type CartLine = { id: string; qty: number };
 
@@ -23,7 +23,7 @@ export function cartSubtotal(lines: CartLine[], priceOf: (id: string) => number)
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const t = useText();
+  const catalog = useCatalog();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -55,7 +55,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setQty,
         clear: () => setLines([]),
         count: lines.reduce((s, l) => s + l.qty, 0),
-        subtotal: cartSubtotal(lines, (id) => numFromText(t(`product.${id}.price`), 0)),
+        subtotal: cartSubtotal(lines, catalog.priceOf),
       }}
     >
       {children}
