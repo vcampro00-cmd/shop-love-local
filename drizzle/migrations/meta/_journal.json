@@ -92,6 +92,13 @@
       "when": 1792228946596,
       "tag": "0012_catalog_products",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792230939967,
+      "tag": "0013_drop_unused_product_images_policies",
+      "breakpoints": true
     }
   ]
 }
