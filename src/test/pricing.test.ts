@@ -11,21 +11,21 @@ const priceOf = (id: string) =>
 describe("Totaux de commande", () => {
   it("additionne les téléphones et ajoute les frais de livraison", () => {
     const totals = computeTotals([{ id: "iphone-se-2020", qty: 1 }, { id: "clone-deliveroo", qty: 1 }], priceOf, 20);
-    expect(totals).toEqual({ subtotal: 680, deliveryFee: 20, total: 700 });
+    expect(totals).toEqual({ subtotal: 680, deliveryFee: 20, total: 700, discount: 0 });
   });
 
   it("compte la quantité", () => {
     const totals = computeTotals([{ id: "iphone-se-2020", qty: 3 }], priceOf, 20);
-    expect(totals).toEqual({ subtotal: 900, deliveryFee: 20, total: 920 });
+    expect(totals).toEqual({ subtotal: 900, deliveryFee: 20, total: 920, discount: 0 });
   });
 
   it("ne facture pas la livraison d'un panier vide", () => {
-    expect(computeTotals([], priceOf, 20)).toEqual({ subtotal: 0, deliveryFee: 0, total: 0 });
+    expect(computeTotals([], priceOf, 20)).toEqual({ subtotal: 0, deliveryFee: 0, total: 0, discount: 0 });
   });
 
   it("compte l'iPhone 7 GPS Manager à 150 € la pièce", () => {
     const totals = computeTotals([{ id: "iphone-7-gps-manager", qty: 2 }], priceOf, 20);
-    expect(totals).toEqual({ subtotal: 300, deliveryFee: 20, total: 320 });
+    expect(totals).toEqual({ subtotal: 300, deliveryFee: 20, total: 320, discount: 0 });
   });
 });
 
@@ -60,5 +60,23 @@ describe("paiement en 2 fois", () => {
   });
   it("le centime impair va sur le 1er paiement", () => {
     expect(splitPayment(100.01, "split")).toEqual({ now: 50.01, later: 50 });
+  });
+});
+
+import { commissionFor, normalizePromoCode } from "@/lib/pricing";
+describe("code promo et commissions", () => {
+  it("VCAMPRO20 retire 20 € du total", () => {
+    expect(computeTotals([{ id: "iphone-se-2020", qty: 1 }], priceOf, 20, "livraison", 20).total).toBe(300);
+  });
+  it("le total ne descend jamais sous 0", () => {
+    expect(computeTotals([{ id: "iphone-7-gps-manager", qty: 1 }], priceOf, 20, "retrait", 500).total).toBe(0);
+  });
+  it("le code est lu en majuscules", () => {
+    expect(normalizePromoCode(" vcampro20 ")).toBe("VCAMPRO20");
+  });
+  it("commission : 50 € SE 2020 et iPhone 7, 60 € Duo Android", () => {
+    expect(commissionFor([{ id: "iphone-se-2020", qty: 1 }])).toBe(50);
+    expect(commissionFor([{ id: "iphone-7-gps-manager", qty: 2 }])).toBe(100);
+    expect(commissionFor([{ id: "clone-deliveroo", qty: 1 }])).toBe(60);
   });
 });

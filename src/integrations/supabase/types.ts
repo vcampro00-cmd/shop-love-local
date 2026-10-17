@@ -43,6 +43,7 @@ export type Database = {
           id: string
           kind: string
           label: string
+          order_id: string | null
           spent_on: string
           unit_price: number | null
           units: number | null
@@ -54,6 +55,7 @@ export type Database = {
           id?: string
           kind?: string
           label: string
+          order_id?: string | null
           spent_on?: string
           unit_price?: number | null
           units?: number | null
@@ -65,6 +67,7 @@ export type Database = {
           id?: string
           kind?: string
           label?: string
+          order_id?: string | null
           spent_on?: string
           unit_price?: number | null
           units?: number | null
@@ -80,6 +83,7 @@ export type Database = {
           customer_id: string
           delivery_fee: number
           delivery_method: string
+          discount: number
           id: string
           items: Json
           name: string
@@ -89,9 +93,11 @@ export type Database = {
           payment_status: string
           phone: string
           postal_code: string
+          promo_code: string | null
           ref: string
           second_amount: number
           second_charge_due_at: string | null
+          seller_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
@@ -107,6 +113,7 @@ export type Database = {
           customer_id: string
           delivery_fee: number
           delivery_method?: string
+          discount?: number
           id?: string
           items?: Json
           name: string
@@ -116,9 +123,11 @@ export type Database = {
           payment_status?: string
           phone: string
           postal_code: string
+          promo_code?: string | null
           ref: string
           second_amount?: number
           second_charge_due_at?: string | null
+          seller_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
@@ -134,6 +143,7 @@ export type Database = {
           customer_id?: string
           delivery_fee?: number
           delivery_method?: string
+          discount?: number
           id?: string
           items?: Json
           name?: string
@@ -143,9 +153,11 @@ export type Database = {
           payment_status?: string
           phone?: string
           postal_code?: string
+          promo_code?: string | null
           ref?: string
           second_amount?: number
           second_charge_due_at?: string | null
+          seller_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
@@ -191,6 +203,45 @@ export type Database = {
           paid_session_id?: string | null
           payment_link?: string | null
           phone?: string
+        }
+        Relationships: []
+      }
+      product_stock: {
+        Row: {
+          product_id: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          product_id: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          product_id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          active: boolean
+          amount: number
+          code: string
+          created_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          code: string
+          created_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          code?: string
+          created_at?: string
         }
         Relationships: []
       }

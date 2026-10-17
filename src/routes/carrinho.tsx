@@ -10,6 +10,7 @@ import { useText, numFromText } from "@/lib/content";
 import { canPayInTwoTimes, splitPayment, type PaymentPlan, type DeliveryMethod } from "@/lib/pricing";
 import { useAccount, rememberIntendedPath } from "@/lib/auth";
 import { createOrder } from "@/lib/orders.functions";
+import { checkPromo } from "@/lib/inventory.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,10 +54,14 @@ function Cart() {
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PaymentPlan>("full");
   const [method, setMethod] = useState<DeliveryMethod>("livraison");
+  const verifyPromo = useServerFn(checkPromo);
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; amount: number } | null>(null);
 
   const fee = numFromText(t("delivery.fee"), 0);
   const shipping = subtotal > 0 && method === "livraison" ? fee : 0;
-  const total = subtotal + shipping;
+  const discount = promo ? Math.min(promo.amount, subtotal + shipping) : 0;
+  const total = subtotal + shipping - discount;
   const parts = splitPayment(total, "split");
   // Certains téléphones (ex. iPhone 7 GPS Manager) se paient uniquement en une fois.
   const twoTimesAllowed = canPayInTwoTimes(lines);
@@ -93,6 +98,7 @@ function Cart() {
           items: lines.map((l) => ({ id: l.id, qty: l.qty })),
           plan: effectivePlan,
           delivery_method: method,
+          promo_code: promo?.code,
         },
       });
       clear();
@@ -183,8 +189,29 @@ function Cart() {
         <div className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>{brl(subtotal)}</span></div>
           <div className="flex justify-between"><span>{t("delivery.label")}</span><span>{method === "retrait" ? t("delivery.pickup") : brl(shipping)}</span></div>
+          {discount > 0 && <div className="flex justify-between text-accent"><span>{t("cart.promoLine")} ({promo?.code})</span><span>−{brl(discount)}</span></div>}
           <div className="flex justify-between border-t pt-3 text-lg font-bold"><span>{t("cart.total")}</span><span>{brl(total)}</span></div>
         </div>
+
+        {user && (
+          <div className="mt-5 flex gap-2">
+            <Input placeholder={t("cart.promoLabel")} value={promoInput} onChange={(e) => setPromoInput(e.target.value)} maxLength={30} />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                if (!promoInput.trim()) { setPromo(null); return; }
+                try {
+                  const r = await verifyPromo({ data: { code: promoInput } });
+                  if (r.amount > 0) { setPromo(r); toast.success(`${r.code} : −${brl(r.amount)}`); }
+                  else { setPromo(null); toast.error("Code promo invalide"); }
+                } catch { toast.error("Code promo invalide"); }
+              }}
+            >
+              {t("cart.promoApply")}
+            </Button>
+          </div>
+        )}
 
         {user && (
           <fieldset className="mt-5 space-y-2 text-sm">

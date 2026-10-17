@@ -78,6 +78,13 @@
       "when": 1792101703858,
       "tag": "0010_mark_paid_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792227483797,
+      "tag": "0011_stock_promo_commission",
+      "breakpoints": true
     }
   ]
 }

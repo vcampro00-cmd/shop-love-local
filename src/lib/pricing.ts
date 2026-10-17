@@ -14,16 +14,35 @@ export type Totals = { subtotal: number; deliveryFee: number; total: number };
 
 export type DeliveryMethod = "livraison" | "retrait";
 
-/** Frais de livraison seulement quand le panier n'est pas vide et que le client choisit la livraison. */
+/** Frais de livraison seulement quand le panier n'est pas vide et que le client choisit la livraison.
+ *  Le code promo retire un montant fixe du total (jamais en dessous de 0). */
 export function computeTotals(
   items: CartItem[],
   priceOf: (id: string) => number,
   deliveryFee: number,
   method: DeliveryMethod = "livraison",
-): Totals {
+  discount = 0,
+): Totals & { discount: number } {
   const subtotal = items.reduce((sum, item) => sum + priceOf(item.id) * item.qty, 0);
   const shipping = subtotal > 0 && method === "livraison" ? deliveryFee : 0;
-  return { subtotal, deliveryFee: shipping, total: subtotal + shipping };
+  const gross = subtotal + shipping;
+  const applied = Math.min(Math.max(discount, 0), gross);
+  return { subtotal, deliveryFee: shipping, total: gross - applied, discount: applied };
+}
+
+/** Commission du vendeur par téléphone vendu. */
+export const COMMISSION_PER_UNIT: Record<string, number> = {
+  "iphone-se-2020": 50,
+  "iphone-7-gps-manager": 50,
+  "clone-deliveroo": 60,
+};
+
+export function commissionFor(items: CartItem[]): number {
+  return items.reduce((s, i) => s + (COMMISSION_PER_UNIT[i.id] ?? 0) * i.qty, 0);
+}
+
+export function normalizePromoCode(code: string): string {
+  return code.trim().toUpperCase().replace(/\s+/g, "");
 }
 
 export type PaymentPlan = "full" | "split";
