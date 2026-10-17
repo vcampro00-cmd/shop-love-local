@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULTS } from "./content.defaults";
 import { numFromText } from "./content";
-import { canPayInTwoTimes, computeTotals, isKnownProduct, makeOrderRef, splitPayment, type CartItem } from "./pricing";
+import { canPayInTwoTimes, computeTotals, makeOrderRef, splitPayment, type CartItem } from "./pricing";
 import { createStripeClient, getStripeErrorMessage } from "./stripe.server";
 
 const ORDER_STATUSES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
@@ -177,7 +177,7 @@ export const createOrder = createServerFn({ method: "POST" })
             data.delivery_method === "retrait"
               ? ""
               : `${data.address}, ${data.postal_code}`.trim(),
-          items: data.items.map((i) => `${i.qty} × ${i.id}`).join(", "),
+          items: data.items.map((i) => `${i.qty} × ${catalog.get(i.id)?.name ?? i.id}`).join(", "),
           total: eur(totals.total),
           plan: data.plan === "split" ? "En 2 fois" : "En une fois",
         },
