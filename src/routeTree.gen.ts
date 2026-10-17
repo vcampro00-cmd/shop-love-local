@@ -21,6 +21,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCaisseRouteImport } from './routes/_authenticated/caisse'
 import { Route as AuthenticatedMesCommandesRouteImport } from './routes/_authenticated/mes-commandes'
+import { Route as AuthenticatedStockRouteImport } from './routes/_authenticated/stock'
 import { Route as PagarIdRouteImport } from './routes/pagar.$id'
 import { Route as AuthenticatedPaiementIdRouteImport } from './routes/_authenticated/paiement.$id'
 import { Route as AuthenticatedPedidoIdRouteImport } from './routes/_authenticated/pedido.$id'
@@ -88,6 +89,11 @@ const AuthenticatedMesCommandesRoute =
     path: '/mes-commandes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedStockRoute = AuthenticatedStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const PagarIdRoute = PagarIdRouteImport.update({
   id: '/pagar/$id',
   path: '/pagar/$id',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/stock': typeof AuthenticatedStockRoute
   '/pagar/$id': typeof PagarIdRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/stock': typeof AuthenticatedStockRoute
   '/pagar/$id': typeof PagarIdRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/caisse': typeof AuthenticatedCaisseRoute
   '/_authenticated/mes-commandes': typeof AuthenticatedMesCommandesRoute
+  '/_authenticated/stock': typeof AuthenticatedStockRoute
   '/pagar/$id': typeof PagarIdRoute
   '/_authenticated/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/_authenticated/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/caisse'
     | '/mes-commandes'
+    | '/stock'
     | '/pagar/$id'
     | '/paiement/$id'
     | '/pedido/$id'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/caisse'
     | '/mes-commandes'
+    | '/stock'
     | '/pagar/$id'
     | '/paiement/$id'
     | '/pedido/$id'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/caisse'
     | '/_authenticated/mes-commandes'
+    | '/_authenticated/stock'
     | '/pagar/$id'
     | '/_authenticated/paiement/$id'
     | '/_authenticated/pedido/$id'
@@ -344,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMesCommandesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/stock': {
+      id: '/_authenticated/stock'
+      path: '/stock'
+      fullPath: '/stock'
+      preLoaderRoute: typeof AuthenticatedStockRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/pagar/$id': {
       id: '/pagar/$id'
       path: '/pagar/$id'
@@ -393,6 +412,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCaisseRoute: typeof AuthenticatedCaisseRoute
   AuthenticatedMesCommandesRoute: typeof AuthenticatedMesCommandesRoute
+  AuthenticatedStockRoute: typeof AuthenticatedStockRoute
   AuthenticatedPaiementIdRoute: typeof AuthenticatedPaiementIdRoute
   AuthenticatedPedidoIdRoute: typeof AuthenticatedPedidoIdRoute
 }
@@ -401,6 +421,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCaisseRoute: AuthenticatedCaisseRoute,
   AuthenticatedMesCommandesRoute: AuthenticatedMesCommandesRoute,
+  AuthenticatedStockRoute: AuthenticatedStockRoute,
   AuthenticatedPaiementIdRoute: AuthenticatedPaiementIdRoute,
   AuthenticatedPedidoIdRoute: AuthenticatedPedidoIdRoute,
 }
