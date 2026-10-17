@@ -56,6 +56,9 @@ function Cart() {
   const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PaymentPlan>("full");
   const [method, setMethod] = useState<DeliveryMethod>("livraison");
+  // Espèces = uniquement avec le retrait sur place.
+  const [payMethod, setPayMethod] = useState<"carte" | "especes">("carte");
+  const cash = payMethod === "especes";
   const verifyPromo = useServerFn(checkPromo);
   const [promoInput, setPromoInput] = useState("");
   const [promo, setPromo] = useState<{ code: string; amount: number } | null>(null);
@@ -98,13 +101,17 @@ function Cart() {
           address: form.address,
           postal_code: form.cep,
           items: lines.map((l) => ({ id: l.id, qty: l.qty })),
-          plan: effectivePlan,
-          delivery_method: method,
+          plan: cash ? "full" : effectivePlan,
+          delivery_method: cash ? "retrait" : method,
+          payment_method: payMethod,
           promo_code: promo?.code,
         },
       });
       clear();
-      navigate({ to: "/paiement/$id", params: { id: order.id } });
+      if (cash) {
+        toast.success(t("pay.cashPlaced"));
+        navigate({ to: "/pedido/$id", params: { id: order.id } });
+      } else navigate({ to: "/paiement/$id", params: { id: order.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Commande impossible. Réessayez.");
     } finally {
@@ -160,7 +167,7 @@ function Cart() {
           <section className="grid gap-4 rounded-2xl border bg-card p-5 sm:grid-cols-2">
             <h2 className="text-xl font-bold sm:col-span-2">{t("delivery.methodTitle")}</h2>
             <div className="grid gap-2 text-sm sm:col-span-2">
-              {(["livraison", "retrait"] as const).map((m) => (
+              {(["livraison", "retrait"] as const).filter((m) => !cash || m === "retrait").map((m) => (
                 <label key={m} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${method === m ? "border-primary bg-primary/10" : ""}`}>
                   <input type="radio" name="method" className="mt-1" checked={method === m} onChange={() => setMethod(m)} />
                   <span>
@@ -219,8 +226,8 @@ function Cart() {
           <fieldset className="mt-5 space-y-2 text-sm">
             <legend className="mb-2 font-bold">{t("pay.choose")}</legend>
             {(["full", "split"] as const).filter((p) => p !== "split" || twoTimesAllowed).map((p) => (
-              <label key={p} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${plan === p ? "border-primary bg-primary/10" : ""}`}>
-                <input type="radio" name="plan" className="mt-1" checked={plan === p} onChange={() => setPlan(p)} />
+              <label key={p} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${!cash && plan === p ? "border-primary bg-primary/10" : ""}`}>
+                <input type="radio" name="plan" className="mt-1" checked={!cash && plan === p} onChange={() => { setPlan(p); setPayMethod("carte"); }} />
                 <span>
                   <span className="block font-medium">{p === "full" ? `${t("pay.full")} — ${brl(total)}` : `${t("pay.split")} — 2 × ${brl(parts.now)}`}</span>
                   <span className="block text-xs text-muted-foreground">
@@ -229,13 +236,20 @@ function Cart() {
                 </span>
               </label>
             ))}
+            <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${cash ? "border-primary bg-primary/10" : ""}`}>
+              <input type="radio" name="plan" className="mt-1" checked={cash} onChange={() => { setPayMethod("especes"); setMethod("retrait"); }} />
+              <span>
+                <span className="block font-medium">{t("pay.cash")} — {brl(total)}</span>
+                <span className="block text-xs text-muted-foreground">{t("pay.cashHint")}</span>
+              </span>
+            </label>
           </fieldset>
         )}
 
         {loading ? (
           <Button size="lg" disabled className="mt-6 w-full bg-brand">{t("cart.pay")}</Button>
         ) : user ? (
-          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{t("cart.pay")} {brl(effectivePlan === "full" ? total : parts.now)}</Button>
+          <Button type="submit" size="lg" disabled={busy} className="mt-6 w-full bg-brand shadow-glow">{cash ? `${t("pay.cashOrder")} — ${brl(total)}` : `${t("cart.pay")} ${brl(effectivePlan === "full" ? total : parts.now)}`}</Button>
         ) : (
           <Button
             size="lg"
