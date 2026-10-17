@@ -23,7 +23,7 @@ export function SiteHeader() {
         <Link to="/" className="flex items-center">
           <img src={logo} alt="Vcampro" className="h-9 w-auto" />
         </Link>
-        <nav className="flex items-center gap-4 text-sm font-medium sm:gap-5">
+        <nav className="flex items-center gap-4 whitespace-nowrap text-sm font-medium sm:gap-5">
           <Link to="/" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }} activeOptions={{ exact: true }}>{t("nav.shop")}</Link>
           <Link to="/como-funciona" className="hidden text-muted-foreground hover:text-foreground sm:inline" activeProps={{ className: "text-foreground" }}>{t("nav.how")}</Link>
 
