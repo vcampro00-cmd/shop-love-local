@@ -522,7 +522,7 @@ function EntriesList({ title, empty, rows, onDelete }: { title: string; empty: s
                   {r.kind === "entree" && <span className="ml-2 text-xs text-muted-foreground">(manuel)</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {fmtDate(r.date)} · {r.kind === "especes" ? t("cash.inCash") : `−${brl(stripeFee(r.amount))} Stripe`}
+                  {fmtDate(r.date)} · {r.kind === "especes" ? "ESPÈCES" : `−${brl(stripeFee(r.amount))} Stripe`}
                 </p>
               </div>
               <div className="flex items-center gap-2">
