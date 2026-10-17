@@ -127,3 +127,22 @@ describe("rappels WhatsApp", () => {
     expect(reminderMessage("le {date}", { name: "Léa", amount: 150, dueDate: null }, "x")).toBe("le ");
   });
 });
+
+describe("cash (espèces) sales", () => {
+  it("credits the sale total minus the seller commission", async () => {
+    const { cashSaleAmount } = await import("@/lib/cash");
+    expect(cashSaleAmount(300, 50)).toBe(250);
+  });
+
+  it("splits card and cash entries; no Stripe fee on cash", () => {
+    const s = summarizeCash({
+      entries: [entry("card", 200), entry("cash", 250, "especes")],
+      expenses: [],
+      purchases: [],
+      employees: [],
+    });
+    expect(s.cardIn).toBe(199.3);
+    expect(s.cashIn).toBe(250);
+    expect(s.net).toBe(449.3);
+  });
+});

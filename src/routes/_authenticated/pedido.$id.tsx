@@ -73,10 +73,10 @@ function Confirmed() {
       </p>
 
       <p className="mt-1 text-sm text-muted-foreground">
-        {t(`pay.status.${order.payment_status}`)} · {order.payment_plan === "split" ? t("pay.split") : t("pay.full")} · {brl(order.amount_paid)} / {brl(order.total)}
+        {t(`pay.status.${order.payment_status}`)} · {order.payment_method === "especes" ? t("pay.cash") : order.payment_plan === "split" ? t("pay.split") : t("pay.full")} · {brl(order.amount_paid)} / {brl(order.total)}
         {order.second_charge_due_at && <> · {t("pay.secondOn")} {new Date(order.second_charge_due_at).toLocaleDateString("fr-FR")}</>}
       </p>
-      {order.payment_status === "en_attente" && !session_id && (
+      {order.payment_status === "en_attente" && order.payment_method !== "especes" && !session_id && (
         <Button asChild className="mt-4 bg-brand shadow-glow">
           <Link to="/paiement/$id" params={{ id }}>{t("pay.payNow")}</Link>
         </Button>
