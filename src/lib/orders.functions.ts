@@ -27,6 +27,8 @@ export type Order = {
   subtotal: number;
   delivery_fee: number;
   total: number;
+  discount: number;
+  promo_code: string | null;
   payment_plan: "full" | "split";
   delivery_method: "livraison" | "retrait";
   payment_status: "en_attente" | "paye" | "acompte_paye" | "echec_solde";
@@ -51,6 +53,8 @@ function toOrder(r: OrderRow): Order {
     subtotal: Number(r.subtotal),
     delivery_fee: Number(r.delivery_fee),
     total: Number(r.total),
+    discount: Number(r.discount ?? 0),
+    promo_code: r.promo_code ?? null,
     payment_plan: r.payment_plan === "split" ? "split" : "full",
     delivery_method: r.delivery_method === "retrait" ? "retrait" : "livraison",
     payment_status: r.payment_status as Order["payment_status"],
@@ -90,6 +94,7 @@ const orderPayload = z
       .max(20),
     plan: z.enum(["full", "split"]).default("full"),
     delivery_method: z.enum(["livraison", "retrait"]).default("livraison"),
+    promo_code: z.string().max(30).optional(),
   })
   .superRefine((v, ctx) => {
     if (v.delivery_method !== "livraison") return;
@@ -114,7 +119,12 @@ export const createOrder = createServerFn({ method: "POST" })
     const priceOf = (id: string) =>
       numFromText(texts[`product.${id}.price`] ?? DEFAULTS[`product.${id}.price`] ?? "", 0);
     const fee = numFromText(texts["delivery.fee"] ?? DEFAULTS["delivery.fee"] ?? "", 0);
-    const totals = computeTotals(data.items, priceOf, fee, data.delivery_method);
+    const { promoAmount } = await import("./inventory.functions");
+    const { normalizePromoCode } = await import("./pricing");
+    const promo = data.promo_code ? normalizePromoCode(data.promo_code) : "";
+    const promoValue = promo ? await promoAmount(promo) : 0;
+    if (promo && promoValue <= 0) throw new Error("Code promo invalide.");
+    const totals = computeTotals(data.items, priceOf, fee, data.delivery_method, promoValue);
     if (totals.total <= 0) throw new Error("Commande impossible : vérifiez les articles du panier.");
 
     const bytes = new Uint8Array(8);
@@ -136,6 +146,8 @@ export const createOrder = createServerFn({ method: "POST" })
         subtotal: totals.subtotal,
         delivery_fee: totals.deliveryFee,
         total: totals.total,
+        discount: totals.discount,
+        promo_code: promo || null,
         payment_plan: data.plan,
         delivery_method: data.delivery_method,
         second_amount: splitPayment(totals.total, data.plan).later,
