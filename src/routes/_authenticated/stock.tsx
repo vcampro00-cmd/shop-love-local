@@ -5,7 +5,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { addPromo, deletePromo, getInventory, setStock } from "@/lib/inventory.functions";
-import { getProduct, brl } from "@/lib/products";
+import { brl } from "@/lib/products";
+import { useCatalog } from "@/lib/catalog";
+import { CatalogManager } from "@/components/CatalogManager";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/stock")({
 
 function StockPage() {
   const t = useText();
+  const catalog = useCatalog();
   const qc = useQueryClient();
   const fetchInv = useServerFn(getInventory);
   const save = useServerFn(setStock);
@@ -48,25 +51,26 @@ function StockPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-10 px-4 py-12">
+      <CatalogManager />
       <section>
-        <h1 className="text-3xl font-bold">{t("stock.title")}</h1>
+        <h2 className="text-2xl font-bold">{t("stock.title")}</h2>
         <p className="mt-2 text-muted-foreground">{t("stock.intro")}</p>
         <div className="mt-6 divide-y rounded-2xl border bg-card">
           {(data?.stock ?? []).map((s) => {
-            const p = getProduct(s.id);
+            const p = catalog.get(s.id);
             const val = edits[s.id] ?? String(s.quantity);
             return (
               <div key={s.id} className="flex items-center justify-between gap-3 p-4">
                 <div className="flex items-center gap-3">
                   {p && <img src={p.image} alt="" width={p.imageW} height={p.imageH} className="h-14 w-auto object-contain" />}
                   <div>
-                    <p className="font-medium">{t(`product.${s.id}.name`)}</p>
+                    <p className="font-medium">{p?.name ?? s.id}</p>
                     <p className={`text-sm ${s.quantity === 0 ? "text-destructive" : "text-muted-foreground"}`}>{s.quantity} en stock</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Input type="number" min={0} className="w-24" value={val} onChange={(e) => setEdits({ ...edits, [s.id]: e.target.value })} />
-                  <Button size="sm" className="bg-brand" onClick={() => run(() => save({ data: { id: s.id as never, quantity: Math.max(0, parseInt(val, 10) || 0) } }))}>
+                  <Button size="sm" className="bg-brand" onClick={() => run(() => save({ data: { id: s.id, quantity: Math.max(0, parseInt(val, 10) || 0) } }))}>
                     {t("stock.save")}
                   </Button>
                 </div>
