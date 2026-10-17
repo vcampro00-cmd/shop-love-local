@@ -37,8 +37,8 @@ function Shop() {
   return (
     <div>
       <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-60">
-          <img src={logo} alt="Vcampro" className="max-h-[46%] w-auto max-w-[72%] object-contain" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-20 md:justify-end md:pr-[5%] md:opacity-75">
+          <img src={logo} alt="Vcampro" className="max-h-[60%] w-auto max-w-[80%] object-contain md:max-w-[44%]" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="relative mx-auto max-w-6xl px-4 py-24 sm:py-32">
