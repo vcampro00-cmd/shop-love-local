@@ -13,14 +13,16 @@ export const getInventory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const [stock, promos] = await Promise.all([
+    const [stock, promos, staff] = await Promise.all([
       context.supabase.from("product_stock").select("product_id, quantity"),
       context.supabase.from("promo_codes").select("code, amount, active").order("created_at"),
+      context.supabase.from("employees").select("id, name").order("created_at"),
     ]);
     const map = new Map((stock.data ?? []).map((r) => [r.product_id, r.quantity]));
     return {
       stock: PRODUCT_IDS.map((id) => ({ id, quantity: map.get(id) ?? 0 })),
       promos: (promos.data ?? []).map((p) => ({ code: p.code, amount: Number(p.amount), active: p.active })),
+      sellers: (staff.data ?? []).map((s) => ({ id: s.id, name: s.name })),
     };
   });
 

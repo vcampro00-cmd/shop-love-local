@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
 import { listAllOrders, orderAction, setOrderStatus, type Order } from "@/lib/orders.functions";
+import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
 import { brl, getProduct } from "@/lib/products";
@@ -45,6 +46,11 @@ function AdminOrders() {
   const [message, setMessage] = useState("");
   const correctTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tab, setTab] = useState<"pending" | "done" | "refused">("pending");
+  const runConclude = useServerFn(concludeSale);
+  const fetchInv = useServerFn(getInventory);
+  const inv = useQuery({ queryKey: ["inventory"], queryFn: () => fetchInv() });
+  const [sellFor, setSellFor] = useState<string | null>(null);
+  const [seller, setSeller] = useState("");
 
   /** Corrige l'orthographe et la ponctuation automatiquement, 1,5 s après la dernière frappe. */
   function onMessageChange(value: string) {
@@ -96,6 +102,21 @@ function AdminOrders() {
         if (r.emailed) toast.success(t("admin.emailSent"));
         else toast.warning(t("admin.emailFailed"));
       }
+      await queryClient.invalidateQueries({ queryKey: ["all-orders"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action impossible.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function conclude(id: string) {
+    setBusyId(id);
+    try {
+      const r = await runConclude({ data: { id, sellerId: seller } });
+      toast.success(`${t("admin.sellerDone")} ${r.seller} : ${brl(r.commission)}`);
+      setSellFor(null);
+      setSeller("");
       await queryClient.invalidateQueries({ queryKey: ["all-orders"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Action impossible.");
@@ -221,9 +242,22 @@ function AdminOrders() {
                 <Check className="mr-1 h-4 w-4" />{t("admin.accept")}
               </Button>
               {o.status !== "livre" && o.status !== "annule" && (
-                <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => update(o.id, "livre")}>
+                <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => setSellFor(sellFor === o.id ? null : o.id)}>
                   <CheckCheck className="mr-1 h-4 w-4" />{t("admin.complete")}
                 </Button>
+              )}
+              {sellFor === o.id && (
+                <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border p-3 text-sm">
+                  <span className="font-medium">{t("admin.sellerQuestion")}</span>
+                  <select value={seller} onChange={(e) => setSeller(e.target.value)} className="rounded-xl border bg-background px-3 py-2">
+                    <option value="">—</option>
+                    {(inv.data?.sellers ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                  <Button size="sm" className="bg-brand" disabled={!seller || busyId === o.id} onClick={() => conclude(o.id)}>
+                    {t("admin.sellerConfirm")}
+                  </Button>
+                  {(inv.data?.sellers ?? []).length === 0 && <span className="text-muted-foreground">{t("admin.sellerNone")}</span>}
+                </div>
               )}
               {o.delivery_method === "retrait" && (
                 <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => { setReadyFor(readyFor === o.id ? null : o.id); setMessage(""); }}>
