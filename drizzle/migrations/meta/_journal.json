@@ -99,6 +99,13 @@
       "when": 1792230939967,
       "tag": "0013_drop_unused_product_images_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792233997082,
+      "tag": "0014_order_payment_method",
+      "breakpoints": true
     }
   ]
 }

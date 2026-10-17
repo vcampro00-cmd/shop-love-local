@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method text NOT NULL DEFAULT 'carte';
+COMMENT ON COLUMN public.orders.payment_method IS 'carte = paiement par carte en ligne ; especes = paiement en espèces au retrait (crédité en caisse à la conclusion de la vente)';
