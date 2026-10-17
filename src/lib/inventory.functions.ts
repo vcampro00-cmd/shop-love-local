@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { PRODUCT_IDS, commissionFor, normalizePromoCode, type CartItem } from "./pricing";
+import { commissionFor, normalizePromoCode, type CartItem } from "./pricing";
 
 async function assertAdmin(client: any, userId: string) {
   const { data } = await client.rpc("has_role", { _user_id: userId, _role: "admin" });
@@ -13,14 +13,15 @@ export const getInventory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const [stock, promos, staff] = await Promise.all([
+    const [stock, promos, staff, cat] = await Promise.all([
       context.supabase.from("product_stock").select("product_id, quantity"),
       context.supabase.from("promo_codes").select("code, amount, active").order("created_at"),
       context.supabase.from("employees").select("id, name").order("created_at"),
+      context.supabase.from("catalog_products").select("id").eq("active", true).order("sort").order("created_at"),
     ]);
     const map = new Map((stock.data ?? []).map((r) => [r.product_id, r.quantity]));
     return {
-      stock: PRODUCT_IDS.map((id) => ({ id, quantity: map.get(id) ?? 0 })),
+      stock: (cat.data ?? []).map(({ id }) => ({ id, quantity: map.get(id) ?? 0 })),
       promos: (promos.data ?? []).map((p) => ({ code: p.code, amount: Number(p.amount), active: p.active })),
       sellers: (staff.data ?? []).map((s) => ({ id: s.id, name: s.name })),
     };
@@ -29,7 +30,7 @@ export const getInventory = createServerFn({ method: "GET" })
 export const setStock = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({ id: z.enum(PRODUCT_IDS), quantity: z.number().int().min(0).max(100000) }).parse(i),
+    z.object({ id: z.string().min(1).max(64), quantity: z.number().int().min(0).max(100000) }).parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
@@ -102,15 +103,17 @@ export const concludeSale = createServerFn({ method: "POST" })
     if (error) throw new Error("La vente n'a pas pu être conclue.");
 
     const { data: stock } = await sb.from("product_stock").select("product_id, quantity");
+    const { data: cat } = await sb.from("catalog_products").select("id, commission");
+    const commissions = new Map((cat ?? []).map((c) => [c.id, Number(c.commission)]));
     const map = new Map((stock ?? []).map((r) => [r.product_id, r.quantity]));
     for (const it of items) {
-      if (!(PRODUCT_IDS as readonly string[]).includes(it.id)) continue;
+      if (!commissions.has(it.id)) continue;
       const q = Math.max(0, (map.get(it.id) ?? 0) - it.qty);
       map.set(it.id, q);
       await sb.from("product_stock").upsert({ product_id: it.id, quantity: q, updated_at: new Date().toISOString() });
     }
 
-    const commission = commissionFor(items);
+    const commission = commissionFor(items, (id) => commissions.get(id) ?? 0);
     if (commission > 0) {
       await sb.from("expenses").insert({
         kind: "salaire",

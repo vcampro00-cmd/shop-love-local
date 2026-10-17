@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalog_products: {
+        Row: {
+          active: boolean
+          commission: number
+          created_at: string
+          description: string
+          full_payment_only: boolean
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          sort: number
+          tag: string
+        }
+        Insert: {
+          active?: boolean
+          commission?: number
+          created_at?: string
+          description?: string
+          full_payment_only?: boolean
+          id: string
+          image_url?: string | null
+          name: string
+          price: number
+          sort?: number
+          tag?: string
+        }
+        Update: {
+          active?: boolean
+          commission?: number
+          created_at?: string
+          description?: string
+          full_payment_only?: boolean
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          sort?: number
+          tag?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           created_at: string

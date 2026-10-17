@@ -8,7 +8,8 @@ import { listAllOrders, orderAction, setOrderStatus, type Order } from "@/lib/or
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
-import { brl, getProduct } from "@/lib/products";
+import { brl } from "@/lib/products";
+import { useCatalog } from "@/lib/catalog";
 import { useText } from "@/lib/content";
 
 const STATUS_VALUES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
@@ -37,6 +38,7 @@ function tabOf(status: Order["status"]): "pending" | "done" | "refused" {
 
 function AdminOrders() {
   const t = useText();
+  const catalog = useCatalog();
   const queryClient = useQueryClient();
   const changeStatus = useServerFn(setOrderStatus);
   const runAction = useServerFn(orderAction);
@@ -210,8 +212,8 @@ function AdminOrders() {
                 <p className="font-medium">{t("admin.items")}</p>
                 <ul className="mt-1 space-y-1">
                   {o.items.map((item) => {
-                    const p = getProduct(item.id);
-                    const name = t(`product.${item.id}.name`);
+                    const p = catalog.get(item.id);
+                    const name = p?.name ?? item.id;
                     return (
                       <li key={item.id} className="flex items-center gap-2 text-muted-foreground">
                         {p && <img src={p.image} alt={name} width={p.imageW} height={p.imageH} className="h-8 w-auto object-contain" />}

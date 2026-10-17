@@ -37,8 +37,11 @@ export const COMMISSION_PER_UNIT: Record<string, number> = {
   "clone-deliveroo": 60,
 };
 
-export function commissionFor(items: CartItem[]): number {
-  return items.reduce((s, i) => s + (COMMISSION_PER_UNIT[i.id] ?? 0) * i.qty, 0);
+export function commissionFor(
+  items: CartItem[],
+  commissionOf: (id: string) => number = (id) => COMMISSION_PER_UNIT[id] ?? 0,
+): number {
+  return items.reduce((s, i) => s + commissionOf(i.id) * i.qty, 0);
 }
 
 export function normalizePromoCode(code: string): string {
@@ -51,8 +54,11 @@ export type PaymentPlan = "full" | "split";
 export const FULL_PAYMENT_ONLY_IDS = ["iphone-7-gps-manager"] as const;
 
 /** Le paiement en 2 fois n'est proposé que si aucun article « une seule fois » n'est dans le panier. */
-export function canPayInTwoTimes(items: CartItem[]): boolean {
-  return !items.some((item) => (FULL_PAYMENT_ONLY_IDS as readonly string[]).includes(item.id));
+export function canPayInTwoTimes(
+  items: CartItem[],
+  fullOnlyIds: readonly string[] = FULL_PAYMENT_ONLY_IDS,
+): boolean {
+  return !items.some((item) => fullOnlyIds.includes(item.id));
 }
 
 /**
