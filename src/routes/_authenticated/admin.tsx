@@ -38,6 +38,7 @@ function tabOf(status: Order["status"]): "pending" | "done" | "refused" {
 
 function AdminOrders() {
   const t = useText();
+  const catalog = useCatalog();
   const queryClient = useQueryClient();
   const changeStatus = useServerFn(setOrderStatus);
   const runAction = useServerFn(orderAction);

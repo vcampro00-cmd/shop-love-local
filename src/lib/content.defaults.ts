@@ -269,33 +269,6 @@ export const EDITOR_GROUPS: EditorGroup[] = [
     ],
   },
   {
-    title: "iPhone SE 2020",
-    fields: [
-      text("product.iphone-se-2020.name", "Nom"),
-      text("product.iphone-se-2020.tag", "Étiquette"),
-      long("product.iphone-se-2020.description", "Description"),
-      money("product.iphone-se-2020.price", "Prix en euros"),
-    ],
-  },
-  {
-    title: "Duo Android",
-    fields: [
-      text("product.clone-deliveroo.name", "Nom"),
-      text("product.clone-deliveroo.tag", "Étiquette"),
-      long("product.clone-deliveroo.description", "Description"),
-      money("product.clone-deliveroo.price", "Prix en euros"),
-    ],
-  },
-  {
-    title: "iPhone 7 GPS Manager",
-    fields: [
-      text("product.iphone-7-gps-manager.name", "Nom"),
-      text("product.iphone-7-gps-manager.tag", "Étiquette"),
-      long("product.iphone-7-gps-manager.description", "Description"),
-      money("product.iphone-7-gps-manager.price", "Prix en euros"),
-    ],
-  },
-  {
     title: "Livraison et retrait",
     fields: [
       money("delivery.fee", "Frais de livraison en euros"),
