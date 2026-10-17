@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/stock")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Stock et codes promo — Vcampro" },
@@ -82,7 +83,7 @@ function StockPage() {
           onSubmit={(e) => {
             e.preventDefault();
             const a = parseFloat(amount.replace(",", "."));
-            if (!code.trim() || !(a > 0)) return toast.error("Code et montant obligatoires");
+            if (!code.trim() || !(a > 0)) { toast.error("Code et montant obligatoires"); return; }
             run(async () => { await add({ data: { code, amount: a } }); setCode(""); setAmount(""); });
           }}
         >
