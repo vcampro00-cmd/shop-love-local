@@ -107,17 +107,19 @@ export const createOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => orderPayload.parse(input))
   .handler(async ({ data, context }) => {
+    // Prix, disponibilité et règle « une seule fois » relus dans le catalogue du propriétaire.
+    const { readCatalog } = await import("./catalog.server");
+    const catalog = new Map((await readCatalog()).filter((p) => p.active).map((p) => [p.id, p]));
     for (const item of data.items) {
-      if (!isKnownProduct(item.id)) throw new Error("Cet article n'est plus en vente.");
+      if (!catalog.has(item.id)) throw new Error("Cet article n'est plus en vente.");
     }
-    // L'iPhone 7 GPS Manager se paie en une seule fois : on refuse le 2 fois côté serveur.
-    if (data.plan === "split" && !canPayInTwoTimes(data.items))
+    const fullOnly = [...catalog.values()].filter((p) => p.full_payment_only).map((p) => p.id);
+    if (data.plan === "split" && !canPayInTwoTimes(data.items, fullOnly))
       throw new Error("Cet article se paie en une seule fois.");
 
     const { readSiteTexts } = await import("./site-texts.server");
     const texts = await readSiteTexts();
-    const priceOf = (id: string) =>
-      numFromText(texts[`product.${id}.price`] ?? DEFAULTS[`product.${id}.price`] ?? "", 0);
+    const priceOf = (id: string) => Number(catalog.get(id)?.price ?? 0);
     const fee = numFromText(texts["delivery.fee"] ?? DEFAULTS["delivery.fee"] ?? "", 0);
     const { promoAmount } = await import("./inventory.functions");
     const { normalizePromoCode } = await import("./pricing");
