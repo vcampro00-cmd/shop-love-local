@@ -1,4 +1,4 @@
-export type CashEntryKind = "auto" | "entree" | "sortie" | "achat" | "salaire";
+export type CashEntryKind = "auto" | "especes" | "entree" | "sortie" | "achat" | "salaire";
 
 export type CashEntry = {
   id: string;
@@ -74,6 +74,10 @@ export function stripeFee(amount: number): number {
 
 export type CashSummary = {
   inTotal: number;
+  /** Entrées carte (ventes du site + entrées manuelles), commission Stripe déjà déduite. */
+  cardIn: number;
+  /** Ventes payées en espèces, commission du vendeur déjà déduite. */
+  cashIn: number;
   outTotal: number;
   purchaseTotal: number;
   employeeTotal: number;
@@ -81,14 +85,22 @@ export type CashSummary = {
   net: number;
 };
 
+/** Vente en espèces : le montant crédité est le total moins la commission du vendeur. */
+export function cashSaleAmount(total: number, commission: number): number {
+  return Math.max(0, Math.round((total - commission) * 100) / 100);
+}
+
 /** Gains nets = entrées (auto + manuelles) − commission Stripe − sorties − achats de téléphones. Les salaires n'entrent pas dans le calcul : ils servent seulement au suivi, employé par employé. */
 export function summarizeCash(book: CashBook): CashSummary {
+  const card = book.entries.filter((e) => e.kind !== "especes");
   const inTotal = book.entries.reduce((s, e) => s + e.amount, 0);
+  const cashIn = book.entries.filter((e) => e.kind === "especes").reduce((s, e) => s + e.amount, 0);
   const outTotal = book.expenses.reduce((s, e) => s + e.amount, 0);
   const purchaseTotal = book.purchases.reduce((s, e) => s + e.amount, 0);
   const employeeTotal = book.employees.reduce((s, e) => s + e.amount, 0);
-  const feeTotal = book.entries.reduce((s, e) => s + stripeFee(e.amount), 0);
-  return { inTotal, outTotal, purchaseTotal, employeeTotal, feeTotal, net: inTotal - feeTotal - outTotal - purchaseTotal };
+  const feeTotal = card.reduce((s, e) => s + stripeFee(e.amount), 0);
+  const cardIn = Math.round((card.reduce((s, e) => s + e.amount, 0) - feeTotal) * 100) / 100;
+  return { inTotal, cardIn, cashIn, outTotal, purchaseTotal, employeeTotal, feeTotal, net: inTotal - feeTotal - outTotal - purchaseTotal };
 }
 
 /** Total payé à chaque employé (le libellé d'un salaire est le nom de l'employé), du plus payé au moins payé. */

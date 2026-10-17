@@ -181,7 +181,7 @@ function AdminOrders() {
               </span>
               <span className="w-full text-sm">
                 <span className="font-medium">{t(`pay.status.${o.payment_status}`)}</span>
-                <span className="text-muted-foreground"> · {o.payment_plan === "split" ? t("pay.split") : t("pay.full")} · {brl(o.amount_paid)} / {brl(o.total)}</span>
+                <span className="text-muted-foreground"> · {o.payment_method === "especes" ? t("pay.cash") : o.payment_plan === "split" ? t("pay.split") : t("pay.full")} · {brl(o.amount_paid)} / {brl(o.total)}</span>
                 {o.second_charge_due_at && <span className="text-muted-foreground"> · {t("pay.secondOn")} {new Date(o.second_charge_due_at).toLocaleDateString("fr-FR")}</span>}
               </span>
             </div>

@@ -31,6 +31,7 @@ export type Order = {
   promo_code: string | null;
   payment_plan: "full" | "split";
   delivery_method: "livraison" | "retrait";
+  payment_method: "carte" | "especes";
   payment_status: "en_attente" | "paye" | "acompte_paye" | "echec_solde";
   amount_paid: number;
   second_amount: number;
@@ -57,6 +58,7 @@ function toOrder(r: OrderRow): Order {
     promo_code: r.promo_code ?? null,
     payment_plan: r.payment_plan === "split" ? "split" : "full",
     delivery_method: r.delivery_method === "retrait" ? "retrait" : "livraison",
+    payment_method: r.payment_method === "especes" ? "especes" : "carte",
     payment_status: r.payment_status as Order["payment_status"],
     amount_paid: Number(r.amount_paid),
     second_amount: Number(r.second_amount),
@@ -94,9 +96,12 @@ const orderPayload = z
       .max(20),
     plan: z.enum(["full", "split"]).default("full"),
     delivery_method: z.enum(["livraison", "retrait"]).default("livraison"),
+    payment_method: z.enum(["carte", "especes"]).default("carte"),
     promo_code: z.string().max(30).optional(),
   })
   .superRefine((v, ctx) => {
+    if (v.payment_method === "especes" && v.delivery_method !== "retrait")
+      ctx.addIssue({ code: "custom", path: ["payment_method"], message: "Le paiement en espèces se fait uniquement au retrait sur place." });
     if (v.delivery_method !== "livraison") return;
     if (v.address.length < 8) ctx.addIssue({ code: "custom", path: ["address"], message: "Indiquez l'adresse complète" });
     if (v.postal_code.length < 4) ctx.addIssue({ code: "custom", path: ["postal_code"], message: "Code postal invalide" });
@@ -129,6 +134,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const totals = computeTotals(data.items, priceOf, fee, data.delivery_method, promoValue);
     if (totals.total <= 0) throw new Error("Commande impossible : vérifiez les articles du panier.");
 
+    const cash = data.payment_method === "especes";
     const bytes = new Uint8Array(8);
     crypto.getRandomValues(bytes);
     const ref = makeOrderRef(Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(""));
@@ -150,9 +156,10 @@ export const createOrder = createServerFn({ method: "POST" })
         total: totals.total,
         discount: totals.discount,
         promo_code: promo || null,
-        payment_plan: data.plan,
+        payment_plan: cash ? "full" : data.plan,
         delivery_method: data.delivery_method,
-        second_amount: splitPayment(totals.total, data.plan).later,
+        payment_method: data.payment_method,
+        second_amount: cash ? 0 : splitPayment(totals.total, data.plan).later,
       })
       .select("id, ref")
       .single();
@@ -179,7 +186,7 @@ export const createOrder = createServerFn({ method: "POST" })
               : `${data.address}, ${data.postal_code}`.trim(),
           items: data.items.map((i) => `${i.qty} × ${catalog.get(i.id)?.name ?? i.id}`).join(", "),
           total: eur(totals.total),
-          plan: data.plan === "split" ? "En 2 fois" : "En une fois",
+          plan: cash ? "En espèces au retrait" : data.plan === "split" ? "En 2 fois" : "En une fois",
         },
       });
     } catch (e) {
@@ -294,6 +301,7 @@ export const startPayment = createServerFn({ method: "POST" })
     if (!row || row.customer_id !== context.userId) return { error: "Commande introuvable." };
     if (row.payment_status !== "en_attente") return { error: "Cette commande est déjà payée." };
     const order = toOrder(row);
+    if (order.payment_method === "especes") return { error: "Cette commande se paie en espèces au retrait." };
     const { now } = splitPayment(order.total, order.payment_plan);
     const origin = new URL(data.origin).origin;
     try {
