@@ -177,3 +177,11 @@ describe("achats à crédit", () => {
     expect(purchaseDebts([buy("b", 400, true)], [rep])).toEqual([]);
   });
 });
+
+describe("commissions manuelles", () => {
+  it("sortent de l'argent en caisse, même en négatif ; les automatiques non", async () => {
+    const { cashInDrawer } = await import("@/lib/cash");
+    const sal = (id: string, amount: number, orderId: string | null) => ({ id, date: "2026-10-10", createdAt: "2026-10-10T10:00:00Z", label: "Ana", amount, kind: "salaire" as const, orderId });
+    expect(cashInDrawer({ amount: 30, setAt: "2026-10-01T00:00:00Z" }, [], [sal("m", 80, null), sal("a", 50, "o1")])).toBe(-50);
+  });
+});
