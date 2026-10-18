@@ -62,7 +62,16 @@ export type CashBook = {
   purchases: CashEntry[];
   employees: CashEntry[];
   staff?: Employee[];
+  /** Dernier comptage manuel de l'argent en caisse (montant + moment où il a été saisi). */
+  drawer?: { amount: number; setAt: string } | null;
 };
+
+/** Argent en caisse = dernier montant saisi à la main + ventes en espèces conclues depuis. */
+export function cashInDrawer(drawer: { amount: number; setAt: string } | null | undefined, entries: CashEntry[]): number {
+  const since = drawer ? new Date(drawer.setAt).getTime() : -Infinity;
+  const sales = entries.filter((e) => e.kind === "especes" && new Date(e.date).getTime() > since).reduce((s, e) => s + e.amount, 0);
+  return Math.round(((drawer?.amount ?? 0) + sales) * 100) / 100;
+}
 
 /** Commission Stripe prélevée sur chaque entrée (vente du site ou entrée manuelle). */
 export const STRIPE_FEE_RATE = 0.0035;
@@ -131,6 +140,7 @@ export function normalizeBook(book: Partial<CashBook> | null | undefined): CashB
     purchases: book?.purchases ?? [],
     employees: book?.employees ?? [],
     staff: book?.staff ?? [],
+    drawer: book?.drawer ?? null,
   };
 }
 

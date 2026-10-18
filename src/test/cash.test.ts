@@ -146,3 +146,15 @@ describe("cash (espèces) sales", () => {
     expect(s.net).toBe(449.3);
   });
 });
+
+describe("argent en caisse", () => {
+  it("adds cash sales concluded after the manual count", async () => {
+    const { cashInDrawer } = await import("@/lib/cash");
+    const entries = [
+      { id: "old", date: "2026-10-01T10:00:00Z", label: "x", amount: 250, kind: "especes" as const },
+      { id: "new", date: "2026-10-10T10:00:00Z", label: "y", amount: 100, kind: "especes" as const },
+      { id: "card", date: "2026-10-10T10:00:00Z", label: "z", amount: 300, kind: "auto" as const },
+    ];
+    expect(cashInDrawer({ amount: 500, setAt: "2026-10-05T00:00:00Z" }, entries)).toBe(600);
+  });
+});

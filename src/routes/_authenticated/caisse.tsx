@@ -5,7 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
-import { availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
+import { setCashDrawer } from "@/lib/cash.functions";
+import { cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,8 @@ function Caisse() {
   const [remAmount, setRemAmount] = useState("");
   const [remNote, setRemNote] = useState("");
   const [remDate, setRemDate] = useState(today());
+  const saveDrawer = useServerFn(setCashDrawer);
+  const [drawerInput, setDrawerInput] = useState("");
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
   const { data: reminders = [] } = useQuery({ queryKey: ["reminders"], queryFn: () => listReminders(), retry: false });
@@ -86,6 +89,17 @@ function Caisse() {
     try {
       await addEmp({ data: { name: empName, unit_price: 0 } });
       setEmpName("");
+      await qc.invalidateQueries({ queryKey: ["cash-book"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
+  }
+
+  async function submitDrawer(ev: React.FormEvent) {
+    ev.preventDefault();
+    const value = num(drawerInput);
+    if (drawerInput.trim() === "" || !(value >= 0)) { toast.error(t("cash.invalid")); return; }
+    try {
+      await saveDrawer({ data: { amount: value } });
+      setDrawerInput("");
       await qc.invalidateQueries({ queryKey: ["cash-book"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
   }
@@ -186,6 +200,21 @@ function Caisse() {
         <Stat label={t("cash.purchases")} value={brl(s.purchaseTotal)} />
         <Stat label={t("cash.net")} value={brl(s.net)} strong />
       </div>
+
+      <form onSubmit={submitDrawer} className="mt-6 rounded-2xl border border-primary/40 bg-primary/5 p-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">{t("cash.drawer")}</p>
+            <p className="mt-1 text-3xl font-bold">{brl(cashInDrawer(full.drawer, full.entries))}</p>
+            {full.drawer && <p className="mt-1 text-xs text-muted-foreground">{fmtDate(full.drawer.setAt)} : {brl(full.drawer.amount)}</p>}
+          </div>
+          <div className="flex gap-2">
+            <Input inputMode="decimal" placeholder="0,00" value={drawerInput} onChange={(e) => setDrawerInput(e.target.value)} className="w-32" aria-label={t("cash.drawer")} />
+            <Button type="submit">{t("cash.drawerSave")}</Button>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">{t("cash.drawerHint")}</p>
+      </form>
 
       <form onSubmit={submit} className="mt-8 rounded-2xl border bg-card p-5">
         <fieldset className="border-0 p-0">
