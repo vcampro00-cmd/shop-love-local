@@ -12,6 +12,8 @@ export type CashEntry = {
   createdAt?: string;
   /** Achat de téléphones payé à crédit (fiado) : ne sort pas de la caisse tout de suite. */
   onCredit?: boolean;
+  /** Entrée saisie à la main (supprimable). */
+  manual?: boolean;
   /** Remboursement : achat à crédit qu'il rembourse. */
   purchaseId?: string | null;
   /** Commande liée (commission automatique d'une vente). */
