@@ -297,7 +297,7 @@ function Caisse() {
           <>
           {(kind === "achat" || kind === "entree") && (
             <div className="mt-4 flex flex-wrap gap-2" role="radiogroup">
-              {(kind === "achat" ? [{ v: false, k: "cash.payNow" }, { v: true, k: "cash.payLater" }] : [{ v: false, k: "cash.inCard" }, { v: true, k: "cash.inCash" }]).map((o) => (
+              {(kind === "achat" ? [{ v: false, k: "cash.payNow" }, { v: true, k: "cash.payLater" }] : [{ v: false, k: "cash.entryCard" }, { v: true, k: "cash.entryCash" }]).map((o) => (
                 <Button key={o.k} type="button" role="radio" aria-checked={onCredit === o.v} variant={onCredit === o.v ? "default" : "outline"} onClick={() => setOnCredit(o.v)}>
                   {onCredit === o.v && <Check className="h-4 w-4" />} {t(o.k)}
                 </Button>
