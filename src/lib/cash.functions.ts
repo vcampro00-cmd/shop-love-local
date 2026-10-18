@@ -18,7 +18,7 @@ export const getCashBook = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const [orders, expenses, staff] = await Promise.all([
       context.supabase.from("orders").select("id, ref, name, amount_paid, total, status, updated_at, payment_method").or("amount_paid.gt.0,status.eq.livre").order("updated_at", { ascending: false }),
-      context.supabase.from("expenses").select("id, label, amount, spent_on, kind, units, unit_price, order_id, created_at, on_credit, purchase_id").order("spent_on", { ascending: false }).order("created_at", { ascending: false }),
+      context.supabase.from("expenses").select("id, label, amount, spent_on, kind, employee_id, units, unit_price, order_id, created_at, on_credit, purchase_id").order("spent_on", { ascending: false }).order("created_at", { ascending: false }),
       context.supabase.from("employees").select("id, name, unit_price").order("created_at"),
     ]);
     if (orders.error || expenses.error || staff.error) throw new Error("Impossible d'afficher la caisse.");
@@ -34,7 +34,8 @@ export const getCashBook = createServerFn({ method: "GET" })
           id: o.id,
           date: o.updated_at,
           label: `${o.ref} — ${o.name}`,
-          amount: cash ? cashSaleAmount(Number(o.total), commissionByOrder.get(o.id) ?? 0) : o.status === "livre" ? Math.max(Number(o.total), Number(o.amount_paid)) : Number(o.amount_paid),
+          // Seller commission is deducted from every concluded sale, card or cash.
+          amount: cash ? cashSaleAmount(Number(o.total), commissionByOrder.get(o.id) ?? 0) : o.status === "livre" ? cashSaleAmount(Math.max(Number(o.total), Number(o.amount_paid)), commissionByOrder.get(o.id) ?? 0) : Number(o.amount_paid),
           kind: cash ? "especes" : "auto",
           createdAt: o.updated_at,
         };
@@ -50,7 +51,9 @@ export const getCashBook = createServerFn({ method: "GET" })
         if (!drawer || e.created_at > drawer.setAt) drawer = { amount: Number(e.amount), setAt: e.created_at };
         continue;
       }
-      const row: CashEntry = { id: e.id, date: e.spent_on, label: e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"], units: e.units, unitPrice: e.unit_price == null ? null : Number(e.unit_price), createdAt: e.created_at, onCredit: Boolean(e.on_credit), purchaseId: e.purchase_id ?? null };
+      // Salary rows are grouped by employee name, so commissions use the seller's name.
+      const empName = e.kind === "salaire" && e.employee_id ? (staff.data ?? []).find((x: any) => x.id === e.employee_id)?.name : undefined;
+      const row: CashEntry = { id: e.id, date: e.spent_on, label: empName ?? e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"], units: e.units, unitPrice: e.unit_price == null ? null : Number(e.unit_price), createdAt: e.created_at, onCredit: Boolean(e.on_credit), purchaseId: e.purchase_id ?? null };
       if (e.kind === "remboursement") repayments.push(row);
       else if (e.kind === "entree") manual.push(row);
       else if (e.kind === "achat") purchaseRows.push(row);
