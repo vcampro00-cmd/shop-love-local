@@ -179,10 +179,11 @@ describe("achats à crédit", () => {
 });
 
 describe("commissions manuelles", () => {
-  it("sortent de l'argent en caisse, même en négatif ; les automatiques non", async () => {
+  it("toutes les commissions sortent de la caisse, sauf celles déjà retenues sur une vente en espèces", async () => {
     const { cashInDrawer } = await import("@/lib/cash");
     const sal = (id: string, amount: number, orderId: string | null) => ({ id, date: "2026-10-10", createdAt: "2026-10-10T10:00:00Z", label: "Ana", amount, kind: "salaire" as const, orderId });
-    expect(cashInDrawer({ amount: 30, setAt: "2026-10-01T00:00:00Z" }, [], [sal("m", 80, null), sal("a", 50, "o1")])).toBe(-50);
+    const cashSale = { id: "o2", date: "2026-10-10", createdAt: "2026-10-10T10:00:00Z", label: "V", amount: 250, kind: "especes" as const };
+    expect(cashInDrawer({ amount: 30, setAt: "2026-10-01T00:00:00Z" }, [cashSale], [sal("m", 80, null), sal("a", 50, "o1"), sal("c", 50, "o2")])).toBe(150);
   });
 });
 

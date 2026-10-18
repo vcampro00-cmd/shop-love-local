@@ -83,7 +83,9 @@ export function cashInDrawer(drawer: { amount: number; setAt: string } | null | 
   const since = drawer ? new Date(drawer.setAt).getTime() : -Infinity;
   const after = (e: CashEntry) => new Date(e.createdAt ?? e.date).getTime() > since;
   const sales = entries.filter((e) => e.kind === "especes" && after(e)).reduce((s, e) => s + e.amount, 0);
-  const out = outflows.filter((e) => (e.kind === "remboursement" || (e.kind === "achat" && !e.onCredit) || (e.kind === "salaire" && !e.orderId)) && after(e)).reduce((s, e) => s + e.amount, 0);
+  // Cash sales are already credited net of the seller's commission; every other commission is paid from the drawer.
+  const cashOrders = new Set(entries.filter((e) => e.kind === "especes" && !e.manual).map((e) => e.id));
+  const out = outflows.filter((e) => (e.kind === "remboursement" || (e.kind === "achat" && !e.onCredit) || (e.kind === "salaire" && !(e.orderId && cashOrders.has(e.orderId)))) && after(e)).reduce((s, e) => s + e.amount, 0);
   return Math.round(((drawer?.amount ?? 0) + sales - out) * 100) / 100;
 }
 
