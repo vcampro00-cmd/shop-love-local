@@ -175,6 +175,12 @@ function AdminOrders() {
                 <p className="text-xs text-muted-foreground">
                   {t("admin.date")} : {new Date(o.created_at).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })}
                 </p>
+                {o.seller_id && (
+                  <p className="mt-1 text-sm font-semibold text-accent">
+                    {t("stock.promoSeller")} : {inv.data?.sellers.find((s) => s.id === o.seller_id)?.name ?? "?"}
+                    {o.promo_code && ` (${o.promo_code})`}
+                  </p>
+                )}
               </div>
               <span className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">
                 {t("admin.total")} : {brl(o.total)}
