@@ -85,7 +85,9 @@ export type Database = {
           id: string
           kind: string
           label: string
+          on_credit: boolean
           order_id: string | null
+          purchase_id: string | null
           spent_on: string
           unit_price: number | null
           units: number | null
@@ -97,7 +99,9 @@ export type Database = {
           id?: string
           kind?: string
           label: string
+          on_credit?: boolean
           order_id?: string | null
+          purchase_id?: string | null
           spent_on?: string
           unit_price?: number | null
           units?: number | null
@@ -109,12 +113,22 @@ export type Database = {
           id?: string
           kind?: string
           label?: string
+          on_credit?: boolean
           order_id?: string | null
+          purchase_id?: string | null
           spent_on?: string
           unit_price?: number | null
           units?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expenses_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {

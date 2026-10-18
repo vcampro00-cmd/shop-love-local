@@ -158,3 +158,22 @@ describe("argent en caisse", () => {
     expect(cashInDrawer({ amount: 500, setAt: "2026-10-05T00:00:00Z" }, entries)).toBe(600);
   });
 });
+
+describe("achats à crédit", () => {
+  const buy = (id: string, amount: number, onCredit: boolean) => ({ id, date: "2026-10-10", createdAt: "2026-10-10T10:00:00Z", label: id, amount, kind: "achat" as const, onCredit });
+  it("à vue sort de la caisse, à crédit non", async () => {
+    const { cashInDrawer } = await import("@/lib/cash");
+    expect(cashInDrawer({ amount: 1000, setAt: "2026-10-01T00:00:00Z" }, [], [buy("a", 300, false), buy("b", 400, true)])).toBe(700);
+  });
+  it("les remboursements réduisent la dette et la caisse", async () => {
+    const { cashInDrawer, purchaseDebts } = await import("@/lib/cash");
+    const rep = { id: "r", date: "2026-10-12", createdAt: "2026-10-12T10:00:00Z", label: "r", amount: 150, kind: "remboursement" as const, purchaseId: "b" };
+    expect(purchaseDebts([buy("b", 400, true)], [rep])[0]?.remaining).toBe(250);
+    expect(cashInDrawer({ amount: 1000, setAt: "2026-10-01T00:00:00Z" }, [], [buy("b", 400, true), rep])).toBe(850);
+  });
+  it("une dette payée en entier disparaît", async () => {
+    const { purchaseDebts } = await import("@/lib/cash");
+    const rep = { id: "r", date: "2026-10-12", label: "r", amount: 400, kind: "remboursement" as const, purchaseId: "b" };
+    expect(purchaseDebts([buy("b", 400, true)], [rep])).toEqual([]);
+  });
+});

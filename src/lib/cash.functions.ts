@@ -18,7 +18,7 @@ export const getCashBook = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const [orders, expenses, staff] = await Promise.all([
       context.supabase.from("orders").select("id, ref, name, amount_paid, total, status, updated_at, payment_method").or("amount_paid.gt.0,status.eq.livre").order("updated_at", { ascending: false }),
-      context.supabase.from("expenses").select("id, label, amount, spent_on, kind, units, unit_price, order_id, created_at").order("spent_on", { ascending: false }).order("created_at", { ascending: false }),
+      context.supabase.from("expenses").select("id, label, amount, spent_on, kind, units, unit_price, order_id, created_at, on_credit, purchase_id").order("spent_on", { ascending: false }).order("created_at", { ascending: false }),
       context.supabase.from("employees").select("id, name, unit_price").order("created_at"),
     ]);
     if (orders.error || expenses.error || staff.error) throw new Error("Impossible d'afficher la caisse.");
@@ -36,6 +36,7 @@ export const getCashBook = createServerFn({ method: "GET" })
           label: `${o.ref} — ${o.name}`,
           amount: cash ? cashSaleAmount(Number(o.total), commissionByOrder.get(o.id) ?? 0) : o.status === "livre" ? Math.max(Number(o.total), Number(o.amount_paid)) : Number(o.amount_paid),
           kind: cash ? "especes" : "auto",
+          createdAt: o.updated_at,
         };
       });
     const manual: CashEntry[] = [];
@@ -43,19 +44,21 @@ export const getCashBook = createServerFn({ method: "GET" })
     const purchaseRows: CashEntry[] = [];
     const employeeRows: CashEntry[] = [];
     let drawer: CashBook["drawer"] = null;
+    const repayments: CashEntry[] = [];
     for (const e of expenses.data ?? []) {
       if (e.kind === "fond") {
         if (!drawer || e.created_at > drawer.setAt) drawer = { amount: Number(e.amount), setAt: e.created_at };
         continue;
       }
-      const row: CashEntry = { id: e.id, date: e.spent_on, label: e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"], units: e.units, unitPrice: e.unit_price == null ? null : Number(e.unit_price) };
-      if (e.kind === "entree") manual.push(row);
+      const row: CashEntry = { id: e.id, date: e.spent_on, label: e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"], units: e.units, unitPrice: e.unit_price == null ? null : Number(e.unit_price), createdAt: e.created_at, onCredit: Boolean(e.on_credit), purchaseId: e.purchase_id ?? null };
+      if (e.kind === "remboursement") repayments.push(row);
+      else if (e.kind === "entree") manual.push(row);
       else if (e.kind === "achat") purchaseRows.push(row);
       else if (e.kind === "salaire") employeeRows.push(row);
       else sortieRows.push(row);
     }
     const entries = [...autoEntries, ...manual].sort((a, b) => b.date.localeCompare(a.date));
-    return { entries, expenses: sortieRows, purchases: purchaseRows, employees: employeeRows, staff: (staff.data ?? []).map((s: any) => ({ id: s.id, name: s.name, unitPrice: Number(s.unit_price) })), drawer };
+    return { entries, expenses: sortieRows, purchases: purchaseRows, employees: employeeRows, staff: (staff.data ?? []).map((s: any) => ({ id: s.id, name: s.name, unitPrice: Number(s.unit_price) })), drawer, repayments };
   });
 
 const KINDS = z.enum(["entree", "sortie", "achat", "salaire"]);
@@ -71,11 +74,12 @@ export const addExpense = createServerFn({ method: "POST" })
       employee_id: z.string().uuid().optional(),
       units: z.number().int().positive().max(100_000).optional(),
       unit_price: z.number().positive().max(1_000_000).optional(),
+      on_credit: z.boolean().optional(),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    let row: { label: string; amount: number; spent_on: string; kind: string; employee_id?: string; units?: number; unit_price?: number } = { label: data.label, amount: data.amount, spent_on: data.spent_on, kind: data.kind };
+    let row: { label: string; amount: number; spent_on: string; kind: string; employee_id?: string; units?: number; unit_price?: number; on_credit?: boolean } = { label: data.label, amount: data.amount, spent_on: data.spent_on, kind: data.kind, on_credit: data.kind === "achat" && data.on_credit === true };
     if (data.kind === "salaire" && data.employee_id) {
       const { data: emp } = await context.supabase.from("employees").select("id, name").eq("id", data.employee_id).maybeSingle();
       if (!emp) throw new Error("Employé introuvable.");
@@ -176,5 +180,21 @@ export const setCashDrawer = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { error } = await context.supabase.from("expenses").insert({ label: "Argent en caisse", amount: data.amount, spent_on: new Date().toISOString().slice(0, 10), kind: "fond" });
     if (error) throw new Error("Le montant n'a pas pu être enregistré.");
+    return { ok: true };
+  });
+
+/** Rembourse une partie (ou tout) d'un achat de téléphones pris à crédit. */
+export const payDebt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ purchaseId: z.string().uuid(), amount: z.number().positive().max(1_000_000) }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: p } = await context.supabase.from("expenses").select("id, label, amount, kind, on_credit").eq("id", data.purchaseId).maybeSingle();
+    if (!p || p.kind !== "achat" || !p.on_credit) throw new Error("Achat à crédit introuvable.");
+    const { data: paidRows } = await context.supabase.from("expenses").select("amount").eq("purchase_id", p.id).eq("kind", "remboursement");
+    const remaining = Number(p.amount) - (paidRows ?? []).reduce((s: number, r: any) => s + Number(r.amount), 0);
+    if (data.amount > Math.round(remaining * 100) / 100) throw new Error("Le montant dépasse ce qui reste à payer.");
+    const { error } = await context.supabase.from("expenses").insert({ label: `Remboursement — ${p.label}`, amount: data.amount, spent_on: new Date().toISOString().slice(0, 10), kind: "remboursement", purchase_id: p.id });
+    if (error) throw new Error("Le paiement n'a pas pu être enregistré.");
     return { ok: true };
   });

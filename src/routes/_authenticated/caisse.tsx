@@ -5,8 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
-import { setCashDrawer } from "@/lib/cash.functions";
-import { cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
+import { setCashDrawer, payDebt } from "@/lib/cash.functions";
+import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,9 @@ function Caisse() {
   const [remDate, setRemDate] = useState(today());
   const saveDrawer = useServerFn(setCashDrawer);
   const [drawerInput, setDrawerInput] = useState("");
+  const [onCredit, setOnCredit] = useState(false);
+  const pay = useServerFn(payDebt);
+  const [payInputs, setPayInputs] = useState<Record<string, string>>({});
 
   const { data, error, isPending } = useQuery({ queryKey: ["cash-book"], queryFn: () => getCashBook(), retry: false });
   const { data: reminders = [] } = useQuery({ queryKey: ["reminders"], queryFn: () => listReminders(), retry: false });
@@ -81,6 +84,7 @@ function Caisse() {
   const s = summarizeCash(book);
   const staff = full.staff ?? [];
   const empTotals = employeeTotals(book.employees);
+  const debts = purchaseDebts(full.purchases, full.repayments ?? []);
   const num = (v: string) => Number(v.replace(",", "."));
 
   async function submitEmployee(ev: React.FormEvent) {
@@ -100,6 +104,16 @@ function Caisse() {
     try {
       await saveDrawer({ data: { amount: value } });
       setDrawerInput("");
+      await qc.invalidateQueries({ queryKey: ["cash-book"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
+  }
+
+  async function submitPay(id: string) {
+    const value = num(payInputs[id] ?? "");
+    if (!(value > 0)) { toast.error(t("cash.invalid")); return; }
+    try {
+      await pay({ data: { purchaseId: id, amount: value } });
+      setPayInputs((p) => ({ ...p, [id]: "" }));
       await qc.invalidateQueries({ queryKey: ["cash-book"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
   }
@@ -131,8 +145,8 @@ function Caisse() {
     }
     setBusy(true);
     try {
-      await add({ data: { label, amount: value, spent_on: date, kind } });
-      setLabel(""); setAmount(""); setDate(today());
+      await add({ data: { label, amount: value, spent_on: date, kind, on_credit: kind === "achat" ? onCredit : undefined } });
+      setLabel(""); setOnCredit(false); setAmount(""); setDate(today());
       await qc.invalidateQueries({ queryKey: ["cash-book"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("cash.invalid"));
@@ -205,7 +219,7 @@ function Caisse() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm text-muted-foreground">{t("cash.drawer")}</p>
-            <p className="mt-1 text-3xl font-bold">{brl(cashInDrawer(full.drawer, full.entries))}</p>
+            <p className="mt-1 text-3xl font-bold">{brl(cashInDrawer(full.drawer, full.entries, [...full.purchases, ...(full.repayments ?? [])]))}</p>
             {full.drawer && <p className="mt-1 text-xs text-muted-foreground">{fmtDate(full.drawer.setAt)} : {brl(full.drawer.amount)}</p>}
           </div>
           <div className="flex gap-2">
@@ -271,14 +285,49 @@ function Caisse() {
             </div>
           )
         ) : (
+          <>
+          {kind === "achat" && (
+            <div className="mt-4 flex flex-wrap gap-2" role="radiogroup">
+              {[{ v: false, k: "cash.payNow" }, { v: true, k: "cash.payLater" }].map((o) => (
+                <Button key={o.k} type="button" role="radio" aria-checked={onCredit === o.v} variant={onCredit === o.v ? "default" : "outline"} onClick={() => setOnCredit(o.v)}>
+                  {onCredit === o.v && <Check className="h-4 w-4" />} {t(o.k)}
+                </Button>
+              ))}
+            </div>
+          )}
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_140px_160px_auto]">
             <Input placeholder={t("cash.labelPlaceholder")} value={label} onChange={(e) => setLabel(e.target.value)} maxLength={200} />
             <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             <Button type="submit" disabled={busy}>{t("cash.add")}</Button>
           </div>
+          </>
         )}
       </form>
+
+      {debts.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-destructive/40 bg-destructive/5 p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-semibold">{t("cash.debtsTitle")}</h2>
+            <p className="text-sm">{t("cash.debtsTotal")} : <span className="text-lg font-bold text-destructive">−{brl(debts.reduce((x, d) => x + d.remaining, 0))}</span></p>
+          </div>
+          <ul className="mt-3 divide-y divide-border">
+            {debts.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <div>
+                  <p className="font-medium">{d.label}</p>
+                  <p className="text-xs text-muted-foreground">{fmtDate(d.date)} · {brl(d.amount)} · {t("cash.debtPaid")} {brl(d.paid)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-destructive">−{brl(d.remaining)}</span>
+                  <Input inputMode="decimal" placeholder="0,00" className="w-24" aria-label={t("cash.debtPay")} value={payInputs[d.id] ?? ""} onChange={(e) => setPayInputs((p) => ({ ...p, [d.id]: e.target.value }))} />
+                  <Button type="button" size="sm" onClick={() => submitPay(d.id)}>{t("cash.debtPay")}</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <form onSubmit={submitEmployee} className="mt-6 rounded-2xl border bg-card p-5">
         <h2 className="font-semibold">{t("cash.staffTitle")}</h2>
