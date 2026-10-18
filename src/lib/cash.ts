@@ -131,7 +131,8 @@ export function summarizeCash(book: CashBook): CashSummary {
   const inTotal = book.entries.reduce((s, e) => s + e.amount, 0);
   const cashIn = book.entries.filter((e) => e.kind === "especes").reduce((s, e) => s + e.amount, 0);
   const outTotal = book.expenses.reduce((s, e) => s + e.amount, 0);
-  const purchaseTotal = book.purchases.reduce((s, e) => s + e.amount, 0);
+  // Achats à crédit : ne comptent pas tant qu'ils ne sont pas payés ; chaque remboursement compte le mois où il est payé.
+  const purchaseTotal = book.purchases.filter((e) => !e.onCredit).reduce((s, e) => s + e.amount, 0) + (book.repayments ?? []).reduce((s, e) => s + e.amount, 0);
   const employeeTotal = book.employees.reduce((s, e) => s + e.amount, 0);
   const feeTotal = card.reduce((s, e) => s + stripeFee(e.amount), 0);
   const cardIn = Math.round((card.reduce((s, e) => s + e.amount, 0) - feeTotal) * 100) / 100;
@@ -155,7 +156,7 @@ export function monthOf(date: string): string {
 /** La caisse repart de zéro le 1er de chaque mois : on ne garde que les lignes du mois choisi. */
 export function filterBookByMonth(book: CashBook, month: string): CashBook {
   const keep = (rows: CashEntry[]) => rows.filter((r) => monthOf(r.date) === month);
-  return { entries: keep(book.entries), expenses: keep(book.expenses), purchases: keep(book.purchases), employees: keep(book.employees) };
+  return { entries: keep(book.entries), expenses: keep(book.expenses), purchases: keep(book.purchases), employees: keep(book.employees), repayments: keep(book.repayments ?? []) };
 }
 
 /** Complète un livre de caisse partiel (ancienne forme en cache) avec des listes vides. */
