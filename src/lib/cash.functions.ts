@@ -18,7 +18,7 @@ export const getCashBook = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const [orders, expenses, staff] = await Promise.all([
       context.supabase.from("orders").select("id, ref, name, amount_paid, total, status, updated_at, payment_method").or("amount_paid.gt.0,status.eq.livre").order("updated_at", { ascending: false }),
-      context.supabase.from("expenses").select("id, label, amount, spent_on, kind, units, unit_price, order_id").order("spent_on", { ascending: false }).order("created_at", { ascending: false }),
+      context.supabase.from("expenses").select("id, label, amount, spent_on, kind, units, unit_price, order_id, created_at").order("spent_on", { ascending: false }).order("created_at", { ascending: false }),
       context.supabase.from("employees").select("id, name, unit_price").order("created_at"),
     ]);
     if (orders.error || expenses.error || staff.error) throw new Error("Impossible d'afficher la caisse.");
@@ -42,7 +42,12 @@ export const getCashBook = createServerFn({ method: "GET" })
     const sortieRows: CashEntry[] = [];
     const purchaseRows: CashEntry[] = [];
     const employeeRows: CashEntry[] = [];
+    let drawer: CashBook["drawer"] = null;
     for (const e of expenses.data ?? []) {
+      if (e.kind === "fond") {
+        if (!drawer || e.created_at > drawer.setAt) drawer = { amount: Number(e.amount), setAt: e.created_at };
+        continue;
+      }
       const row: CashEntry = { id: e.id, date: e.spent_on, label: e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"], units: e.units, unitPrice: e.unit_price == null ? null : Number(e.unit_price) };
       if (e.kind === "entree") manual.push(row);
       else if (e.kind === "achat") purchaseRows.push(row);
@@ -50,7 +55,7 @@ export const getCashBook = createServerFn({ method: "GET" })
       else sortieRows.push(row);
     }
     const entries = [...autoEntries, ...manual].sort((a, b) => b.date.localeCompare(a.date));
-    return { entries, expenses: sortieRows, purchases: purchaseRows, employees: employeeRows, staff: (staff.data ?? []).map((s: any) => ({ id: s.id, name: s.name, unitPrice: Number(s.unit_price) })) };
+    return { entries, expenses: sortieRows, purchases: purchaseRows, employees: employeeRows, staff: (staff.data ?? []).map((s: any) => ({ id: s.id, name: s.name, unitPrice: Number(s.unit_price) })), drawer };
   });
 
 const KINDS = z.enum(["entree", "sortie", "achat", "salaire"]);
@@ -161,4 +166,15 @@ export const createReminderLink = createServerFn({ method: "POST" })
     if (!row) return { error: "Rappel introuvable." };
     // Lien court sur le site ; la page /pagar ouvre le paiement Stripe au montant enregistré.
     return { url: `${new URL(data.origin).origin}/pagar/${row.id}` };
+  });
+
+/** Le propriétaire compte l'argent en caisse ; les ventes en espèces conclues ensuite s'y ajoutent. */
+export const setCashDrawer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ amount: z.number().min(0).max(1_000_000) }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase.from("expenses").insert({ label: "Argent en caisse", amount: data.amount, spent_on: new Date().toISOString().slice(0, 10), kind: "fond" });
+    if (error) throw new Error("Le montant n'a pas pu être enregistré.");
+    return { ok: true };
   });
