@@ -120,6 +120,13 @@
       "when": 1792324895947,
       "tag": "0016_expenses_credit_purchases",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792333713835,
+      "tag": "0017_promo_codes_seller",
+      "breakpoints": true
     }
   ]
 }
