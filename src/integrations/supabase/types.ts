@@ -289,18 +289,21 @@ export type Database = {
           amount: number
           code: string
           created_at: string
+          seller_id: string | null
         }
         Insert: {
           active?: boolean
           amount: number
           code: string
           created_at?: string
+          seller_id?: string | null
         }
         Update: {
           active?: boolean
           amount?: number
           code?: string
           created_at?: string
+          seller_id?: string | null
         }
         Relationships: []
       }

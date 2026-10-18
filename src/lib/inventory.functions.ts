@@ -15,14 +15,14 @@ export const getInventory = createServerFn({ method: "GET" })
     await assertAdmin(context.supabase, context.userId);
     const [stock, promos, staff, cat] = await Promise.all([
       context.supabase.from("product_stock").select("product_id, quantity"),
-      context.supabase.from("promo_codes").select("code, amount, active").order("created_at"),
+      context.supabase.from("promo_codes").select("code, amount, active, seller_id").order("created_at"),
       context.supabase.from("employees").select("id, name").order("created_at"),
       context.supabase.from("catalog_products").select("id").eq("active", true).order("sort").order("created_at"),
     ]);
     const map = new Map((stock.data ?? []).map((r) => [r.product_id, r.quantity]));
     return {
       stock: (cat.data ?? []).map(({ id }) => ({ id, quantity: map.get(id) ?? 0 })),
-      promos: (promos.data ?? []).map((p) => ({ code: p.code, amount: Number(p.amount), active: p.active })),
+      promos: (promos.data ?? []).map((p) => ({ code: p.code, amount: Number(p.amount), active: p.active, sellerId: p.seller_id })),
       sellers: (staff.data ?? []).map((s) => ({ id: s.id, name: s.name })),
     };
   });
@@ -44,13 +44,16 @@ export const setStock = createServerFn({ method: "POST" })
 export const addPromo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({ code: z.string().min(2).max(30), amount: z.number().positive().max(10000) }).parse(i),
+    z.object({ code: z.string().min(2).max(30), amount: z.number().min(0).max(10000), sellerId: z.string().uuid().nullable().optional() }).parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const code = normalizePromoCode(data.code);
     if (!/^[A-Z0-9_-]{2,30}$/.test(code)) throw new Error("Code invalide (lettres et chiffres).");
-    const { error } = await context.supabase.from("promo_codes").upsert({ code, amount: data.amount, active: true });
+    if (data.amount <= 0 && !data.sellerId) throw new Error("Indiquez une réduction ou un revendeur.");
+    const { error } = await context.supabase
+      .from("promo_codes")
+      .upsert({ code, amount: data.amount, active: true, seller_id: data.sellerId ?? null });
     if (error) throw new Error("Le code n'a pas pu être enregistré.");
     return { ok: true };
   });
@@ -65,12 +68,18 @@ export const deletePromo = createServerFn({ method: "POST" })
   });
 
 /** Montant de réduction d'un code promo actif (0 si inconnu). Utilisé aussi par createOrder. */
-export async function promoAmount(code: string): Promise<number> {
+export async function promoInfo(code: string): Promise<{ valid: boolean; amount: number; sellerId: string | null }> {
   const c = normalizePromoCode(code);
-  if (!c) return 0;
+  if (!c) return { valid: false, amount: 0, sellerId: null };
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.from("promo_codes").select("amount").eq("code", c).eq("active", true).maybeSingle();
-  return data ? Number(data.amount) : 0;
+  const { data } = await supabaseAdmin
+    .from("promo_codes").select("amount, seller_id").eq("code", c).eq("active", true).maybeSingle();
+  if (!data) return { valid: false, amount: 0, sellerId: null };
+  return { valid: true, amount: Number(data.amount), sellerId: data.seller_id };
+}
+
+export async function promoAmount(code: string): Promise<number> {
+  return (await promoInfo(code)).amount;
 }
 
 /** Vérifie un code promo saisi dans le panier. */
@@ -78,8 +87,8 @@ export const checkPromo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ code: z.string().max(30) }).parse(i))
   .handler(async ({ data }) => {
-    const amount = await promoAmount(data.code);
-    return { code: normalizePromoCode(data.code), amount };
+    const info = await promoInfo(data.code);
+    return { code: normalizePromoCode(data.code), amount: info.amount, valid: info.valid };
   });
 
 /**

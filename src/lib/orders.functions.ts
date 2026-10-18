@@ -36,6 +36,7 @@ export type Order = {
   amount_paid: number;
   second_amount: number;
   second_charge_due_at: string | null;
+  seller_id: string | null;
 };
 
 function toOrder(r: OrderRow): Order {
@@ -63,6 +64,7 @@ function toOrder(r: OrderRow): Order {
     amount_paid: Number(r.amount_paid),
     second_amount: Number(r.second_amount),
     second_charge_due_at: r.second_charge_due_at,
+    seller_id: r.seller_id ?? null,
   };
 }
 
@@ -126,11 +128,12 @@ export const createOrder = createServerFn({ method: "POST" })
     const texts = await readSiteTexts();
     const priceOf = (id: string) => Number(catalog.get(id)?.price ?? 0);
     const fee = numFromText(texts["delivery.fee"] ?? DEFAULTS["delivery.fee"] ?? "", 0);
-    const { promoAmount } = await import("./inventory.functions");
+    const { promoInfo } = await import("./inventory.functions");
     const { normalizePromoCode } = await import("./pricing");
     const promo = data.promo_code ? normalizePromoCode(data.promo_code) : "";
-    const promoValue = promo ? await promoAmount(promo) : 0;
-    if (promo && promoValue <= 0) throw new Error("Code promo invalide.");
+    const info = promo ? await promoInfo(promo) : { valid: false, amount: 0, sellerId: null };
+    if (promo && !info.valid) throw new Error("Code promo invalide.");
+    const promoValue = info.amount;
     const totals = computeTotals(data.items, priceOf, fee, data.delivery_method, promoValue);
     if (totals.total <= 0) throw new Error("Commande impossible : vérifiez les articles du panier.");
 
@@ -156,6 +159,7 @@ export const createOrder = createServerFn({ method: "POST" })
         total: totals.total,
         discount: totals.discount,
         promo_code: promo || null,
+        seller_id: info.sellerId,
         payment_plan: cash ? "full" : data.plan,
         delivery_method: data.delivery_method,
         payment_method: data.payment_method,

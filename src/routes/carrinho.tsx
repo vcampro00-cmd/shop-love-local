@@ -212,7 +212,7 @@ function Cart() {
                 if (!promoInput.trim()) { setPromo(null); return; }
                 try {
                   const r = await verifyPromo({ data: { code: promoInput } });
-                  if (r.amount > 0) { setPromo(r); toast.success(`${r.code} : −${brl(r.amount)}`); }
+                  if (r.valid) { setPromo(r); toast.success(r.amount > 0 ? `${r.code} : −${brl(r.amount)}` : `${r.code} ✓`); }
                   else { setPromo(null); toast.error("Code promo invalide"); }
                 } catch { toast.error("Code promo invalide"); }
               }}

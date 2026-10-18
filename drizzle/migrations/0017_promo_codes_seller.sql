@@ -1,0 +1,1 @@
+ALTER TABLE public.promo_codes ADD COLUMN seller_id uuid;

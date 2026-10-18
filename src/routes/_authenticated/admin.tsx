@@ -244,7 +244,7 @@ function AdminOrders() {
                 <Check className="mr-1 h-4 w-4" />{t("admin.accept")}
               </Button>
               {o.status !== "livre" && o.status !== "annule" && (
-                <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => setSellFor(sellFor === o.id ? null : o.id)}>
+                <Button size="sm" variant="secondary" disabled={busyId === o.id} onClick={() => { setSellFor(sellFor === o.id ? null : o.id); setSeller(o.seller_id ?? ""); }}>
                   <CheckCheck className="mr-1 h-4 w-4" />{t("admin.complete")}
                 </Button>
               )}
