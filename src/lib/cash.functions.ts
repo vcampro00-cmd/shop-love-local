@@ -201,3 +201,17 @@ export const payDebt = createServerFn({ method: "POST" })
     if (error) throw new Error("Le paiement n'a pas pu être enregistré.");
     return { ok: true };
   });
+
+/** Corrige le dernier montant saisi (faute de frappe) sans perdre les mouvements faits depuis. */
+export const correctCashDrawer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ amount: z.number().min(0).max(1_000_000) }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: last } = await context.supabase.from("expenses").select("id, spent_on, created_at").eq("kind", "fond").order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!last) throw new Error("Aucun montant à corriger.");
+    const { error } = await context.supabase.from("expenses").insert({ label: "Argent en caisse", amount: data.amount, spent_on: last.spent_on, kind: "fond", created_at: last.created_at });
+    if (error) throw new Error("Le montant n'a pas pu être corrigé.");
+    await context.supabase.from("expenses").delete().eq("id", last.id);
+    return { ok: true };
+  });
