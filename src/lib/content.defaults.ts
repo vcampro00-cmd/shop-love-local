@@ -215,8 +215,6 @@ export const DEFAULTS: Record<string, string> = {
   "cash.drawerFixHint": "Corrigez le dernier montant saisi : les ventes et sorties faites depuis restent comptées.",
   "cash.payNow": "À vue (payé de la caisse)",
   "cash.payLater": "À crédit",
-  "cash.inCard": "Carte",
-  "cash.inCash": "Espèces (va en caisse)",
   "cash.debtsTitle": "Achats à crédit — reste à payer",
   "cash.debtsTotal": "Total dû",
   "cash.debtPaid": "Déjà payé",
