@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
-import { setCashDrawer, payDebt } from "@/lib/cash.functions";
+import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
 import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
@@ -64,6 +64,8 @@ function Caisse() {
   const [remDate, setRemDate] = useState(today());
   const saveDrawer = useServerFn(setCashDrawer);
   const [drawerInput, setDrawerInput] = useState("");
+  const fixDrawer = useServerFn(correctCashDrawer);
+  const [fixing, setFixing] = useState(false);
   const [onCredit, setOnCredit] = useState(false);
   const pay = useServerFn(payDebt);
   const [payInputs, setPayInputs] = useState<Record<string, string>>({});
@@ -102,8 +104,9 @@ function Caisse() {
     const value = num(drawerInput);
     if (drawerInput.trim() === "" || !(value >= 0)) { toast.error(t("cash.invalid")); return; }
     try {
-      await saveDrawer({ data: { amount: value } });
-      setDrawerInput("");
+      if (fixing) await fixDrawer({ data: { amount: value } });
+      else await saveDrawer({ data: { amount: value } });
+      setDrawerInput(""); setFixing(false);
       await qc.invalidateQueries({ queryKey: ["cash-book"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
   }
@@ -220,14 +223,20 @@ function Caisse() {
           <div>
             <p className="text-sm text-muted-foreground">{t("cash.drawer")}</p>
             <p className="mt-1 text-3xl font-bold">{brl(cashInDrawer(full.drawer, full.entries, [...full.purchases, ...(full.repayments ?? []), ...full.employees]))}</p>
-            {full.drawer && <p className="mt-1 text-xs text-muted-foreground">{fmtDate(full.drawer.setAt)} : {brl(full.drawer.amount)}</p>}
+            {full.drawer && (
+              <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                {fmtDate(full.drawer.setAt)} : {brl(full.drawer.amount)}
+                <button type="button" className="underline hover:text-foreground" onClick={() => { setFixing(true); setDrawerInput(String(full.drawer!.amount).replace(".", ",")); }}>{t("cash.drawerEdit")}</button>
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <Input inputMode="decimal" placeholder="0,00" value={drawerInput} onChange={(e) => setDrawerInput(e.target.value)} className="w-32" aria-label={t("cash.drawer")} />
-            <Button type="submit">{t("cash.drawerSave")}</Button>
+            <Button type="submit">{fixing ? t("cash.drawerFix") : t("cash.drawerSave")}</Button>
+            {fixing && <Button type="button" variant="outline" onClick={() => { setFixing(false); setDrawerInput(""); }}>✕</Button>}
           </div>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">{t("cash.drawerHint")}</p>
+        <p className="mt-3 text-xs text-muted-foreground">{fixing ? t("cash.drawerFixHint") : t("cash.drawerHint")}</p>
       </form>
 
       <form onSubmit={submit} className="mt-8 rounded-2xl border bg-card p-5">
