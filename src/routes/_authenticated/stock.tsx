@@ -40,6 +40,7 @@ function StockPage() {
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [code, setCode] = useState("");
   const [amount, setAmount] = useState("");
+  const [promoSeller, setPromoSeller] = useState("");
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["inventory"] });
   const run = async (fn: () => Promise<unknown>) => {
@@ -86,19 +87,29 @@ function StockPage() {
           className="mt-4 flex flex-wrap items-end gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            const a = parseFloat(amount.replace(",", "."));
-            if (!code.trim() || !(a > 0)) { toast.error("Code et montant obligatoires"); return; }
-            run(async () => { await add({ data: { code, amount: a } }); setCode(""); setAmount(""); });
+            const a = parseFloat(amount.replace(",", ".")) || 0;
+            if (!code.trim() || (a <= 0 && !promoSeller)) { toast.error("Code + réduction ou revendeur obligatoires"); return; }
+            run(async () => { await add({ data: { code, amount: Math.max(0, a), sellerId: promoSeller || null } }); setCode(""); setAmount(""); setPromoSeller(""); });
           }}
         >
           <div><label className="text-sm">{t("stock.promoCode")}</label><Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="VCAMPRO20" maxLength={30} /></div>
           <div><label className="text-sm">{t("stock.promoAmount")}</label><Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="20" className="w-28" inputMode="decimal" /></div>
+          <div>
+            <label className="text-sm">{t("stock.promoSeller")}</label>
+            <select value={promoSeller} onChange={(e) => setPromoSeller(e.target.value)} className="block h-10 rounded-md border bg-background px-3">
+              <option value="">—</option>
+              {(data?.sellers ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
           <Button type="submit" className="bg-brand">{t("stock.promoAdd")}</Button>
         </form>
         <ul className="mt-4 divide-y rounded-2xl border bg-card">
           {(data?.promos ?? []).map((p) => (
             <li key={p.code} className="flex items-center justify-between p-4">
-              <span className="font-medium">{p.code} — −{brl(p.amount)}</span>
+              <span className="font-medium">
+                {p.code}{p.amount > 0 && <> — −{brl(p.amount)}</>}
+                {p.sellerId && <span className="text-muted-foreground"> — {t("stock.promoSeller")} : {data?.sellers.find((s) => s.id === p.sellerId)?.name ?? "?"}</span>}
+              </span>
               <Button size="icon" variant="outline" aria-label="Supprimer" onClick={() => run(() => del({ data: { code: p.code } }))}>
                 <Trash2 className="h-4 w-4" />
               </Button>
