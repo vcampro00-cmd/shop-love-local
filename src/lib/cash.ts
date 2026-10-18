@@ -95,10 +95,6 @@ export function purchaseDebts(purchases: CashEntry[], repayments: CashEntry[]): 
     })
     .filter((d) => d.remaining > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
-} | null | undefined, entries: CashEntry[]): number {
-  const since = drawer ? new Date(drawer.setAt).getTime() : -Infinity;
-  const sales = entries.filter((e) => e.kind === "especes" && new Date(e.date).getTime() > since).reduce((s, e) => s + e.amount, 0);
-  return Math.round(((drawer?.amount ?? 0) + sales) * 100) / 100;
 }
 
 /** Commission Stripe prélevée sur chaque entrée (vente du site ou entrée manuelle). */
