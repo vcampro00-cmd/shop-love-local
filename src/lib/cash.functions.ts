@@ -55,7 +55,7 @@ export const getCashBook = createServerFn({ method: "GET" })
       const empName = e.kind === "salaire" && e.employee_id ? (staff.data ?? []).find((x: any) => x.id === e.employee_id)?.name : undefined;
       const row: CashEntry = { id: e.id, date: e.spent_on, label: empName ?? e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"], units: e.units, unitPrice: e.unit_price == null ? null : Number(e.unit_price), createdAt: e.created_at, onCredit: Boolean(e.on_credit), purchaseId: e.purchase_id ?? null, orderId: e.order_id ?? null };
       if (e.kind === "remboursement") repayments.push(row);
-      else if (e.kind === "entree") manual.push(row);
+      else if (e.kind === "entree") manual.push(e.on_credit ? { ...row, kind: "especes", manual: true } : { ...row, manual: true });
       else if (e.kind === "achat") purchaseRows.push(row);
       else if (e.kind === "salaire") employeeRows.push(row);
       else sortieRows.push(row);
@@ -82,7 +82,7 @@ export const addExpense = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    let row: { label: string; amount: number; spent_on: string; kind: string; employee_id?: string; units?: number; unit_price?: number; on_credit?: boolean } = { label: data.label, amount: data.amount, spent_on: data.spent_on, kind: data.kind, on_credit: data.kind === "achat" && data.on_credit === true };
+    let row: { label: string; amount: number; spent_on: string; kind: string; employee_id?: string; units?: number; unit_price?: number; on_credit?: boolean } = { label: data.label, amount: data.amount, spent_on: data.spent_on, kind: data.kind, on_credit: (data.kind === "achat" || data.kind === "entree") && data.on_credit === true };
     if (data.kind === "salaire" && data.employee_id) {
       const { data: emp } = await context.supabase.from("employees").select("id, name").eq("id", data.employee_id).maybeSingle();
       if (!emp) throw new Error("Employé introuvable.");

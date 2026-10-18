@@ -148,7 +148,7 @@ function Caisse() {
     }
     setBusy(true);
     try {
-      await add({ data: { label, amount: value, spent_on: date, kind, on_credit: kind === "achat" ? onCredit : undefined } });
+      await add({ data: { label, amount: value, spent_on: date, kind, on_credit: kind === "achat" || kind === "entree" ? onCredit : undefined } });
       setLabel(""); setOnCredit(false); setAmount(""); setDate(today());
       await qc.invalidateQueries({ queryKey: ["cash-book"] });
     } catch (e) {
@@ -295,9 +295,9 @@ function Caisse() {
           )
         ) : (
           <>
-          {kind === "achat" && (
+          {(kind === "achat" || kind === "entree") && (
             <div className="mt-4 flex flex-wrap gap-2" role="radiogroup">
-              {[{ v: false, k: "cash.payNow" }, { v: true, k: "cash.payLater" }].map((o) => (
+              {(kind === "achat" ? [{ v: false, k: "cash.payNow" }, { v: true, k: "cash.payLater" }] : [{ v: false, k: "cash.entryCard" }, { v: true, k: "cash.entryCash" }]).map((o) => (
                 <Button key={o.k} type="button" role="radio" aria-checked={onCredit === o.v} variant={onCredit === o.v ? "default" : "outline"} onClick={() => setOnCredit(o.v)}>
                   {onCredit === o.v && <Check className="h-4 w-4" />} {t(o.k)}
                 </Button>
@@ -606,7 +606,7 @@ function EntriesList({ title, empty, rows, onDelete }: { title: string; empty: s
               <div className="min-w-0">
                 <p className="truncate">
                   {r.label}
-                  {r.kind === "entree" && <span className="ml-2 text-xs text-muted-foreground">(manuel)</span>}
+                  {r.manual && <span className="ml-2 text-xs text-muted-foreground">(manuel)</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {fmtDate(r.date)} · {r.kind === "especes" ? "ESPÈCES" : `−${brl(stripeFee(r.amount))} Stripe`}
@@ -614,7 +614,7 @@ function EntriesList({ title, empty, rows, onDelete }: { title: string; empty: s
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium">+ {brl(r.amount)}</span>
-                {r.kind === "entree" && (
+                {r.manual && (
                   <button type="button" aria-label="Supprimer" onClick={() => onDelete(r.id)} className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
