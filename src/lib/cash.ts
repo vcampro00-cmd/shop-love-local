@@ -1,4 +1,4 @@
-export type CashEntryKind = "auto" | "especes" | "entree" | "sortie" | "achat" | "salaire";
+export type CashEntryKind = "auto" | "especes" | "entree" | "sortie" | "achat" | "salaire" | "remboursement";
 
 export type CashEntry = {
   id: string;
@@ -8,6 +8,12 @@ export type CashEntry = {
   kind: CashEntryKind;
   units?: number | null;
   unitPrice?: number | null;
+  /** Moment exact de la saisie (pour l'argent en caisse). */
+  createdAt?: string;
+  /** Achat de téléphones payé à crédit (fiado) : ne sort pas de la caisse tout de suite. */
+  onCredit?: boolean;
+  /** Remboursement : achat à crédit qu'il rembourse. */
+  purchaseId?: string | null;
 };
 
 export type Employee = { id: string; name: string; unitPrice: number };
@@ -62,12 +68,34 @@ export type CashBook = {
   purchases: CashEntry[];
   employees: CashEntry[];
   staff?: Employee[];
+  /** Remboursements des achats à crédit. */
+  repayments?: CashEntry[];
   /** Dernier comptage manuel de l'argent en caisse (montant + moment où il a été saisi). */
   drawer?: { amount: number; setAt: string } | null;
 };
 
-/** Argent en caisse = dernier montant saisi à la main + ventes en espèces conclues depuis. */
-export function cashInDrawer(drawer: { amount: number; setAt: string } | null | undefined, entries: CashEntry[]): number {
+/** Argent en caisse = dernier montant saisi à la main + ventes en espèces conclues depuis − achats payés comptant et remboursements faits depuis. */
+export function cashInDrawer(drawer: { amount: number; setAt: string } | null | undefined, entries: CashEntry[], outflows: CashEntry[] = []): number {
+  const since = drawer ? new Date(drawer.setAt).getTime() : -Infinity;
+  const after = (e: CashEntry) => new Date(e.createdAt ?? e.date).getTime() > since;
+  const sales = entries.filter((e) => e.kind === "especes" && after(e)).reduce((s, e) => s + e.amount, 0);
+  const out = outflows.filter((e) => (e.kind === "remboursement" || (e.kind === "achat" && !e.onCredit)) && after(e)).reduce((s, e) => s + e.amount, 0);
+  return Math.round(((drawer?.amount ?? 0) + sales - out) * 100) / 100;
+}
+
+export type Debt = { id: string; label: string; date: string; amount: number; paid: number; remaining: number };
+
+/** Achats à crédit encore dus : montant − remboursements, du plus ancien au plus récent. */
+export function purchaseDebts(purchases: CashEntry[], repayments: CashEntry[]): Debt[] {
+  return purchases
+    .filter((p) => p.onCredit)
+    .map((p) => {
+      const paid = Math.round(repayments.filter((r) => r.purchaseId === p.id).reduce((s, r) => s + r.amount, 0) * 100) / 100;
+      return { id: p.id, label: p.label, date: p.date, amount: p.amount, paid, remaining: Math.round((p.amount - paid) * 100) / 100 };
+    })
+    .filter((d) => d.remaining > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+} | null | undefined, entries: CashEntry[]): number {
   const since = drawer ? new Date(drawer.setAt).getTime() : -Infinity;
   const sales = entries.filter((e) => e.kind === "especes" && new Date(e.date).getTime() > since).reduce((s, e) => s + e.amount, 0);
   return Math.round(((drawer?.amount ?? 0) + sales) * 100) / 100;
@@ -141,6 +169,7 @@ export function normalizeBook(book: Partial<CashBook> | null | undefined): CashB
     employees: book?.employees ?? [],
     staff: book?.staff ?? [],
     drawer: book?.drawer ?? null,
+    repayments: book?.repayments ?? [],
   };
 }
 
