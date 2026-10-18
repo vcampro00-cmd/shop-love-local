@@ -14,6 +14,8 @@ export type CashEntry = {
   onCredit?: boolean;
   /** Remboursement : achat à crédit qu'il rembourse. */
   purchaseId?: string | null;
+  /** Commande liée (commission automatique d'une vente). */
+  orderId?: string | null;
 };
 
 export type Employee = { id: string; name: string; unitPrice: number };
@@ -74,12 +76,12 @@ export type CashBook = {
   drawer?: { amount: number; setAt: string } | null;
 };
 
-/** Argent en caisse = dernier montant saisi à la main + ventes en espèces conclues depuis − achats payés comptant et remboursements faits depuis. */
+/** Argent en caisse = dernier montant saisi à la main + ventes en espèces conclues depuis − achats payés comptant, remboursements et salaires/commissions saisis à la main depuis (peut devenir négatif). */
 export function cashInDrawer(drawer: { amount: number; setAt: string } | null | undefined, entries: CashEntry[], outflows: CashEntry[] = []): number {
   const since = drawer ? new Date(drawer.setAt).getTime() : -Infinity;
   const after = (e: CashEntry) => new Date(e.createdAt ?? e.date).getTime() > since;
   const sales = entries.filter((e) => e.kind === "especes" && after(e)).reduce((s, e) => s + e.amount, 0);
-  const out = outflows.filter((e) => (e.kind === "remboursement" || (e.kind === "achat" && !e.onCredit)) && after(e)).reduce((s, e) => s + e.amount, 0);
+  const out = outflows.filter((e) => (e.kind === "remboursement" || (e.kind === "achat" && !e.onCredit) || (e.kind === "salaire" && !e.orderId)) && after(e)).reduce((s, e) => s + e.amount, 0);
   return Math.round(((drawer?.amount ?? 0) + sales - out) * 100) / 100;
 }
 
