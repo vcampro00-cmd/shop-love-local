@@ -185,3 +185,16 @@ describe("commissions manuelles", () => {
     expect(cashInDrawer({ amount: 30, setAt: "2026-10-01T00:00:00Z" }, [], [sal("m", 80, null), sal("a", 50, "o1")])).toBe(-50);
   });
 });
+
+describe("gains nets et achats à crédit", () => {
+  it("un achat à crédit ne baisse pas le net ; seul le montant remboursé compte", () => {
+    const s = summarizeCash({
+      entries: [],
+      expenses: [],
+      purchases: [{ ...entry("b", 400, "achat"), onCredit: true }, entry("c", 100, "achat")],
+      employees: [],
+      repayments: [{ ...entry("r", 150, "remboursement"), purchaseId: "b" }],
+    });
+    expect(s.net).toBe(-250);
+  });
+});
