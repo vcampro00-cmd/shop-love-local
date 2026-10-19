@@ -199,3 +199,11 @@ describe("gains nets et achats à crédit", () => {
     expect(s.net).toBe(-250);
   });
 });
+
+describe("dépenses et caisse", () => {
+  it("une dépense sort de l'argent en caisse", async () => {
+    const { cashInDrawer } = await import("@/lib/cash");
+    const dep = { id: "d", date: "2026-10-12", createdAt: "2026-10-12T10:00:00Z", label: "d", amount: 40, kind: "sortie" as const };
+    expect(cashInDrawer({ amount: 100, setAt: "2026-10-01T00:00:00Z" }, [], [dep])).toBe(60);
+  });
+});
