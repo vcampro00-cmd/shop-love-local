@@ -222,7 +222,7 @@ function Caisse() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm text-muted-foreground">{t("cash.drawer")}</p>
-            <p className="mt-1 text-3xl font-bold">{brl(cashInDrawer(full.drawer, full.entries, [...full.purchases, ...(full.repayments ?? []), ...full.employees]))}</p>
+            <p className="mt-1 text-3xl font-bold">{brl(cashInDrawer(full.drawer, full.entries, [...full.expenses, ...full.purchases, ...(full.repayments ?? []), ...full.employees]))}</p>
             {full.drawer && (
               <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                 {fmtDate(full.drawer.setAt)} : {brl(full.drawer.amount)}
