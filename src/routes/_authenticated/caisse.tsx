@@ -370,6 +370,10 @@ function Caisse() {
       <form onSubmit={submitReminder} className="mt-6 rounded-2xl border bg-card p-5">
         <h2 className="font-semibold">{t("cash.remindersTitle")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("cash.remindersIntro")}</p>
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-primary/40 bg-primary/10 px-4 py-3">
+          <span className="text-sm font-semibold">{t("cash.remindersOpenTotal")} ({reminders.filter((r) => !r.paid).length})</span>
+          <span className="text-lg font-bold text-primary">{brl(reminders.filter((r) => !r.paid).reduce((s, r) => s + Number(r.amount || 0), 0))}</span>
+        </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_140px_160px_auto]">
           <Input placeholder={t("cash.reminderName")} value={remName} onChange={(e) => setRemName(e.target.value)} maxLength={100} />
           <Input placeholder={t("cash.reminderPhone")} inputMode="tel" value={remPhone} onChange={(e) => setRemPhone(e.target.value)} maxLength={20} />
