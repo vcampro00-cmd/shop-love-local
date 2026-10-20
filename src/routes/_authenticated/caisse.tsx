@@ -390,9 +390,11 @@ function Caisse() {
                   <p className="truncate font-medium">
                     {r.name} — {brl(r.amount)}
                     {r.paid && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">PAYÉ</span>}
+                    {r.fromOrder && <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold">VENTE DU SITE</span>}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">+{r.phone}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
+                  <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
+                {!r.fromOrder && (
                 <div className="flex items-center gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => sendWhatsApp(r)}>
                     <MessageCircle className="h-4 w-4" /> {t("cash.reminderSend")}
@@ -401,6 +403,7 @@ function Caisse() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
+                )}
               </li>
             ))}
           </ul>
