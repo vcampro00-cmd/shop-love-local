@@ -34,6 +34,8 @@ export type Reminder = {
   /** Vrai dès que le client a payé via le lien : l'entrée est alors créditée en caisse. */
   paid?: boolean;
   createdAt: string;
+  /** 2e paiement d'une commande du site : ne peut pas être supprimé, disparaît une fois payé. */
+  fromOrder?: boolean;
 };
 
 /** Numéro WhatsApp au format international, chiffres uniquement (33… pour la France). */

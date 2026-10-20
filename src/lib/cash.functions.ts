@@ -132,7 +132,12 @@ export const listReminders = createServerFn({ method: "GET" })
     // Paid reminders disappear; the rest are sorted by due date (soonest first, undated last).
     const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id").is("paid_session_id", null).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
     if (error) throw new Error("Impossible d'afficher les rappels.");
-    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at }));
+    const manual: Reminder[] = (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at }));
+    // Second instalments of site orders: read-only, dated on the automatic charge day, gone once paid.
+    const { data: orders } = await context.supabase.from("orders").select("id, ref, name, phone, second_amount, second_charge_due_at, payment_status, created_at").in("payment_status", ["acompte_paye", "echec_solde"]);
+    const paris = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+    const fromOrders: Reminder[] = (orders ?? []).map((o: any) => ({ id: o.id, name: o.name, phone: o.phone ?? "", amount: Number(o.second_amount), note: `Commande ${o.ref} — 2e paiement${o.payment_status === "echec_solde" ? " (échec du prélèvement)" : ""}`, dueDate: o.second_charge_due_at ? paris(o.second_charge_due_at) : null, paymentLink: null, paid: false, createdAt: o.created_at, fromOrder: true }));
+    return [...manual, ...fromOrders].sort((a, b) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999") || a.createdAt.localeCompare(b.createdAt));
   });
 
 export const addReminder = createServerFn({ method: "POST" })
