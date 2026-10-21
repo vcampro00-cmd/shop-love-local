@@ -131,17 +131,18 @@ export function cashSaleAmount(total: number, commission: number): number {
   return Math.max(0, Math.round((total - commission) * 100) / 100);
 }
 
-/** Gains nets = entrées (auto + manuelles) − commission Stripe − sorties − achats de téléphones. Les salaires n'entrent pas dans le calcul : ils servent seulement au suivi, employé par employé. */
+/** Gains nets = entrées carte (auto + manuelles) − commission Stripe − sorties − achats de téléphones. Les ventes en espèces n'y comptent plus, les salaires non plus : ils servent seulement au suivi, employé par employé. */
 export function summarizeCash(book: CashBook): CashSummary {
   const card = book.entries.filter((e) => e.kind !== "especes");
-  const inTotal = book.entries.reduce((s, e) => s + e.amount, 0);
+  // Les ventes en espèces ne comptent plus dans les entrées ni dans le net.
+  const inTotal = card.reduce((s, e) => s + e.amount, 0);
   const cashIn = book.entries.filter((e) => e.kind === "especes").reduce((s, e) => s + e.amount, 0);
   const outTotal = book.expenses.reduce((s, e) => s + e.amount, 0);
   // Achats à crédit : ne comptent pas tant qu'ils ne sont pas payés ; chaque remboursement compte le mois où il est payé.
   const purchaseTotal = book.purchases.filter((e) => !e.onCredit).reduce((s, e) => s + e.amount, 0) + (book.repayments ?? []).reduce((s, e) => s + e.amount, 0);
   const employeeTotal = book.employees.reduce((s, e) => s + e.amount, 0);
   const feeTotal = card.reduce((s, e) => s + stripeFee(e.amount), 0);
-  const cardIn = Math.round((card.reduce((s, e) => s + e.amount, 0) - feeTotal) * 100) / 100;
+  const cardIn = Math.round((inTotal - feeTotal) * 100) / 100;
   return { inTotal, cardIn, cashIn, outTotal, purchaseTotal, employeeTotal, feeTotal, net: inTotal - feeTotal - outTotal - purchaseTotal };
 }
 

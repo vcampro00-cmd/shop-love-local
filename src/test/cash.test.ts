@@ -134,7 +134,7 @@ describe("cash (espèces) sales", () => {
     expect(cashSaleAmount(300, 50)).toBe(250);
   });
 
-  it("splits card and cash entries; no Stripe fee on cash", () => {
+  it("splits card and cash entries; cash sales no longer count in the entries or the net", () => {
     const s = summarizeCash({
       entries: [entry("card", 200), entry("cash", 250, "especes")],
       expenses: [],
@@ -142,8 +142,9 @@ describe("cash (espèces) sales", () => {
       employees: [],
     });
     expect(s.cardIn).toBe(199.3);
+    expect(s.inTotal).toBe(200);
     expect(s.cashIn).toBe(250);
-    expect(s.net).toBe(449.3);
+    expect(s.net).toBe(199.3);
   });
 });
 
