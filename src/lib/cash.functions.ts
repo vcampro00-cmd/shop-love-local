@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { cashSaleAmount, type CashBook, type CashEntry, type Reminder } from "@/lib/cash";
+import { type CashBook, type CashEntry, type Reminder } from "@/lib/cash";
 import { createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 type Ctx = { supabase: any; userId: string };
