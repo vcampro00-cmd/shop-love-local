@@ -138,8 +138,8 @@ export function summarizeCash(book: CashBook): CashSummary {
   const inTotal = card.reduce((s, e) => s + e.amount, 0);
   const cashIn = book.entries.filter((e) => e.kind === "especes").reduce((s, e) => s + e.amount, 0);
   const outTotal = book.expenses.reduce((s, e) => s + e.amount, 0);
-  // Achats à crédit : ne comptent pas tant qu'ils ne sont pas payés ; chaque remboursement compte le mois où il est payé.
-  const purchaseTotal = book.purchases.filter((e) => !e.onCredit).reduce((s, e) => s + e.amount, 0) + (book.repayments ?? []).reduce((s, e) => s + e.amount, 0);
+  // Achats à crédit et leurs remboursements : suivi seulement, jamais déduits d'aucun total.
+  const purchaseTotal = book.purchases.filter((e) => !e.onCredit).reduce((s, e) => s + e.amount, 0);
   const employeeTotal = book.employees.reduce((s, e) => s + e.amount, 0);
   const feeTotal = card.reduce((s, e) => s + stripeFee(e.amount), 0);
   const cardIn = Math.round((inTotal - feeTotal) * 100) / 100;
