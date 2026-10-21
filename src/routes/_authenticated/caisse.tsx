@@ -461,7 +461,7 @@ async function exportPdf(book: CashBook, month: string, t: (k: string) => string
   };
   line(`Vcampro — ${t("cash.title")}`, 18, true); y += 2;
   line(monthLabel(month), 13); y += 4;
-  line(`${t("cash.inCard")} : ${eur(s.cardIn)}`, 11);
+  line(`${t("cash.inCard")} : ${eur(s.cardIn + s.cashIn)}`, 11);
   line(`${t("cash.out")} : ${eur(s.outTotal)}`, 11);
   line(`${t("cash.purchases")} : ${eur(s.purchaseTotal)}`, 11);
   for (const e of employeeTotals(book.employees)) line(`${e.name} : ${eur(e.total)}`, 11);
