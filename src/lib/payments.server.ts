@@ -127,8 +127,8 @@ export async function applyPaidReminder(sessionId: string, env: StripeEnv): Prom
   const { error: ins } = await db.from("expenses").insert({
     label: `Paiement convenu — ${data[0]!.name}`,
     amount,
+    kind: "auto",
     spent_on: today,
-    kind: "entree",
   });
   if (ins) console.error("Cash entry for reminder payment failed", ins);
 }
