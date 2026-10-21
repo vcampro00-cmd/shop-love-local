@@ -189,7 +189,7 @@ describe("commissions manuelles", () => {
 });
 
 describe("gains nets et achats à crédit", () => {
-  it("un achat à crédit ne baisse pas le net ; seul le montant remboursé compte", () => {
+  it("un achat à crédit et ses remboursements ne baissent jamais le net", () => {
     const s = summarizeCash({
       entries: [],
       expenses: [],
@@ -197,7 +197,7 @@ describe("gains nets et achats à crédit", () => {
       employees: [],
       repayments: [{ ...entry("r", 150, "remboursement"), purchaseId: "b" }],
     });
-    expect(s.net).toBe(-250);
+    expect(s.net).toBe(-100);
   });
 });
 
