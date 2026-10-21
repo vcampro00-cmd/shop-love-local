@@ -55,6 +55,8 @@ export const getCashBook = createServerFn({ method: "GET" })
       const empName = e.kind === "salaire" && e.employee_id ? (staff.data ?? []).find((x: any) => x.id === e.employee_id)?.name : undefined;
       const row: CashEntry = { id: e.id, date: e.spent_on, label: empName ?? e.label, amount: Number(e.amount), kind: e.kind as CashEntry["kind"], units: e.units, unitPrice: e.unit_price == null ? null : Number(e.unit_price), createdAt: e.created_at, onCredit: Boolean(e.on_credit), purchaseId: e.purchase_id ?? null, orderId: e.order_id ?? null };
       if (e.kind === "remboursement") repayments.push(row);
+      // "Paiement convenu" paid through the /pagar link: a real card payment, counts automatically.
+      else if (e.kind === "auto") autoEntries.push(row);
       else if (e.kind === "entree") manual.push(e.on_credit ? { ...row, kind: "especes", manual: true } : { ...row, manual: true });
       else if (e.kind === "achat") purchaseRows.push(row);
       else if (e.kind === "salaire") employeeRows.push(row);
