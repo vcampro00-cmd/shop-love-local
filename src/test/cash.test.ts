@@ -18,22 +18,23 @@ describe("summarizeCash", () => {
       employees: [],
     };
     const s = summarizeCash(book);
-    expect(s.inTotal).toBe(420);
+    expect(s.inTotal).toBe(320);
     expect(s.outTotal).toBe(30);
     expect(s.purchaseTotal).toBe(150);
-    expect(s.feeTotal).toBeCloseTo(1.47);
-    expect(s.net).toBeCloseTo(238.53);
+    expect(s.feeTotal).toBeCloseTo(1.12);
+    expect(s.net).toBeCloseTo(138.88);
   });
 
-  it("deducts the 0.35% Stripe fee from every entry, manual ones included", () => {
+  it("manual entries never count in the entries, the fee or the net", () => {
     const s = summarizeCash({
       entries: [entry("auto-1", 300), entry("manual-1", 200, "entree")],
       expenses: [],
       purchases: [],
       employees: [],
     });
-    expect(s.feeTotal).toBe(1.75);
-    expect(s.net).toBe(498.25);
+    expect(s.inTotal).toBe(300);
+    expect(s.feeTotal).toBe(1.05);
+    expect(s.net).toBe(298.95);
   });
 
   it("an empty book nets to zero", () => {

@@ -133,7 +133,8 @@ export function cashSaleAmount(total: number, commission: number): number {
 
 /** Gains nets = entrées carte (auto + manuelles) − commission Stripe − sorties − achats de téléphones. Les ventes en espèces n'y comptent plus, les salaires non plus : ils servent seulement au suivi, employé par employé. */
 export function summarizeCash(book: CashBook): CashSummary {
-  const card = book.entries.filter((e) => e.kind !== "especes");
+  // Only real payments received through the site count; manual entries are listed for control only.
+  const card = book.entries.filter((e) => e.kind === "auto");
   // Les ventes en espèces ne comptent plus dans les entrées ni dans le net.
   const inTotal = card.reduce((s, e) => s + e.amount, 0);
   const cashIn = book.entries.filter((e) => e.kind === "especes").reduce((s, e) => s + e.amount, 0);
