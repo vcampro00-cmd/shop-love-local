@@ -34,8 +34,8 @@ export const getCashBook = createServerFn({ method: "GET" })
           id: o.id,
           date: o.updated_at,
           label: `${o.ref} — ${o.name}`,
-          // Seller commission is deducted from every concluded sale, card or cash.
-          amount: cash ? cashSaleAmount(Number(o.total), commissionByOrder.get(o.id) ?? 0) : o.status === "livre" ? cashSaleAmount(Math.max(Number(o.total), Number(o.amount_paid)), commissionByOrder.get(o.id) ?? 0) : Number(o.amount_paid),
+          // Seller commissions are tracked per seller only; they are never deducted from sales.
+          amount: cash ? Number(o.total) : o.status === "livre" ? Math.max(Number(o.total), Number(o.amount_paid)) : Number(o.amount_paid),
           kind: cash ? "especes" : "auto",
           createdAt: o.updated_at,
         };

@@ -210,34 +210,12 @@ function Caisse() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Stat label={t("cash.inCard")} value={brl(s.cardIn)} />
-        <Stat label={t("cash.inCash")} value={brl(s.cashIn)} />
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label={t("cash.inCard")} value={brl(s.cardIn + s.cashIn)} />
         <Stat label={t("cash.out")} value={brl(s.outTotal)} />
         <Stat label={t("cash.purchases")} value={brl(s.purchaseTotal)} />
         <Stat label={t("cash.net")} value={brl(s.net)} strong />
       </div>
-
-      <form onSubmit={submitDrawer} className="mt-6 rounded-2xl border border-primary/40 bg-primary/5 p-5">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">{t("cash.drawer")}</p>
-            <p className="mt-1 text-3xl font-bold">{brl(cashInDrawer(full.drawer, full.entries, [...full.expenses, ...full.purchases, ...(full.repayments ?? []), ...full.employees]))}</p>
-            {full.drawer && (
-              <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                {fmtDate(full.drawer.setAt)} : {brl(full.drawer.amount)}
-                <button type="button" className="underline hover:text-foreground" onClick={() => { setFixing(true); setDrawerInput(String(full.drawer!.amount).replace(".", ",")); }}>{t("cash.drawerEdit")}</button>
-              </p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Input inputMode="decimal" placeholder="0,00" value={drawerInput} onChange={(e) => setDrawerInput(e.target.value)} className="w-32" aria-label={t("cash.drawer")} />
-            <Button type="submit">{fixing ? t("cash.drawerFix") : t("cash.drawerSave")}</Button>
-            {fixing && <Button type="button" variant="outline" onClick={() => { setFixing(false); setDrawerInput(""); }}>✕</Button>}
-          </div>
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">{fixing ? t("cash.drawerFixHint") : t("cash.drawerHint")}</p>
-      </form>
 
       <form onSubmit={submit} className="mt-8 rounded-2xl border bg-card p-5">
         <fieldset className="border-0 p-0">
@@ -295,9 +273,9 @@ function Caisse() {
           )
         ) : (
           <>
-          {(kind === "achat" || kind === "entree") && (
+          {kind === "achat" && (
             <div className="mt-4 flex flex-wrap gap-2" role="radiogroup">
-              {(kind === "achat" ? [{ v: false, k: "cash.payNow" }, { v: true, k: "cash.payLater" }] : [{ v: false, k: "cash.entryCard" }, { v: true, k: "cash.entryCash" }]).map((o) => (
+              {[{ v: false, k: "cash.payNow" }, { v: true, k: "cash.payLater" }].map((o) => (
                 <Button key={o.k} type="button" role="radio" aria-checked={onCredit === o.v} variant={onCredit === o.v ? "default" : "outline"} onClick={() => setOnCredit(o.v)}>
                   {onCredit === o.v && <Check className="h-4 w-4" />} {t(o.k)}
                 </Button>

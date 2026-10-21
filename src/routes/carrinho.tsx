@@ -242,13 +242,6 @@ function Cart() {
                 <p className="mt-1 text-xs leading-relaxed">{t("cart.splitContract")}</p>
               </div>
             )}
-            <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${cash ? "border-primary bg-primary/10" : ""}`}>
-              <input type="radio" name="plan" className="mt-1" checked={cash} onChange={() => { setPayMethod("especes"); setMethod("retrait"); }} />
-              <span>
-                <span className="block font-medium">{t("pay.cash")} — {brl(total)}</span>
-                <span className="block text-xs text-muted-foreground">{t("pay.cashHint")}</span>
-              </span>
-            </label>
           </fieldset>
         )}
 
