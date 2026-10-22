@@ -209,3 +209,14 @@ describe("dépenses et caisse", () => {
     expect(cashInDrawer({ amount: 100, setAt: "2026-10-01T00:00:00Z" }, [], [dep])).toBe(60);
   });
 });
+
+import { summarizeCash as sum2 } from "@/lib/cash";
+describe("Stripe fee cutoff", () => {
+  it("no fee before 22/10 19:30 UTC, fee after", () => {
+    const book = { entries: [
+      { id: "a", date: "2026-10-20", label: "old", amount: 1000, kind: "auto" as const, createdAt: "2026-10-20T10:00:00Z" },
+      { id: "b", date: "2026-10-23", label: "new", amount: 1000, kind: "auto" as const, createdAt: "2026-10-23T10:00:00Z" },
+    ], expenses: [], purchases: [], employees: [] };
+    expect(sum2(book).net).toBe(1996.5);
+  });
+});
