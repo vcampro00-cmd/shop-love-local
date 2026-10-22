@@ -22,8 +22,8 @@ describe("summarizeCash", () => {
     expect(s.inTotal).toBe(320);
     expect(s.outTotal).toBe(30);
     expect(s.purchaseTotal).toBe(150);
-    expect(s.feeTotal).toBeCloseTo(1.12);
-    expect(s.net).toBeCloseTo(138.88);
+    expect(s.feeTotal).toBeCloseTo(5.05);
+    expect(s.net).toBeCloseTo(134.95);
   });
 
   it("manual entries never count in the entries, the fee or the net", () => {
@@ -34,8 +34,8 @@ describe("summarizeCash", () => {
       employees: [],
     });
     expect(s.inTotal).toBe(300);
-    expect(s.feeTotal).toBe(1.05);
-    expect(s.net).toBe(298.95);
+    expect(s.feeTotal).toBe(4.75);
+    expect(s.net).toBe(295.25);
   });
 
   it("an empty book nets to zero", () => {
@@ -61,7 +61,7 @@ describe("summarizeCash", () => {
       employees: [entry("salary-1", 80, "salaire"), entry("salary-2", 40, "salaire")],
     });
     expect(s.employeeTotal).toBe(120);
-    expect(s.net).toBe(318.88);
+    expect(s.net).toBe(314.95);
   });
 });
 
@@ -143,10 +143,10 @@ describe("cash (espèces) sales", () => {
       purchases: [],
       employees: [],
     });
-    expect(s.cardIn).toBe(199.3);
+    expect(s.cardIn).toBe(196.75);
     expect(s.inTotal).toBe(200);
     expect(s.cashIn).toBe(250);
-    expect(s.net).toBe(199.3);
+    expect(s.net).toBe(196.75);
   });
 });
 
@@ -218,6 +218,27 @@ describe("Stripe fee cutoff", () => {
       { id: "a", date: "2026-10-20", label: "old", amount: 1000, kind: "auto" as const, createdAt: "2026-10-20T10:00:00Z" },
       { id: "b", date: "2026-10-23", label: "new", amount: 1000, kind: "auto" as const, createdAt: "2026-10-23T10:00:00Z" },
     ], expenses: [], purchases: [], employees: [] };
-    expect(sum2(book).net).toBe(1996.5);
+    expect(sum2(book).net).toBe(1984.75);
+  });
+});
+
+import { stripeFee } from "@/lib/cash";
+describe("frais Stripe réels (1,5 % + 0,25 €)", () => {
+  it("un paiement de 150 € coûte 2,50 € de frais", () => {
+    expect(stripeFee(150)).toBe(2.5);
+  });
+  it("un paiement de 150 € laisse 147,50 € en caisse", () => {
+    const s = summarizeCash({
+      entries: [{ id: "p", date: "2026-10-23", createdAt: "2026-10-23T10:00:00Z", label: "p", amount: 150, kind: "auto" as const }],
+      expenses: [],
+      purchases: [],
+      employees: [],
+    });
+    expect(s.feeTotal).toBe(2.5);
+    expect(s.net).toBe(147.5);
+  });
+  it("les frais augmentent avec le montant", () => {
+    expect(stripeFee(300)).toBe(4.75);
+    expect(stripeFee(380)).toBe(5.95);
   });
 });
