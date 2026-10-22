@@ -18,6 +18,8 @@ export type CashEntry = {
   purchaseId?: string | null;
   /** Commande liée (commission automatique d'une vente). */
   orderId?: string | null;
+  /** Paiement reçu par un lien Stripe créé hors du site, saisi à la main (compte dans les entrées). */
+  link?: boolean;
 };
 
 export type Employee = { id: string; name: string; unitPrice: number };
@@ -108,9 +110,18 @@ export function purchaseDebts(purchases: CashEntry[], repayments: CashEntry[]): 
 /** Commission Stripe prélevée sur chaque entrée (vente du site ou entrée manuelle). */
 export const STRIPE_FEE_RATE = 0.0035;
 
+/** Les entrées enregistrées avant ce moment comptent sans commission (total aligné sur Stripe). */
+export const STRIPE_FEE_FROM = "2026-10-22T19:30:00Z";
+
 /** Commission Stripe sur un montant, arrondie au centime. */
 export function stripeFee(amount: number): number {
   return Math.round(amount * STRIPE_FEE_RATE * 100) / 100;
+}
+
+/** Commission d'une entrée : zéro pour celles d'avant STRIPE_FEE_FROM. */
+export function entryFee(e: CashEntry): number {
+  const at = new Date(e.createdAt ?? e.date).getTime();
+  return at >= new Date(STRIPE_FEE_FROM).getTime() ? stripeFee(e.amount) : 0;
 }
 
 export type CashSummary = {
@@ -142,7 +153,7 @@ export function summarizeCash(book: CashBook): CashSummary {
   // Achats à crédit et leurs remboursements : suivi seulement, jamais déduits d'aucun total.
   const purchaseTotal = book.purchases.filter((e) => !e.onCredit).reduce((s, e) => s + e.amount, 0);
   const employeeTotal = book.employees.reduce((s, e) => s + e.amount, 0);
-  const feeTotal = card.reduce((s, e) => s + stripeFee(e.amount), 0);
+  const feeTotal = card.reduce((s, e) => s + entryFee(e), 0);
   const cardIn = Math.round((inTotal - feeTotal) * 100) / 100;
   return { inTotal, cardIn, cashIn, outTotal, purchaseTotal, employeeTotal, feeTotal, net: inTotal - feeTotal - outTotal - purchaseTotal };
 }

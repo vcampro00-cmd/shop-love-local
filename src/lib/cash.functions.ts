@@ -58,6 +58,7 @@ export const getCashBook = createServerFn({ method: "GET" })
       if (e.kind === "remboursement") repayments.push(row);
       // "Paiement convenu" paid through the /pagar link: a real card payment, counts automatically.
       else if (e.kind === "auto") autoEntries.push(row);
+      else if (e.kind === "lien") autoEntries.push({ ...row, kind: "auto", manual: true, link: true });
       else if (e.kind === "entree") manual.push(e.on_credit ? { ...row, kind: "especes", manual: true } : { ...row, manual: true });
       else if (e.kind === "achat") purchaseRows.push(row);
       else if (e.kind === "salaire") employeeRows.push(row);
@@ -67,7 +68,7 @@ export const getCashBook = createServerFn({ method: "GET" })
     return { entries, expenses: sortieRows, purchases: purchaseRows, employees: employeeRows, staff: (staff.data ?? []).map((s: any) => ({ id: s.id, name: s.name, unitPrice: Number(s.unit_price) })), drawer, repayments };
   });
 
-const KINDS = z.enum(["entree", "sortie", "achat", "salaire"]);
+const KINDS = z.enum(["entree", "sortie", "achat", "salaire", "lien"]);
 
 export const addExpense = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
