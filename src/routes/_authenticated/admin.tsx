@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
-import { listAllOrders, orderAction, setOrderStatus, type Order } from "@/lib/orders.functions";
+import { listAllOrders, orderAction, setOrderStatus, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
@@ -192,6 +192,10 @@ function AdminOrders() {
               </span>
             </div>
 
+            {o.payment_plan === "split" && (o.payment_status === "acompte_paye" || o.payment_status === "en_attente") && (
+              <SecondChargeDate order={o} onSaved={() => queryClient.invalidateQueries({ queryKey: ["all-orders"] })} />
+            )}
+
             <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
               <div>
                 <p className="font-medium">{t("admin.customer")}</p>
@@ -306,6 +310,50 @@ function AdminOrders() {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function SecondChargeDate({ order, onSaved }: { order: Order; onSaved: () => void }) {
+  const t = useText();
+  const save = useServerFn(setSecondChargeDate);
+  const current = order.second_charge_due_at?.slice(0, 10) ?? "";
+  const [date, setDate] = useState(current);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 p-3 text-sm">
+      <span className="font-medium">{t("admin.secondDate.label")}</span>
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="rounded-xl border bg-background px-3 py-2"
+      />
+      <Button
+        size="sm"
+        className="bg-brand"
+        disabled={busy || !date || date === current}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await save({ data: { id: order.id, date } });
+            toast.success(t("admin.secondDate.saved"));
+            onSaved();
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Date impossible.");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {t("admin.secondDate.save")}
+      </Button>
+      {current && (
+        <span className="text-muted-foreground">
+          {t("pay.secondOn")} {new Date(order.second_charge_due_at!).toLocaleDateString("fr-FR")}
+        </span>
+      )}
     </div>
   );
 }
