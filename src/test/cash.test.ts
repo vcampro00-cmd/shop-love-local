@@ -4,6 +4,7 @@ import { summarizeCash, type CashEntry } from "@/lib/cash";
 const entry = (id: string, amount: number, kind: CashEntry["kind"] = "auto"): CashEntry => ({
   id,
   date: "2026-10-14",
+  createdAt: "2026-11-01T10:00:00Z",
   label: id,
   amount,
   kind,
