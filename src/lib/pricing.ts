@@ -78,6 +78,13 @@ export const SECOND_CHARGE_DELAY_DAYS = 7;
 // Alphabet sans I, O, 0, 1 : lisible quand on l'écrit à la main.
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+/** "2026-11-05" → ISO du 2e prélèvement, fixé à 12 h UTC ce jour-là (le cron tourne toutes les heures). */
+export function secondChargeDueFrom(date: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const d = new Date(`${date}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 /** "00ff2200ff22" → "VCA9CA9C". La partie aléatoire vient du serveur. */
 export function makeOrderRef(randomHex: string): string {
   let out = "";

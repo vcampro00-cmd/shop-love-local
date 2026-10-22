@@ -80,3 +80,14 @@ describe("code promo et commissions", () => {
     expect(commissionFor([{ id: "clone-deliveroo", qty: 1 }])).toBe(60);
   });
 });
+
+import { secondChargeDueFrom } from "@/lib/pricing";
+describe("date du 2e paiement", () => {
+  it("fixe le prélèvement à 12 h le jour choisi par le propriétaire", () => {
+    expect(secondChargeDueFrom("2026-11-05")).toBe("2026-11-05T12:00:00.000Z");
+  });
+  it("refuse une date invalide", () => {
+    expect(secondChargeDueFrom("pas-une-date")).toBeNull();
+    expect(secondChargeDueFrom("")).toBeNull();
+  });
+});

@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULTS } from "./content.defaults";
 import { numFromText } from "./content";
-import { canPayInTwoTimes, computeTotals, makeOrderRef, splitPayment, type CartItem } from "./pricing";
+import { canPayInTwoTimes, computeTotals, makeOrderRef, secondChargeDueFrom, splitPayment, type CartItem } from "./pricing";
 import { createStripeClient, getStripeErrorMessage } from "./stripe.server";
 
 const ORDER_STATUSES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
@@ -249,6 +249,25 @@ export const setOrderStatus = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("orders").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error("La situation n'a pas pu être enregistrée.");
     return { ok: true };
+  });
+
+const secondDatePayload = z.object({ id: z.string().uuid(), date: z.string().max(10) });
+
+/** Choisit la date du 2e prélèvement d'une commande en 2 fois — réservé au propriétaire. */
+export const setSecondChargeDate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => secondDatePayload.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
+    const due = secondChargeDueFrom(data.date.trim());
+    if (!due) throw new Error("Date invalide.");
+    const { error } = await context.supabase
+      .from("orders")
+      .update({ second_charge_due_at: due })
+      .eq("id", data.id)
+      .in("payment_status", ["en_attente", "acompte_paye"]);
+    if (error) throw new Error("La date n'a pas pu être enregistrée.");
+    return { ok: true, due };
   });
 
 const actionPayload = z.object({
