@@ -204,6 +204,9 @@ export const DEFAULTS: Record<string, string> = {
   "admin.deleteConfirm": "Supprimer définitivement cette commande ?",
   "admin.emailSent": "E-mail envoyé au client.",
   "admin.emailFailed": "Action enregistrée, mais l'e-mail n'a pas pu partir.",
+  "admin.secondDate.label": "2e paiement — date du prélèvement",
+  "admin.secondDate.save": "Enregistrer la date",
+  "admin.secondDate.saved": "Date du 2e paiement enregistrée.",
 
   // Caisse
   "cash.title": "Caisse",
@@ -488,6 +491,9 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       long("admin.deleteConfirm", "Question avant suppression"),
       text("admin.emailSent", "Message e-mail envoyé"),
       long("admin.emailFailed", "Message e-mail non envoyé"),
+      text("admin.secondDate.label", "Date du 2e prélèvement — titre"),
+      text("admin.secondDate.save", "Date du 2e prélèvement — bouton"),
+      long("admin.secondDate.saved", "Date du 2e prélèvement — confirmation"),
     ],
   },
   {

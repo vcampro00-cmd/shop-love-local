@@ -28,7 +28,8 @@ export async function applyPaidSession(sessionId: string, env: StripeEnv): Promi
   const customer = typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
 
   if (order.payment_plan === "split" && Number(order.second_amount) > 0) {
-    const due = new Date(Date.now() + SECOND_CHARGE_DELAY_DAYS * 86400_000).toISOString();
+    // Date déjà choisie par le propriétaire ? On la garde, sinon 7 jours plus tard.
+    const due = order.second_charge_due_at ?? new Date(Date.now() + SECOND_CHARGE_DELAY_DAYS * 86400_000).toISOString();
     await db
       .from("orders")
       .update({
