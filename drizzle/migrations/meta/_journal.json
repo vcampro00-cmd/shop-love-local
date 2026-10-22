@@ -127,6 +127,13 @@
       "when": 1792333713835,
       "tag": "0017_promo_codes_seller",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792696731192,
+      "tag": "0018_link_payments",
+      "breakpoints": true
     }
   ]
 }

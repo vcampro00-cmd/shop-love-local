@@ -1,0 +1,3 @@
+ALTER TABLE public.expenses DROP CONSTRAINT expenses_kind_check;
+ALTER TABLE public.expenses ADD CONSTRAINT expenses_kind_check CHECK (kind = ANY (ARRAY['entree','sortie','achat','salaire','fond','remboursement','auto','lien']));
+INSERT INTO public.expenses (label, amount, kind, spent_on, created_at) VALUES ('Paiements par lien Stripe (avant le 22/10)', 113.05, 'lien', '2026-10-22', '2026-10-22T19:00:00Z');

@@ -31,10 +31,11 @@ export const Route = createFileRoute("/_authenticated/caisse")({
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
 
-type Kind = "entree" | "sortie" | "achat" | "salaire";
+type Kind = "entree" | "lien" | "sortie" | "achat" | "salaire";
 
 const KINDS: { value: Kind; key: string }[] = [
   { value: "entree", key: "cash.kind.in" },
+  { value: "lien", key: "cash.kind.link" },
   { value: "sortie", key: "cash.kind.out" },
   { value: "achat", key: "cash.kind.purchase" },
   { value: "salaire", key: "cash.kind.employee" },
@@ -215,6 +216,11 @@ function Caisse() {
         <Stat label={t("cash.out")} value={brl(s.outTotal)} />
         <Stat label={t("cash.purchases")} value={brl(s.purchaseTotal)} />
         <Stat label={t("cash.net")} value={brl(s.net)} strong />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border bg-card p-4">
+        <span className="text-sm font-semibold">{t("cash.linkTotal")} ({book.entries.filter((e) => e.link).length})</span>
+        <span className="text-lg font-bold">{brl(book.entries.filter((e) => e.link).reduce((sum, e) => sum + e.amount, 0))}</span>
       </div>
 
       <form onSubmit={submit} className="mt-8 rounded-2xl border bg-card p-5">
