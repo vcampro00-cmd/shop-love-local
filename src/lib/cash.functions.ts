@@ -35,7 +35,8 @@ export const getCashBook = createServerFn({ method: "GET" })
           date: o.updated_at,
           label: `${o.ref} — ${o.name}`,
           // Seller commissions are tracked per seller only; they are never deducted from sales.
-          amount: cash ? Number(o.total) : o.status === "livre" ? Math.max(Number(o.total), Number(o.amount_paid)) : Number(o.amount_paid),
+          // Card sales count only what Stripe really collected; the 2nd instalment adds itself once charged.
+          amount: cash ? Number(o.total) : Number(o.amount_paid),
           kind: cash ? "especes" : "auto",
           createdAt: o.updated_at,
         };
