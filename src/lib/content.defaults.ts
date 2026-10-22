@@ -231,7 +231,7 @@ export const DEFAULTS: Record<string, string> = {
   "cash.out": "Sorties",
   "cash.purchases": "Achats de téléphones",
   "cash.employees": "Salaires versés",
-  "cash.stripeFees": "Frais Stripe (0,35 %)",
+  "cash.stripeFees": "Frais Stripe (1,5 % + 0,25 €)",
   "cash.net": "Gains nets",
   "cash.kindLabel": "Type de ligne",
   "cash.kind.in": "Entrée manuelle",

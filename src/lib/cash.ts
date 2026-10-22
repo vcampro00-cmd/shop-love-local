@@ -107,15 +107,18 @@ export function purchaseDebts(purchases: CashEntry[], repayments: CashEntry[]): 
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/** Commission Stripe prélevée sur chaque entrée (vente du site ou entrée manuelle). */
-export const STRIPE_FEE_RATE = 0.0035;
+/** Commission Stripe prélevée sur chaque paiement (vente du site ou paiement par lien). */
+export const STRIPE_FEE_RATE = 0.015;
+
+/** Partie fixe de la commission Stripe, en euros par paiement. */
+export const STRIPE_FEE_FIXED = 0.25;
 
 /** Les entrées enregistrées avant ce moment comptent sans commission (total aligné sur Stripe). */
 export const STRIPE_FEE_FROM = "2026-10-22T19:30:00Z";
 
-/** Commission Stripe sur un montant, arrondie au centime. */
+/** Commission Stripe sur un montant : 1,5 % + 0,25 € par paiement, arrondie au centime. */
 export function stripeFee(amount: number): number {
-  return Math.round(amount * STRIPE_FEE_RATE * 100) / 100;
+  return Math.round((amount * STRIPE_FEE_RATE + STRIPE_FEE_FIXED) * 100) / 100;
 }
 
 /** Commission d'une entrée : zéro pour celles d'avant STRIPE_FEE_FROM. */
