@@ -8,3 +8,4 @@
 - [ ] Connexion avec Google, s'il la veut pour ses clients.
 - [ ] Le client veut réécrire lui-même la description du Duo Android dans `/editar`.
 - Caisse: entrées automatiques (paiements reçus) + sorties manuelles — fait
+- Rappels WhatsApp automatiques le jour du paiement (modèles Meta en validation)
