@@ -114,7 +114,7 @@ export const STRIPE_FEE_RATE = 0.015;
 export const STRIPE_FEE_FIXED = 0.25;
 
 /** Les entrées enregistrées avant ce moment comptent sans commission (total aligné sur Stripe). */
-export const STRIPE_FEE_FROM = "2026-10-22T19:30:00Z";
+export const STRIPE_FEE_FROM = "2026-10-23T14:40:00Z";
 
 /** Commission Stripe sur un montant : 1,5 % + 0,25 € par paiement, arrondie au centime. */
 export function stripeFee(amount: number): number {
