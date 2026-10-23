@@ -26,7 +26,9 @@ import { Route as PagarIdRouteImport } from './routes/pagar.$id'
 import { Route as AuthenticatedPaiementIdRouteImport } from './routes/_authenticated/paiement.$id'
 import { Route as AuthenticatedPedidoIdRouteImport } from './routes/_authenticated/pedido.$id'
 import { Route as ApiPublicCronSecondPaymentsRouteImport } from './routes/api/public/cron/second-payments'
+import { Route as ApiPublicCronWhatsappRemindersRouteImport } from './routes/api/public/cron/whatsapp-reminders'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -115,10 +117,22 @@ const ApiPublicCronSecondPaymentsRoute =
     path: '/api/public/cron/second-payments',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronWhatsappRemindersRoute =
+  ApiPublicCronWhatsappRemindersRouteImport.update({
+    id: '/api/public/cron/whatsapp-reminders',
+    path: '/api/public/cron/whatsapp-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
     path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailTransactionalPreviewRoute =
@@ -145,7 +159,9 @@ export interface FileRoutesByFullPath {
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
+  '/api/public/cron/whatsapp-reminders': typeof ApiPublicCronWhatsappRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -165,7 +181,9 @@ export interface FileRoutesByTo {
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
+  '/api/public/cron/whatsapp-reminders': typeof ApiPublicCronWhatsappRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -187,7 +205,9 @@ export interface FileRoutesById {
   '/_authenticated/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/_authenticated/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
+  '/api/public/cron/whatsapp-reminders': typeof ApiPublicCronWhatsappRemindersRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -209,7 +229,9 @@ export interface FileRouteTypes {
     | '/paiement/$id'
     | '/pedido/$id'
     | '/api/public/cron/second-payments'
+    | '/api/public/cron/whatsapp-reminders'
     | '/api/public/payments/webhook'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -229,7 +251,9 @@ export interface FileRouteTypes {
     | '/paiement/$id'
     | '/pedido/$id'
     | '/api/public/cron/second-payments'
+    | '/api/public/cron/whatsapp-reminders'
     | '/api/public/payments/webhook'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -250,7 +274,9 @@ export interface FileRouteTypes {
     | '/_authenticated/paiement/$id'
     | '/_authenticated/pedido/$id'
     | '/api/public/cron/second-payments'
+    | '/api/public/cron/whatsapp-reminders'
     | '/api/public/payments/webhook'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -266,7 +292,9 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   PagarIdRoute: typeof PagarIdRoute
   ApiPublicCronSecondPaymentsRoute: typeof ApiPublicCronSecondPaymentsRoute
+  ApiPublicCronWhatsappRemindersRoute: typeof ApiPublicCronWhatsappRemindersRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -391,11 +419,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronSecondPaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/whatsapp-reminders': {
+      id: '/api/public/cron/whatsapp-reminders'
+      path: '/api/public/cron/whatsapp-reminders'
+      fullPath: '/api/public/cron/whatsapp-reminders'
+      preLoaderRoute: typeof ApiPublicCronWhatsappRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
       fullPath: '/api/public/payments/webhook'
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/transactional/preview': {
@@ -441,7 +483,9 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   PagarIdRoute: PagarIdRoute,
   ApiPublicCronSecondPaymentsRoute: ApiPublicCronSecondPaymentsRoute,
+  ApiPublicCronWhatsappRemindersRoute: ApiPublicCronWhatsappRemindersRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
