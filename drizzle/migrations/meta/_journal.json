@@ -134,6 +134,13 @@
       "when": 1792696731192,
       "tag": "0018_link_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792788308185,
+      "tag": "0019_whatsapp_reminders",
+      "breakpoints": true
     }
   ]
 }
