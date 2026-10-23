@@ -213,10 +213,10 @@ describe("dépenses et caisse", () => {
 
 import { summarizeCash as sum2 } from "@/lib/cash";
 describe("Stripe fee cutoff", () => {
-  it("no fee before 22/10 19:30 UTC, fee after", () => {
+  it("no fee before 23/10 14:40 UTC, fee after", () => {
     const book = { entries: [
       { id: "a", date: "2026-10-20", label: "old", amount: 1000, kind: "auto" as const, createdAt: "2026-10-20T10:00:00Z" },
-      { id: "b", date: "2026-10-23", label: "new", amount: 1000, kind: "auto" as const, createdAt: "2026-10-23T10:00:00Z" },
+      { id: "b", date: "2026-10-24", label: "new", amount: 1000, kind: "auto" as const, createdAt: "2026-10-24T10:00:00Z" },
     ], expenses: [], purchases: [], employees: [] };
     expect(sum2(book).net).toBe(1984.75);
   });
@@ -229,7 +229,7 @@ describe("frais Stripe réels (1,5 % + 0,25 €)", () => {
   });
   it("un paiement de 150 € laisse 147,50 € en caisse", () => {
     const s = summarizeCash({
-      entries: [{ id: "p", date: "2026-10-23", createdAt: "2026-10-23T10:00:00Z", label: "p", amount: 150, kind: "auto" as const }],
+      entries: [{ id: "p", date: "2026-10-24", createdAt: "2026-10-24T10:00:00Z", label: "p", amount: 150, kind: "auto" as const }],
       expenses: [],
       purchases: [],
       employees: [],
