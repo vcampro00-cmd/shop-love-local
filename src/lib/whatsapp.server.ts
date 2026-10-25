@@ -13,6 +13,11 @@ function parisDay(d: Date | string = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
 }
 
+/** Vence hoje ou já venceu: a data-limite é hoje ou um dia anterior. */
+export function isDueNow(dueDay: string, today: string): boolean {
+  return dueDay <= today;
+}
+
 const euros = (n: number) => n.toFixed(2).replace(".", ",");
 
 async function sendTemplate(to: string, name: string, params: string[]): Promise<string> {
@@ -44,7 +49,7 @@ export async function sendDueReminders(): Promise<{ sent: number; failed: number
   const today = parisDay();
   const jobs: Job[] = [];
 
-  const { data: reminders, error: e1 } = await db.from("payment_reminders").select("id, name, phone, amount").eq("due_date", today).is("paid_session_id", null);
+  const { data: reminders, error: e1 } = await db.from("payment_reminders").select("id, name, phone, amount").lte("due_date", today).is("paid_session_id", null);
   if (e1) throw e1;
   for (const r of reminders ?? []) {
     jobs.push({ kind: "rappel", sourceId: r.id, phone: r.phone, template: "vcampro_rappel_paiement", params: [r.name, euros(Number(r.amount)), `${SITE}/pagar/${r.id}`] });
@@ -53,7 +58,7 @@ export async function sendDueReminders(): Promise<{ sent: number; failed: number
   const { data: orders, error: e2 } = await db.from("orders").select("id, name, phone, ref, second_amount, second_charge_due_at").eq("payment_status", "acompte_paye").not("second_charge_due_at", "is", null);
   if (e2) throw e2;
   for (const o of orders ?? []) {
-    if (parisDay(o.second_charge_due_at!) !== today) continue;
+    if (!isDueNow(parisDay(o.second_charge_due_at!), today)) continue;
     jobs.push({ kind: "second", sourceId: o.id, phone: o.phone, template: "vcampro_second_paiement", params: [o.name, o.ref, euros(Number(o.second_amount))] });
   }
 
