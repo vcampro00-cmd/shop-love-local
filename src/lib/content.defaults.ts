@@ -207,6 +207,9 @@ export const DEFAULTS: Record<string, string> = {
   "admin.secondDate.label": "2e paiement — date du prélèvement",
   "admin.secondDate.save": "Enregistrer la date",
   "admin.secondDate.saved": "Date du 2e paiement enregistrée.",
+  "admin.phone.label": "Téléphone du client",
+  "admin.phone.save": "Enregistrer le numéro",
+  "admin.phone.saved": "Numéro du client enregistré.",
 
   // Caisse
   "cash.title": "Caisse",
@@ -498,6 +501,9 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("admin.secondDate.label", "Date du 2e prélèvement — titre"),
       text("admin.secondDate.save", "Date du 2e prélèvement — bouton"),
       long("admin.secondDate.saved", "Date du 2e prélèvement — confirmation"),
+      text("admin.phone.label", "Téléphone client — étiquette"),
+      text("admin.phone.save", "Téléphone client — bouton"),
+      long("admin.phone.saved", "Téléphone client — confirmation"),
     ],
   },
   {
