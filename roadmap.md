@@ -11,3 +11,4 @@
 - Rappels WhatsApp automatiques le jour du paiement — modèles approuvés par Meta, envois vérifiés (4 rappels en retard envoyés le 25/10)
 - [ ] Confirmer la destination des messages entrants (Connectors → WhatsApp → Incoming messages) — la boîte de réception `whatsapp_webhook_events` est restée vide après les envois
 - [ ] Numéro de DAMPOU (6666666666) à corriger : le rappel automatique échouera tant que ce numéro reste faux
+- [ ] Confirmation du numéro par code WhatsApp — bloqué : Meta n'autorise les messages de code (AUTHENTICATION) qu'après la vérification de l'entreprise dans le Centre de sécurité ; tentative refusée le 25/10 (erreur permission 2388185)
