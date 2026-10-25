@@ -169,7 +169,9 @@ function Caisse() {
     const digits = whatsappDigits(remPhone);
     if (!remName.trim() || !(value > 0) || digits.length < 8 || !remDate) { toast.error(t("cash.invalid")); return; }
     try {
-      await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate } });
+      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate } });
+      if (res.whatsapp?.sent) toast.success(t("cash.reminderWaSent"));
+      else if (res.whatsapp?.failed) toast.error(t("cash.reminderWaFailed"));
       setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today());
       await qc.invalidateQueries({ queryKey: ["reminders"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
