@@ -44,22 +44,28 @@ async function sendTemplate(to: string, name: string, params: string[]): Promise
 type Job = { kind: "rappel" | "second"; sourceId: string; phone: string; template: string; params: string[] };
 
 /** Envoie, le jour de l'échéance, le rappel WhatsApp de chaque paiement en attente (une fois par jour et par paiement). */
-export async function sendDueReminders(): Promise<{ sent: number; failed: number; skipped: number }> {
+export async function sendDueReminders(opts: { onlyReminderId?: string } = {}): Promise<{ sent: number; failed: number; skipped: number }> {
   const db = await admin();
   const today = parisDay();
   const jobs: Job[] = [];
 
-  const { data: reminders, error: e1 } = await db.from("payment_reminders").select("id, name, phone, amount").lte("due_date", today).is("paid_session_id", null);
+  // Envoi ciblé (création d'un rappel) : le rappel sans date part aussi tout de suite.
+  const q = db.from("payment_reminders").select("id, name, phone, amount").is("paid_session_id", null);
+  const { data: reminders, error: e1 } = opts.onlyReminderId
+    ? await q.eq("id", opts.onlyReminderId).or(`due_date.is.null,due_date.lte.${today}`)
+    : await q.lte("due_date", today);
   if (e1) throw e1;
   for (const r of reminders ?? []) {
     jobs.push({ kind: "rappel", sourceId: r.id, phone: r.phone, template: "vcampro_rappel_paiement", params: [r.name, euros(Number(r.amount)), `${SITE}/pagar/${r.id}`] });
   }
 
-  const { data: orders, error: e2 } = await db.from("orders").select("id, name, phone, ref, second_amount, second_charge_due_at").eq("payment_status", "acompte_paye").not("second_charge_due_at", "is", null);
-  if (e2) throw e2;
-  for (const o of orders ?? []) {
-    if (!isDueNow(parisDay(o.second_charge_due_at!), today)) continue;
-    jobs.push({ kind: "second", sourceId: o.id, phone: o.phone, template: "vcampro_second_paiement", params: [o.name, o.ref, euros(Number(o.second_amount))] });
+  if (!opts.onlyReminderId) {
+    const { data: orders, error: e2 } = await db.from("orders").select("id, name, phone, ref, second_amount, second_charge_due_at").eq("payment_status", "acompte_paye").not("second_charge_due_at", "is", null);
+    if (e2) throw e2;
+    for (const o of orders ?? []) {
+      if (!isDueNow(parisDay(o.second_charge_due_at!), today)) continue;
+      jobs.push({ kind: "second", sourceId: o.id, phone: o.phone, template: "vcampro_second_paiement", params: [o.name, o.ref, euros(Number(o.second_amount))] });
+    }
   }
 
   let sent = 0, failed = 0, skipped = 0;
