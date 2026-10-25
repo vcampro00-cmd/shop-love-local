@@ -314,6 +314,45 @@ function AdminOrders() {
   );
 }
 
+function OrderRef({ order, onSaved }: { order: Order; onSaved: () => void }) {
+  const t = useText();
+  const save = useServerFn(setOrderRef);
+  const [ref, setRef] = useState(order.ref);
+  const [busy, setBusy] = useState(false);
+  const changed = ref.trim().toUpperCase() !== order.ref && /^VC[A-Z0-9]{2,10}$/.test(ref.trim().toUpperCase());
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <input
+        value={ref}
+        onChange={(e) => setRef(e.target.value.toUpperCase())}
+        aria-label={t("admin.ref.label")}
+        className="w-36 rounded-xl border bg-background px-3 py-1.5 text-lg font-bold"
+      />
+      {changed && (
+        <Button
+          size="sm"
+          className="bg-brand"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await save({ data: { id: order.id, ref: ref.trim() } });
+              toast.success(t("admin.ref.saved"));
+              onSaved();
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Numéro invalide.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {t("admin.ref.save")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function OrderPhone({ order, onSaved }: { order: Order; onSaved: () => void }) {
   const t = useText();
   const save = useServerFn(setOrderPhone);
