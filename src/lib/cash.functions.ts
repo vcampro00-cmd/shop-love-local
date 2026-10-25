@@ -157,9 +157,19 @@ export const addReminder = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { error } = await context.supabase.from("payment_reminders").insert({ name: data.name, phone: data.phone, amount: data.amount, note: data.note, due_date: data.dueDate });
-    if (error) throw new Error("Le rappel n'a pas pu être enregistré.");
-    return { ok: true };
+    const { data: row, error } = await context.supabase.from("payment_reminders").insert({ name: data.name, phone: data.phone, amount: data.amount, note: data.note, due_date: data.dueDate }).select("id").single();
+    if (error || !row) throw new Error("Le rappel n'a pas pu être enregistré.");
+    // Rappel dû aujourd'hui (ou sans date) : le client reçoit le WhatsApp tout de suite.
+    let whatsapp: { sent: number; failed: number } | null = null;
+    try {
+      const { sendDueReminders } = await import("@/lib/whatsapp.server");
+      const r = await sendDueReminders({ onlyReminderId: row.id });
+      whatsapp = { sent: r.sent, failed: r.failed };
+    } catch (e) {
+      console.error("Immediate WhatsApp reminder failed", e);
+      whatsapp = { sent: 0, failed: 1 };
+    }
+    return { ok: true, whatsapp };
   });
 
 export const deleteReminder = createServerFn({ method: "POST" })
