@@ -11,7 +11,7 @@ export const PHONE_COUNTRIES: PhoneCountry[] = [
 ];
 
 export function countryOf(code: string) {
-  return PHONE_COUNTRIES.find((c) => c.code === code) ?? PHONE_COUNTRIES[0];
+  return PHONE_COUNTRIES.find((c) => c.code === code) ?? PHONE_COUNTRIES[0]!;
 }
 
 /** Garde seulement les chiffres nationaux (sans le 0 initial), limités à la longueur du pays. */
