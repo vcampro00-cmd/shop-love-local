@@ -235,6 +235,9 @@ export const listAllOrders = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("orders")
       .select("*")
+      // Les commandes « en_attente » n'ont pas été payées : le client n'a pas terminé le paiement.
+      // Elles n'apparaissent pas au propriétaire pour éviter de préparer un téléphone non payé.
+      .in("payment_status", ["paye", "acompte_paye", "echec_solde"])
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Impossible d'afficher les commandes.");
