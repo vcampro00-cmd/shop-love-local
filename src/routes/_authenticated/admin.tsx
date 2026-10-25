@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
-import { listAllOrders, orderAction, setOrderPhone, setOrderStatus, setSecondChargeDate, type Order } from "@/lib/orders.functions";
+import { listAllOrders, orderAction, setOrderPhone, setOrderRef, setOrderStatus, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
@@ -171,7 +171,7 @@ function AdminOrders() {
           <li key={o.id} className="rounded-2xl border bg-card p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-lg font-bold">{o.ref}</p>
+                <OrderRef order={o} onSaved={() => queryClient.invalidateQueries({ queryKey: ["all-orders"] })} />
                 <p className="text-xs text-muted-foreground">
                   {t("admin.date")} : {new Date(o.created_at).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })}
                 </p>
