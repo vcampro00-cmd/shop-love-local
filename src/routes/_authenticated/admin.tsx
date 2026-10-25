@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
-import { listAllOrders, orderAction, setOrderPhone, setOrderRef, setOrderStatus, setSecondChargeDate, type Order } from "@/lib/orders.functions";
+import { listAllOrders, orderAction, setOrderPhone, setOrderStatus, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
@@ -171,7 +171,7 @@ function AdminOrders() {
           <li key={o.id} className="rounded-2xl border bg-card p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <OrderRef order={o} onSaved={() => queryClient.invalidateQueries({ queryKey: ["all-orders"] })} />
+                <p className="text-lg font-bold">{o.ref}</p>
                 <p className="text-xs text-muted-foreground">
                   {t("admin.date")} : {new Date(o.created_at).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })}
                 </p>
@@ -310,45 +310,6 @@ function AdminOrders() {
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function OrderRef({ order, onSaved }: { order: Order; onSaved: () => void }) {
-  const t = useText();
-  const save = useServerFn(setOrderRef);
-  const [ref, setRef] = useState(order.ref);
-  const [busy, setBusy] = useState(false);
-  const changed = ref.trim().toUpperCase() !== order.ref && /^VC[A-Z0-9]{2,10}$/.test(ref.trim().toUpperCase());
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <input
-        value={ref}
-        onChange={(e) => setRef(e.target.value.toUpperCase())}
-        aria-label={t("admin.ref.label")}
-        className="w-36 rounded-xl border bg-background px-3 py-1.5 text-lg font-bold"
-      />
-      {changed && (
-        <Button
-          size="sm"
-          className="bg-brand"
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await save({ data: { id: order.id, ref: ref.trim() } });
-              toast.success(t("admin.ref.saved"));
-              onSaved();
-            } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Numéro invalide.");
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {t("admin.ref.save")}
-        </Button>
-      )}
     </div>
   );
 }
