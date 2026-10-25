@@ -43,6 +43,6 @@ export function isVisionxCode(v: string) {
 
 /** Affiche le code VISIONX avec un tiret tous les 4 caractères (ZSCM-1234-5678). */
 export function formatVisionxCode(v: string) {
-  const d = v.replace(/[^A-Z0-9]/g, "").toUpperCase();
+  const d = v.toUpperCase().replace(/[^A-Z0-9]/g, "");
   return d.replace(/(.{4})(?=.)/g, "$1-");
 }
