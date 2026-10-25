@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
-import { isVisionxCode } from "@/lib/phone";
+import { formatVisionxCode, isVisionxCode } from "@/lib/phone";
 import { listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
@@ -352,7 +352,7 @@ function VisionxCode({ order, onSaved }: { order: Order; onSaved: () => void }) 
             onClick={async () => {
               setBusy(true);
               try {
-                await save({ data: { id: order.id, code: clean } });
+                await save({ data: { id: order.id, code: code.replace(/[^A-Z0-9-]/g, "") } });
                 toast.success(t("admin.visionx.saved"));
                 onSaved();
               } catch (e) {
