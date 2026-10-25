@@ -58,7 +58,15 @@ function ResetPassword() {
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) {
-      toast.error("Ce lien a expiré. Demandez un nouveau lien de réinitialisation.");
+      const code = (error as { code?: string }).code ?? "";
+      const msg = error.message.toLowerCase();
+      if (code === "same_password" || msg.includes("different from the old"))
+        toast.error("Ce mot de passe est déjà le vôtre. Choisissez-en un nouveau.");
+      else if (code === "weak_password" || msg.includes("weak") || msg.includes("easy to guess"))
+        toast.error("Mot de passe trop facile à deviner. Choisissez-en un plus original (mélangez lettres, chiffres et symboles).");
+      else if (code === "session_not_found" || msg.includes("session") || msg.includes("expired"))
+        toast.error("Ce lien a expiré. Demandez un nouveau lien de réinitialisation.");
+      else toast.error(error.message);
       return;
     }
     toast.success("Mot de passe enregistré.");
