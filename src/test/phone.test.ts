@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { countryOf, formatPhone, nationalDigits, isVisionxCode } from "@/lib/phone";
+import { countryOf, formatPhone, nationalDigits, isVisionxCode, formatVisionxCode } from "@/lib/phone";
 
 describe("téléphone", () => {
   it("France : +33 6 66 66 66 66", () => {
