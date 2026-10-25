@@ -49,6 +49,36 @@ export async function applyPaidSession(sessionId: string, env: StripeEnv): Promi
       .eq("id", orderId)
       .eq("payment_status", "en_attente");
   }
+
+  // E-mail ao proprietário — enviado somente agora, depois da confirmação do pagamento.
+  try {
+    const { readCatalog } = await import("./catalog.server");
+    const catalog = new Map((await readCatalog()).map((p) => [p.id, p]));
+    const { sendTemplateEmail } = await import("./email-templates/send-email");
+    const eur = (cents: number) =>
+      (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+    await sendTemplateEmail("order-notification", "", {
+      idempotencyKey: `order-notification-${order.id}`,
+      templateData: {
+        ref: order.ref,
+        name: order.name,
+        phone: order.phone,
+        email: order.customer_email,
+        delivery: order.delivery_method === "retrait" ? "Retrait sur place" : "Livraison à domicile",
+        address:
+          order.delivery_method === "retrait"
+            ? ""
+            : `${order.address ?? ""}, ${order.postal_code ?? ""}`.trim(),
+        items: ((order.items ?? []) as { id: string; qty: number }[])
+          .map((i) => `${i.qty} × ${catalog.get(i.id)?.name ?? i.id}`)
+          .join(", "),
+        total: eur(order.total),
+        plan: order.payment_plan === "split" ? "En 2 fois" : "En une fois",
+      },
+    });
+  } catch (e) {
+    console.error("order-notification email failed", e);
+  }
 }
 
 /** Prélève le 2e paiement des commandes arrivées à échéance. Une seule fois par commande. */

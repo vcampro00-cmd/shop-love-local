@@ -173,33 +173,6 @@ export const createOrder = createServerFn({ method: "POST" })
 
     if (error) throw new Error("La commande n'a pas pu être enregistrée. Réessayez.");
 
-    // Aviso por e-mail ao proprietário — uma falha aqui nunca bloqueia o pedido.
-    try {
-      const { sendTemplateEmail } = await import("./email-templates/send-email");
-      const eur = (cents: number) =>
-        (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
-      await sendTemplateEmail("order-notification", "", {
-        idempotencyKey: `order-notification-${order.id}`,
-        templateData: {
-          ref: order.ref,
-          name: data.name,
-          phone: data.phone,
-          email: emailOf(context.claims),
-          delivery:
-            data.delivery_method === "retrait" ? "Retrait sur place" : "Livraison à domicile",
-          address:
-            data.delivery_method === "retrait"
-              ? ""
-              : `${data.address}, ${data.postal_code}`.trim(),
-          items: data.items.map((i) => `${i.qty} × ${catalog.get(i.id)?.name ?? i.id}`).join(", "),
-          total: eur(totals.total),
-          plan: cash ? "En espèces au retrait" : data.plan === "split" ? "En 2 fois" : "En une fois",
-        },
-      });
-    } catch (e) {
-      console.error("order-notification email failed", e);
-    }
-
     return { id: order.id, ref: order.ref, total: totals.total };
   });
 
