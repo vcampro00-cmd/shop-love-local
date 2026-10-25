@@ -8,4 +8,6 @@
 - [ ] Connexion avec Google, s'il la veut pour ses clients.
 - [ ] Le client veut réécrire lui-même la description du Duo Android dans `/editar`.
 - Caisse: entrées automatiques (paiements reçus) + sorties manuelles — fait
-- Rappels WhatsApp automatiques le jour du paiement (modèles Meta en validation)
+- Rappels WhatsApp automatiques le jour du paiement — modèles approuvés par Meta, envois vérifiés (4 rappels en retard envoyés le 25/10)
+- [ ] Confirmer la destination des messages entrants (Connectors → WhatsApp → Incoming messages) — la boîte de réception `whatsapp_webhook_events` est restée vide après les envois
+- [ ] Numéro de DAMPOU (6666666666) à corriger : le rappel automatique échouera tant que ce numéro reste faux
