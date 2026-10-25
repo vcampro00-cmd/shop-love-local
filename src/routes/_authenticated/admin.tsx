@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
-import { listAllOrders, orderAction, setOrderStatus, setSecondChargeDate, type Order } from "@/lib/orders.functions";
+import { listAllOrders, orderAction, setOrderPhone, setOrderStatus, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
@@ -201,7 +201,7 @@ function AdminOrders() {
                 <p className="font-medium">{t("admin.customer")}</p>
                 <p className="text-muted-foreground">{o.name}</p>
                 <p className="text-muted-foreground">{o.customer_email}</p>
-                <p className="text-muted-foreground">{o.phone}</p>
+                <OrderPhone order={o} onSaved={() => queryClient.invalidateQueries({ queryKey: ["all-orders"] })} />
               </div>
               <div>
                 <p className="font-medium">{t("admin.address")}</p>
@@ -310,6 +310,46 @@ function AdminOrders() {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function OrderPhone({ order, onSaved }: { order: Order; onSaved: () => void }) {
+  const t = useText();
+  const save = useServerFn(setOrderPhone);
+  const [phone, setPhone] = useState(order.phone ?? "");
+  const [busy, setBusy] = useState(false);
+  const changed = phone.trim() !== (order.phone ?? "") && phone.trim().length >= 8;
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-2">
+      <input
+        type="tel"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        aria-label={t("admin.phone.label")}
+        className="w-40 rounded-xl border bg-background px-3 py-1.5 text-sm"
+      />
+      {changed && (
+        <Button
+          size="sm"
+          className="bg-brand"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await save({ data: { id: order.id, phone: phone.trim() } });
+              toast.success(t("admin.phone.saved"));
+              onSaved();
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Téléphone invalide.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {t("admin.phone.save")}
+        </Button>
+      )}
     </div>
   );
 }
