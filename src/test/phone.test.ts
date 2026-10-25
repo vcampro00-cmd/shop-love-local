@@ -12,4 +12,9 @@ describe("VISIONX", () => {
     expect(isVisionxCode("ZSCM12345")).toBe(true);
     expect(isVisionxCode("ABC12345")).toBe(false);
   });
+  it("a un tiret tous les 4 caractères", () => {
+    expect(formatVisionxCode("ZSCM1234")).toBe("ZSCM-1234");
+    expect(formatVisionxCode("ZSCM12345678")).toBe("ZSCM-1234-5678");
+    expect(formatVisionxCode("zscm-1234-5678")).toBe("ZSCM-1234-5678");
+  });
 });
