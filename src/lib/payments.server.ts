@@ -55,8 +55,8 @@ export async function applyPaidSession(sessionId: string, env: StripeEnv): Promi
     const { readCatalog } = await import("./catalog.server");
     const catalog = new Map((await readCatalog()).map((p) => [p.id, p]));
     const { sendTemplateEmail } = await import("./email-templates/send-email");
-    const eur = (cents: number) =>
-      (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+    const eur = (euros: number) =>
+      Number(euros).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
     await sendTemplateEmail("order-notification", "", {
       idempotencyKey: `order-notification-${order.id}`,
       templateData: {
