@@ -211,7 +211,7 @@ export const DEFAULTS: Record<string, string> = {
   "admin.phone.save": "Enregistrer le numéro",
   "admin.phone.saved": "Numéro du client enregistré.",
   "admin.visionx.label": "Code VISIONX",
-  "admin.visionx.hint": "Doit commencer par ZSCM",
+  "admin.visionx.hint": "Saisissez le code du téléphone",
   "admin.visionx.save": "Enregistrer le code",
   "admin.visionx.saved": "Code VISIONX enregistré.",
   "form.country": "Pays",

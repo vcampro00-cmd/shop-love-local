@@ -8,13 +8,15 @@ describe("téléphone", () => {
   });
 });
 describe("VISIONX", () => {
-  it("doit commencer par ZSCM", () => {
+  it("accepte n'importe quel code, sans préfixe obligatoire", () => {
     expect(isVisionxCode("ZSCM12345")).toBe(true);
-    expect(isVisionxCode("ABC12345")).toBe(false);
+    expect(isVisionxCode("ABC12345")).toBe(true);
+    expect(isVisionxCode("7788")).toBe(true);
+    expect(isVisionxCode("ABC")).toBe(false);
   });
   it("a un tiret tous les 4 caractères", () => {
     expect(formatVisionxCode("ZSCM1234")).toBe("ZSCM-1234");
     expect(formatVisionxCode("ZSCM12345678")).toBe("ZSCM-1234-5678");
-    expect(formatVisionxCode("zscm-1234-5678")).toBe("ZSCM-1234-5678");
+    expect(formatVisionxCode("abcd-1234-5678")).toBe("ABCD-1234-5678");
   });
 });

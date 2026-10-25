@@ -265,8 +265,8 @@ export const setOrderPhone = createServerFn({ method: "POST" })
 
 const visionxPayload = z.object({
   id: z.string().uuid(),
-  // Les tirets d'affichage (ZSCM-1234-5678) ne comptent pas dans la validation.
-  code: z.string().trim().toUpperCase().refine((v) => isVisionxCode(v.replace(/-/g, "")), "Le code VISIONX doit commencer par ZSCM."),
+  // Les tirets d'affichage (ABCD-1234-5678) ne comptent pas dans la validation.
+  code: z.string().trim().toUpperCase().refine((v) => isVisionxCode(v.replace(/-/g, "")), "Le code VISIONX est invalide."),
 });
 
 /** Le propriétaire enregistre le code VISIONX d'une commande payée en 2 fois. */
