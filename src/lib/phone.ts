@@ -36,9 +36,9 @@ export function isCompletePhone(country: PhoneCountry, digits: string) {
   return digits.length === country.groups.reduce((a, b) => a + b, 0);
 }
 
-/** Code VISIONX saisi par le propriétaire : commence obligatoirement par ZSCM. */
+/** Code VISIONX saisi par le propriétaire : n'importe quels caractères, sans préfixe obligatoire. */
 export function isVisionxCode(v: string) {
-  return /^ZSCM[A-Z0-9-]{1,60}$/.test(v.trim().toUpperCase());
+  return /^[A-Z0-9]{4,60}$/.test(v.trim().toUpperCase());
 }
 
 /** Affiche le code VISIONX avec un tiret tous les 4 caractères (ZSCM-1234-5678). */

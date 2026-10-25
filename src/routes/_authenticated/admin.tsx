@@ -322,7 +322,7 @@ function AdminOrders() {
 function VisionxCode({ order, onSaved }: { order: Order; onSaved: () => void }) {
   const t = useText();
   const save = useServerFn(setOrderVisionx);
-  const [code, setCode] = useState(order.visionx_code ? formatVisionxCode(order.visionx_code) : "ZSCM");
+  const [code, setCode] = useState(order.visionx_code ? formatVisionxCode(order.visionx_code) : "");
   const [busy, setBusy] = useState(false);
   const clean = code.replace(/-/g, "").trim().toUpperCase();
   const valid = isVisionxCode(clean);
@@ -335,10 +335,8 @@ function VisionxCode({ order, onSaved }: { order: Order; onSaved: () => void }) 
         <input
           value={code}
           onChange={(e) => {
-            const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "");
-            const letters = raw.replace(/-/g, "");
-            const prefixed = letters.startsWith("ZSCM") ? letters : "ZSCM" + letters.replace(/^Z?S?C?M?/, "");
-            setCode(formatVisionxCode(prefixed));
+            const letters = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").replace(/-/g, "");
+            setCode(formatVisionxCode(letters));
           }}
           maxLength={64}
           aria-label={t("admin.visionx.label")}
