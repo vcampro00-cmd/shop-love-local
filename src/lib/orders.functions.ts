@@ -283,6 +283,24 @@ export const setOrderPhone = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const refPayload = z.object({ id: z.string().uuid(), ref: z.string().trim().min(4, "Numéro trop court").max(16) });
+
+/** Le propriétaire corrige le numéro (référence) d'une commande après coup. */
+export const setOrderRef = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => refPayload.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
+    const ref = data.ref.toUpperCase();
+    if (!/^VC[A-Z0-9]{2,10}$/.test(ref)) throw new Error("Le numéro doit commencer par « VC » (ex. VC123ABC).");
+    const { error } = await context.supabase.from("orders").update({ ref }).eq("id", data.id);
+    if (error) {
+      if (error.code === "23505") throw new Error("Ce numéro est déjà utilisé par une autre commande.");
+      throw new Error("Le numéro n'a pas pu être enregistré.");
+    }
+    return { ok: true };
+  });
+
 const actionPayload = z.object({
   id: z.string().uuid(),
   action: z.enum(["accept", "refuse", "ready", "delete"]),
