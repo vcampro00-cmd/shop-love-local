@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
-import { isVisionxCode } from "@/lib/phone";
+import { formatVisionxCode, isVisionxCode } from "@/lib/phone";
 import { listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
@@ -322,11 +322,11 @@ function AdminOrders() {
 function VisionxCode({ order, onSaved }: { order: Order; onSaved: () => void }) {
   const t = useText();
   const save = useServerFn(setOrderVisionx);
-  const [code, setCode] = useState(order.visionx_code ?? "ZSCM");
+  const [code, setCode] = useState(order.visionx_code ? formatVisionxCode(order.visionx_code) : "ZSCM");
   const [busy, setBusy] = useState(false);
-  const clean = code.trim().toUpperCase();
+  const clean = code.replace(/-/g, "").trim().toUpperCase();
   const valid = isVisionxCode(clean);
-  const changed = clean !== (order.visionx_code ?? "");
+  const changed = clean !== (order.visionx_code ?? "").replace(/-/g, "");
   return (
     <div className="mt-4 rounded-xl border border-primary/40 bg-primary/10 p-4 text-sm">
       <p className="font-bold">{t("admin.visionx.label")}</p>
@@ -335,8 +335,10 @@ function VisionxCode({ order, onSaved }: { order: Order; onSaved: () => void }) 
         <input
           value={code}
           onChange={(e) => {
-            const v = e.target.value.toUpperCase();
-            setCode(v.startsWith("ZSCM") ? v : "ZSCM" + v.replace(/^Z?S?C?M?/, ""));
+            const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "");
+            const letters = raw.replace(/-/g, "");
+            const prefixed = letters.startsWith("ZSCM") ? letters : "ZSCM" + letters.replace(/^Z?S?C?M?/, "");
+            setCode(formatVisionxCode(prefixed));
           }}
           maxLength={64}
           aria-label={t("admin.visionx.label")}
@@ -350,7 +352,7 @@ function VisionxCode({ order, onSaved }: { order: Order; onSaved: () => void }) 
             onClick={async () => {
               setBusy(true);
               try {
-                await save({ data: { id: order.id, code: clean } });
+                await save({ data: { id: order.id, code: code.replace(/[^A-Z0-9-]/g, "") } });
                 toast.success(t("admin.visionx.saved"));
                 onSaved();
               } catch (e) {
