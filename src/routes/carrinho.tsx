@@ -15,6 +15,7 @@ import { checkPromo } from "@/lib/inventory.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PHONE_COUNTRIES, countryOf, nationalDigits, formatPhone, isCompletePhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/carrinho")({
   staticData: { sitemap: false },
@@ -54,6 +55,9 @@ function Cart() {
   const placeOrder = useServerFn(createOrder);
   const [form, setForm] = useState({ name: "", phone: "", address: "", cep: "" });
   const [busy, setBusy] = useState(false);
+  const [country, setCountry] = useState("FR");
+  const pc = countryOf(country);
+  const phoneDigits = nationalDigits(pc, form.phone);
   const [plan, setPlan] = useState<PaymentPlan>("full");
   const [method, setMethod] = useState<DeliveryMethod>("livraison");
   // Espèces = uniquement avec le retrait sur place.
@@ -87,7 +91,12 @@ function Cart() {
       navigate({ to: "/auth" });
       return;
     }
-    const r = schema.safeParse({ ...form, method });
+    if (!isCompletePhone(pc, phoneDigits)) {
+      toast.error("Téléphone invalide");
+      return;
+    }
+    const fullPhone = formatPhone(pc, phoneDigits);
+    const r = schema.safeParse({ ...form, phone: fullPhone, method });
     if (!r.success) {
       toast.error(r.error.issues[0]?.message ?? "Vérifiez vos informations");
       return;
@@ -97,7 +106,7 @@ function Cart() {
       const order = await placeOrder({
         data: {
           name: form.name,
-          phone: form.phone,
+          phone: fullPhone,
           address: form.address,
           postal_code: form.cep,
           items: lines.map((l) => ({ id: l.id, qty: l.qty })),
@@ -182,7 +191,30 @@ function Cart() {
               ))}
             </div>
             <div><Label>{t("form.name")}</Label><Input value={form.name} onChange={set("name")} maxLength={100} /></div>
-            <div><Label>{t("form.phone")}</Label><Input value={form.phone} onChange={set("phone")} maxLength={20} /></div>
+            <div>
+              <Label>{t("form.phone")}</Label>
+              <div className="flex gap-2">
+                <select
+                  aria-label={t("form.country")}
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="h-9 shrink-0 rounded-md border bg-background px-2 text-sm"
+                >
+                  {PHONE_COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.name} +{c.dial}</option>
+                  ))}
+                </select>
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  value={formatPhone(pc, phoneDigits)}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(new RegExp(`^\\s*\\+?${pc.dial}`), "");
+                    setForm({ ...form, phone: nationalDigits(pc, raw) });
+                  }}
+                />
+              </div>
+            </div>
             {method === "livraison" && (
               <>
                 <div className="sm:col-span-2"><Label>{t("form.address")}</Label><Input value={form.address} onChange={set("address")} maxLength={300} /></div>

@@ -1,3 +1,4 @@
+import { isVisionxCode } from "./phone";
 import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -37,6 +38,7 @@ export type Order = {
   second_amount: number;
   second_charge_due_at: string | null;
   seller_id: string | null;
+  visionx_code: string | null;
 };
 
 function toOrder(r: OrderRow): Order {
@@ -65,6 +67,7 @@ function toOrder(r: OrderRow): Order {
     second_amount: Number(r.second_amount),
     second_charge_due_at: r.second_charge_due_at,
     seller_id: r.seller_id ?? null,
+    visionx_code: r.visionx_code ?? null,
   };
 }
 
@@ -88,7 +91,7 @@ export const getAccount = createServerFn({ method: "GET" })
 const orderPayload = z
   .object({
     name: z.string().trim().min(2, "Indiquez votre nom").max(100),
-    phone: z.string().trim().min(8, "Téléphone invalide").max(20),
+    phone: z.string().trim().min(8, "Téléphone invalide").max(25),
     address: z.string().trim().max(300).default(""),
     postal_code: z.string().trim().max(9).default(""),
     notes: z.string().trim().max(500).optional(),
@@ -270,7 +273,7 @@ export const setSecondChargeDate = createServerFn({ method: "POST" })
     return { ok: true, due };
   });
 
-const phonePayload = z.object({ id: z.string().uuid(), phone: z.string().trim().min(8, "Téléphone invalide").max(20) });
+const phonePayload = z.object({ id: z.string().uuid(), phone: z.string().trim().min(8, "Téléphone invalide").max(25) });
 
 /** Le propriétaire corrige le téléphone d'un client après la commande. */
 export const setOrderPhone = createServerFn({ method: "POST" })
@@ -283,6 +286,22 @@ export const setOrderPhone = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+const visionxPayload = z.object({
+  id: z.string().uuid(),
+  code: z.string().trim().toUpperCase().refine(isVisionxCode, "Le code VISIONX doit commencer par ZSCM."),
+});
+
+/** Le propriétaire enregistre le code VISIONX d'une commande payée en 2 fois. */
+export const setOrderVisionx = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => visionxPayload.parse(input))
+  .handler(async ({ data, context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
+    const { error } = await context.supabase.from("orders").update({ visionx_code: data.code }).eq("id", data.id).eq("payment_plan", "split");
+    if (error) throw new Error("Le code n'a pas pu être enregistré.");
+    return { ok: true };
+  });
 
 const actionPayload = z.object({
   id: z.string().uuid(),

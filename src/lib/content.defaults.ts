@@ -210,6 +210,11 @@ export const DEFAULTS: Record<string, string> = {
   "admin.phone.label": "Téléphone du client",
   "admin.phone.save": "Enregistrer le numéro",
   "admin.phone.saved": "Numéro du client enregistré.",
+  "admin.visionx.label": "Code VISIONX",
+  "admin.visionx.hint": "Doit commencer par ZSCM",
+  "admin.visionx.save": "Enregistrer le code",
+  "admin.visionx.saved": "Code VISIONX enregistré.",
+  "form.country": "Pays",
 
   // Caisse
   "cash.title": "Caisse",
@@ -504,6 +509,11 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("admin.phone.label", "Téléphone client — étiquette"),
       text("admin.phone.save", "Téléphone client — bouton"),
       long("admin.phone.saved", "Téléphone client — confirmation"),
+      text("admin.visionx.label", "Code VISIONX — titre"),
+      text("admin.visionx.hint", "Code VISIONX — aide"),
+      text("admin.visionx.save", "Code VISIONX — bouton"),
+      long("admin.visionx.saved", "Code VISIONX — confirmation"),
+      text("form.country", "Formulaire — pays du téléphone"),
     ],
   },
   {

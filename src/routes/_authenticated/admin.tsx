@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
-import { listAllOrders, orderAction, setOrderPhone, setOrderStatus, setSecondChargeDate, type Order } from "@/lib/orders.functions";
+import { isVisionxCode } from "@/lib/phone";
+import { listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
@@ -192,6 +193,10 @@ function AdminOrders() {
               </span>
             </div>
 
+            {o.payment_plan === "split" && (
+              <VisionxCode order={o} onSaved={() => queryClient.invalidateQueries({ queryKey: ["all-orders"] })} />
+            )}
+
             {o.payment_plan === "split" && (o.payment_status === "acompte_paye" || o.payment_status === "en_attente") && (
               <SecondChargeDate order={o} onSaved={() => queryClient.invalidateQueries({ queryKey: ["all-orders"] })} />
             )}
@@ -310,6 +315,55 @@ function AdminOrders() {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function VisionxCode({ order, onSaved }: { order: Order; onSaved: () => void }) {
+  const t = useText();
+  const save = useServerFn(setOrderVisionx);
+  const [code, setCode] = useState(order.visionx_code ?? "ZSCM");
+  const [busy, setBusy] = useState(false);
+  const clean = code.trim().toUpperCase();
+  const valid = isVisionxCode(clean);
+  const changed = clean !== (order.visionx_code ?? "");
+  return (
+    <div className="mt-4 rounded-xl border border-primary/40 bg-primary/10 p-4 text-sm">
+      <p className="font-bold">{t("admin.visionx.label")}</p>
+      <p className="text-xs text-muted-foreground">{t("admin.visionx.hint")}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          value={code}
+          onChange={(e) => {
+            const v = e.target.value.toUpperCase();
+            setCode(v.startsWith("ZSCM") ? v : "ZSCM" + v.replace(/^Z?S?C?M?/, ""));
+          }}
+          maxLength={64}
+          aria-label={t("admin.visionx.label")}
+          className="w-56 rounded-xl border bg-background px-3 py-1.5 font-mono text-sm"
+        />
+        {changed && (
+          <Button
+            size="sm"
+            className="bg-brand"
+            disabled={busy || !valid}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await save({ data: { id: order.id, code: clean } });
+                toast.success(t("admin.visionx.saved"));
+                onSaved();
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Code invalide.");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {t("admin.visionx.save")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
