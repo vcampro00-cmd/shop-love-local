@@ -40,3 +40,9 @@ export function isCompletePhone(country: PhoneCountry, digits: string) {
 export function isVisionxCode(v: string) {
   return /^ZSCM[A-Z0-9-]{1,60}$/.test(v.trim().toUpperCase());
 }
+
+/** Affiche le code VISIONX avec un tiret tous les 4 caractères (ZSCM-1234-5678). */
+export function formatVisionxCode(v: string) {
+  const d = v.replace(/[^A-Z0-9]/g, "").toUpperCase();
+  return d.replace(/(.{4})(?=.)/g, "$1-");
+}
