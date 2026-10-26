@@ -33,7 +33,7 @@ export type Order = {
   payment_plan: "full" | "split";
   delivery_method: "livraison" | "retrait";
   payment_method: "carte" | "especes";
-  payment_status: "en_attente" | "paye" | "acompte_paye" | "echec_solde";
+  payment_status: "en_attente" | "paye" | "acompte_paye" | "echec_solde" | "solde_annule";
   amount_paid: number;
   second_amount: number;
   second_charge_due_at: string | null;
@@ -210,7 +210,7 @@ export const listAllOrders = createServerFn({ method: "GET" })
       .select("*")
       // Les commandes « en_attente » n'ont pas été payées : le client n'a pas terminé le paiement.
       // Elles n'apparaissent pas au propriétaire pour éviter de préparer un téléphone non payé.
-      .in("payment_status", ["paye", "acompte_paye", "echec_solde"])
+      .in("payment_status", ["paye", "acompte_paye", "echec_solde", "solde_annule"])
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Impossible d'afficher les commandes.");

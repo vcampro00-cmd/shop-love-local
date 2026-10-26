@@ -148,6 +148,13 @@
       "when": 1792935167189,
       "tag": "0020_orders_visionx_code",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793023476257,
+      "tag": "0021_orders_solde_annule",
+      "breakpoints": true
     }
   ]
 }
