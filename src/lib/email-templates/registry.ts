@@ -19,8 +19,10 @@ export interface TemplateEntry {
  */
 import { template as orderNotification } from './order-notification'
 import { template as orderUpdate } from './order-update'
+import { template as secondPaymentFailed } from './second-payment-failed'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'order-notification': orderNotification,
   'order-update': orderUpdate,
+  'second-payment-failed': secondPaymentFailed,
 }

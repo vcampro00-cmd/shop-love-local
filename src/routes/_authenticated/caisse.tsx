@@ -60,8 +60,8 @@ function Caisse() {
   const delRem = useServerFn(deleteReminder);
   const cancelSecondFn = useServerFn(cancelSecondPayment);
   async function cancelSecond(id: string) {
-    if (!window.confirm(t("admin.cancelSecondConfirm"))) return;
-    try { await cancelSecondFn({ data: { id } }); toast.success(t("admin.cancelSecondDone")); await qc.invalidateQueries({ queryKey: ["reminders"] }); }
+    if (!window.confirm(t("admin.cancelSecond.confirm"))) return;
+    try { await cancelSecondFn({ data: { id } }); toast.success(t("admin.cancelSecond.saved")); await qc.invalidateQueries({ queryKey: ["reminders"] }); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
   const [remName, setRemName] = useState("");
@@ -388,7 +388,7 @@ function Caisse() {
                   <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
                 {r.failed && (
-                  <Button type="button" size="sm" variant="destructive" onClick={() => cancelSecond(r.id)}>{t("admin.cancelSecond")}</Button>
+                  <Button type="button" size="sm" variant="destructive" onClick={() => cancelSecond(r.id)}>{t("admin.cancelSecond.button")}</Button>
                 )}
                 {!r.fromOrder && (
                 <div className="flex items-center gap-2">
