@@ -249,6 +249,22 @@ export const setSecondChargeDate = createServerFn({ method: "POST" })
     return { ok: true, due };
   });
 
+/** Le propriétaire renonce au 2e prélèvement : il ne sera plus tenté ni montré comme dû. */
+export const cancelSecondPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
+    const { error } = await context.supabase
+      .from("orders")
+      .update({ payment_status: "solde_annule", second_charge_due_at: null })
+      .eq("id", data.id)
+      .eq("payment_plan", "split")
+      .in("payment_status", ["acompte_paye", "echec_solde"]);
+    if (error) throw new Error("Le 2e paiement n'a pas pu être annulé.");
+    return { ok: true };
+  });
+
 const phonePayload = z.object({ id: z.string().uuid(), phone: z.string().trim().min(8, "Téléphone invalide").max(25) });
 
 /** Le propriétaire corrige le téléphone d'un client après la commande. */
