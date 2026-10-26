@@ -33,7 +33,7 @@ export type Order = {
   payment_plan: "full" | "split";
   delivery_method: "livraison" | "retrait";
   payment_method: "carte" | "especes";
-  payment_status: "en_attente" | "paye" | "acompte_paye" | "echec_solde";
+  payment_status: "en_attente" | "paye" | "acompte_paye" | "echec_solde" | "solde_annule";
   amount_paid: number;
   second_amount: number;
   second_charge_due_at: string | null;
@@ -210,7 +210,7 @@ export const listAllOrders = createServerFn({ method: "GET" })
       .select("*")
       // Les commandes « en_attente » n'ont pas été payées : le client n'a pas terminé le paiement.
       // Elles n'apparaissent pas au propriétaire pour éviter de préparer un téléphone non payé.
-      .in("payment_status", ["paye", "acompte_paye", "echec_solde"])
+      .in("payment_status", ["paye", "acompte_paye", "echec_solde", "solde_annule"])
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Impossible d'afficher les commandes.");
@@ -247,6 +247,22 @@ export const setSecondChargeDate = createServerFn({ method: "POST" })
       .in("payment_status", ["en_attente", "acompte_paye"]);
     if (error) throw new Error("La date n'a pas pu être enregistrée.");
     return { ok: true, due };
+  });
+
+/** Le propriétaire renonce au 2e prélèvement : il ne sera plus tenté ni montré comme dû. */
+export const cancelSecondPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
+    const { error } = await context.supabase
+      .from("orders")
+      .update({ payment_status: "solde_annule", second_charge_due_at: null })
+      .eq("id", data.id)
+      .eq("payment_plan", "split")
+      .in("payment_status", ["acompte_paye", "echec_solde"]);
+    if (error) throw new Error("Le 2e paiement n'a pas pu être annulé.");
+    return { ok: true };
   });
 
 const phonePayload = z.object({ id: z.string().uuid(), phone: z.string().trim().min(8, "Téléphone invalide").max(25) });

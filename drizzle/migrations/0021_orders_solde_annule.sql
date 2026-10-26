@@ -1,0 +1,2 @@
+ALTER TABLE public.orders DROP CONSTRAINT orders_payment_status_check;
+ALTER TABLE public.orders ADD CONSTRAINT orders_payment_status_check CHECK (payment_status = ANY (ARRAY['en_attente'::text, 'paye'::text, 'acompte_paye'::text, 'echec_solde'::text, 'solde_annule'::text]));
