@@ -93,6 +93,7 @@ export const DEFAULTS: Record<string, string> = {
   "pay.status.paye": "Payée",
   "pay.status.acompte_paye": "1er paiement reçu — 2e prélèvement prévu",
   "pay.status.echec_solde": "2e prélèvement refusé",
+  "pay.status.solde_annule": "2e paiement annulé",
   "pay.secondOn": "2e prélèvement le",
   "pay.payNow": "Payer maintenant",
 
@@ -509,6 +510,9 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("admin.secondDate.label", "Date du 2e prélèvement — titre"),
       text("admin.secondDate.save", "Date du 2e prélèvement — bouton"),
       long("admin.secondDate.saved", "Date du 2e prélèvement — confirmation"),
+      text("admin.cancelSecond.button", "Bouton annuler le 2e paiement"),
+      long("admin.cancelSecond.confirm", "Annuler le 2e paiement — question de confirmation"),
+      long("admin.cancelSecond.saved", "Annuler le 2e paiement — confirmation"),
       text("admin.phone.label", "Téléphone client — étiquette"),
       text("admin.phone.save", "Téléphone client — bouton"),
       long("admin.phone.saved", "Téléphone client — confirmation"),
