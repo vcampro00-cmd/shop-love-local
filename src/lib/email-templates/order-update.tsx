@@ -1,7 +1,7 @@
 import { Body, Container, Head, Heading, Html, Preview, Text } from '@react-email/components'
 import type { TemplateEntry } from './registry'
 
-type Kind = 'accepted' | 'refused' | 'ready'
+type Kind = 'accepted' | 'refused' | 'ready' | 'secondCancelled'
 
 interface Props {
   kind?: Kind
@@ -25,6 +25,11 @@ const COPY: Record<Kind, { subject: string; title: string; body: string }> = {
     subject: 'Votre commande est prête',
     title: 'Commande prête à retirer',
     body: 'Votre commande est prête. Vous pouvez venir la récupérer sur place dès maintenant.',
+  },
+  secondCancelled: {
+    subject: 'Votre 2e paiement a été annulé',
+    title: '2e paiement annulé',
+    body: "Le 2e paiement de votre commande en 2 fois a été annulé : aucun prélèvement automatique ne sera plus effectué sur votre carte. Pour toute question, contactez-nous.",
   },
 }
 
