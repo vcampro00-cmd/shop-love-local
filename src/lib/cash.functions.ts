@@ -140,7 +140,7 @@ export const listReminders = createServerFn({ method: "GET" })
     // Second instalments of site orders: read-only, dated on the automatic charge day, gone once paid.
     const { data: orders } = await context.supabase.from("orders").select("id, ref, name, phone, second_amount, second_charge_due_at, payment_status, created_at").in("payment_status", ["acompte_paye", "echec_solde"]);
     const paris = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
-    const fromOrders: Reminder[] = (orders ?? []).map((o: any) => ({ id: o.id, name: o.name, phone: o.phone ?? "", amount: Number(o.second_amount), note: `Commande ${o.ref} — 2e paiement${o.payment_status === "echec_solde" ? " (échec du prélèvement)" : ""}`, dueDate: o.second_charge_due_at ? paris(o.second_charge_due_at) : null, paymentLink: null, paid: false, createdAt: o.created_at, fromOrder: true }));
+    const fromOrders: Reminder[] = (orders ?? []).map((o: any) => ({ id: o.id, name: o.name, phone: o.phone ?? "", amount: Number(o.second_amount), note: `Commande ${o.ref} — 2e paiement${o.payment_status === "echec_solde" ? " (échec du prélèvement)" : ""}`, dueDate: o.second_charge_due_at ? paris(o.second_charge_due_at) : null, paymentLink: null, paid: false, createdAt: o.created_at, fromOrder: true, failed: o.payment_status === "echec_solde" }));
     return [...manual, ...fromOrders].sort((a, b) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999") || a.createdAt.localeCompare(b.createdAt));
   });
 

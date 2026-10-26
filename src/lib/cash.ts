@@ -38,6 +38,7 @@ export type Reminder = {
   createdAt: string;
   /** 2e paiement d'une commande du site : ne peut pas être supprimé, disparaît une fois payé. */
   fromOrder?: boolean;
+  failed?: boolean;
 };
 
 /** Numéro WhatsApp au format international, chiffres uniquement (33… pour la France). */

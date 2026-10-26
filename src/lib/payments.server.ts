@@ -121,8 +121,18 @@ export async function chargeDueInstallments(): Promise<{ charged: number; failed
       charged++;
     } catch (e) {
       console.error("Second charge failed", o.id, getStripeErrorMessage(e));
+      const reason = getStripeErrorMessage(e);
       await db.from("orders").update({ payment_status: "echec_solde" }).eq("id", o.id).eq("payment_status", "acompte_paye");
       failed++;
+      try {
+        const { sendTemplateEmail } = await import("./email-templates/send-email");
+        await sendTemplateEmail("second-payment-failed", "", {
+          idempotencyKey: `second-payment-failed-${o.id}`,
+          templateData: { ref: o.ref, name: o.name, phone: o.phone, amount: `${Number(o.second_amount).toFixed(2).replace(".", ",")} €`, reason },
+        });
+      } catch (err) {
+        console.error("second-payment-failed email failed", err);
+      }
     }
   }
   return { charged, failed };

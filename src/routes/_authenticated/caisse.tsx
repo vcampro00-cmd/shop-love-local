@@ -58,6 +58,12 @@ function Caisse() {
   const [empId, setEmpId] = useState("");
   const addRem = useServerFn(addReminder);
   const delRem = useServerFn(deleteReminder);
+  const cancelSecondFn = useServerFn(cancelSecondPayment);
+  async function cancelSecond(id: string) {
+    if (!window.confirm(t("admin.cancelSecondConfirm"))) return;
+    try { await cancelSecondFn({ data: { id } }); toast.success(t("admin.cancelSecondDone")); await qc.invalidateQueries({ queryKey: ["reminders"] }); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
+  }
   const [remName, setRemName] = useState("");
   const [remPhone, setRemPhone] = useState("");
   const [remAmount, setRemAmount] = useState("");
@@ -371,15 +377,19 @@ function Caisse() {
         {reminders.length > 0 && (
           <ul className="mt-3 divide-y divide-border">
             {reminders.map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <li key={r.id} className={`flex items-center justify-between gap-3 py-2 text-sm ${r.failed ? "rounded-lg border border-destructive bg-destructive/15 px-2" : ""}`}>
                 <div className="min-w-0">
                   <p className="truncate font-medium">
                     {r.name} — {brl(r.amount)}
                     {r.paid && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">PAYÉ</span>}
                     {r.fromOrder && <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold">VENTE DU SITE</span>}
+                    {r.failed && <span className="ml-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">ÉCHEC</span>}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
+                {r.failed && (
+                  <Button type="button" size="sm" variant="destructive" onClick={() => cancelSecond(r.id)}>{t("admin.cancelSecond")}</Button>
+                )}
                 {!r.fromOrder && (
                 <div className="flex items-center gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => sendWhatsApp(r)}>
