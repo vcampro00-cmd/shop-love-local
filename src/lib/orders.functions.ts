@@ -255,14 +255,29 @@ export const cancelSecondPayment = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
-    const { error } = await context.supabase
+    const { data: rows, error } = await context.supabase
       .from("orders")
       .update({ payment_status: "solde_annule", second_charge_due_at: null })
       .eq("id", data.id)
       .eq("payment_plan", "split")
-      .in("payment_status", ["acompte_paye", "echec_solde"]);
+      .in("payment_status", ["acompte_paye", "echec_solde"])
+      .select("id, ref, name, customer_email");
     if (error) throw new Error("Le 2e paiement n'a pas pu être annulé.");
-    return { ok: true };
+    const row = rows?.[0];
+    let emailed = false;
+    if (row?.customer_email) {
+      try {
+        const { sendTemplateEmail } = await import("./email-templates/send-email");
+        const r = await sendTemplateEmail("order-update", row.customer_email, {
+          idempotencyKey: `order-update-second-cancelled-${row.id}`,
+          templateData: { kind: "secondCancelled", ref: row.ref, name: row.name },
+        });
+        emailed = r.sent;
+      } catch (e) {
+        console.error("second-cancelled email failed", e);
+      }
+    }
+    return { ok: true, emailed };
   });
 
 const phonePayload = z.object({ id: z.string().uuid(), phone: z.string().trim().min(8, "Téléphone invalide").max(25) });
