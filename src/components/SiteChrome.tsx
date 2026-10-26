@@ -5,6 +5,19 @@ import { useCart } from "@/lib/cart";
 import { useText } from "@/lib/content";
 import { useAccount } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { listReminders } from "@/lib/cash.functions";
+
+function CashLink({ label }: { label: string }) {
+  const { data = [] } = useQuery({ queryKey: ["reminders"], queryFn: () => listReminders(), retry: false });
+  const failed = data.filter((r) => r.failed).length;
+  return (
+    <Link to="/caisse" className={failed ? "relative font-semibold text-destructive" : "text-muted-foreground hover:text-foreground"} activeProps={failed ? {} : { className: "text-foreground" }}>
+      {label}
+      {failed > 0 && <span className="ml-1 rounded-full bg-destructive px-1.5 py-0.5 text-xs text-destructive-foreground">{failed}</span>}
+    </Link>
+  );
+}
 
 export function SiteHeader() {
   const { count } = useCart();
@@ -31,7 +44,7 @@ export function SiteHeader() {
             <>
               <Link to="/mes-commandes" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>{t("account.menu")}</Link>
               {isAdmin && <Link to="/admin" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>{t("admin.title")}</Link>}
-              {isAdmin && <Link to="/caisse" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>{t("cash.title")}</Link>}
+              {isAdmin && <CashLink label={t("cash.title")} />}
               {isAdmin && <Link to="/stock" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>{t("stock.title")}</Link>}
               <button type="button" onClick={signOut} className="hidden text-xs text-muted-foreground underline decoration-dotted underline-offset-4 hover:text-foreground sm:inline">
                 {t("account.signOut")}
