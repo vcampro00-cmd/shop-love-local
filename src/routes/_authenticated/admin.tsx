@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
 import { formatVisionxCode, isVisionxCode } from "@/lib/phone";
-import { listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
+import { cancelSecondPayment, listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ function AdminOrders() {
   const catalog = useCatalog();
   const queryClient = useQueryClient();
   const changeStatus = useServerFn(setOrderStatus);
+  const cancelSecondFn = useServerFn(cancelSecondPayment);
   const runAction = useServerFn(orderAction);
   const correct = useServerFn(correctText);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -140,6 +141,21 @@ function AdminOrders() {
     }
   }
 
+  /** Renonce au 2e prélèvement : il ne sera plus tenté ni affiché comme dû. */
+  async function cancelSecond(id: string) {
+    if (!window.confirm(t("admin.cancelSecond.confirm"))) return;
+    setBusyId(id);
+    try {
+      await cancelSecondFn({ data: { id } });
+      toast.success(t("admin.cancelSecond.saved"));
+      await queryClient.invalidateQueries({ queryKey: ["all-orders"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action impossible.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <h1 className="text-3xl font-bold">{t("admin.title")}</h1>
@@ -199,6 +215,14 @@ function AdminOrders() {
 
             {o.payment_plan === "split" && (o.payment_status === "acompte_paye" || o.payment_status === "en_attente") && (
               <SecondChargeDate order={o} onSaved={() => queryClient.invalidateQueries({ queryKey: ["all-orders"] })} />
+            )}
+
+            {o.payment_plan === "split" && (o.payment_status === "acompte_paye" || o.payment_status === "echec_solde") && (
+              <div className="mt-3">
+                <Button size="sm" variant="outline" disabled={busyId === o.id} onClick={() => cancelSecond(o.id)}>
+                  <X className="mr-1 h-4 w-4" />{t("admin.cancelSecond.button")}
+                </Button>
+              </div>
             )}
 
             <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
