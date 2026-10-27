@@ -1,0 +1,1 @@
+ALTER TABLE public.payment_reminders ADD COLUMN IF NOT EXISTS contract_lang text NOT NULL DEFAULT 'fr';
