@@ -19,6 +19,7 @@ export function isDueNow(dueDay: string, today: string): boolean {
 }
 
 const euros = (n: number) => n.toFixed(2).replace(".", ",");
+const frDay = (d: string | null) => (d ? d.split("-").reverse().join("/") : "");
 
 async function sendTemplate(to: string, name: string, params: string[]): Promise<string> {
   const lovable = process.env["LOVABLE_API_KEY"];
@@ -50,13 +51,21 @@ export async function sendDueReminders(opts: { onlyReminderId?: string } = {}): 
   const jobs: Job[] = [];
 
   // Envoi ciblé (création d'un rappel) : le rappel sans date part aussi tout de suite.
-  const q = db.from("payment_reminders").select("id, name, phone, amount").is("paid_session_id", null);
+  const q = db.from("payment_reminders").select("id, name, phone, amount, due_date, installment, installments, group_id, group_total, charge_error").is("paid_session_id", null);
   const { data: reminders, error: e1 } = opts.onlyReminderId
     ? await q.eq("id", opts.onlyReminderId)
     : await q.lte("due_date", today);
   if (e1) throw e1;
   for (const r of reminders ?? []) {
-    jobs.push({ kind: "rappel", sourceId: r.id, phone: r.phone, template: "vcampro_rappel_paiement", params: [r.name, euros(Number(r.amount)), `${SITE}/pagar/${r.id}`] });
+    // Échéances suivantes d'un rappel en plusieurs fois : prélevées automatiquement, pas de message (sauf échec).
+    if (r.installments > 1 && r.installment > 1 && !r.charge_error) continue;
+    let amount = euros(Number(r.amount));
+    if (r.installments > 1 && r.installment === 1 && r.group_id) {
+      const { data: rest } = await db.from("payment_reminders").select("amount, due_date, installment").eq("group_id", r.group_id).gt("installment", 1).order("installment");
+      const next = (rest ?? []).map((x) => `${euros(Number(x.amount))} € prélevé automatiquement le ${frDay(x.due_date)}`).join(", ");
+      amount = `${euros(Number(r.group_total ?? r.amount))} au total, payable en ${r.installments} fois : ${euros(Number(r.amount))} € aujourd'hui, puis ${next}. À payer maintenant : ${euros(Number(r.amount))}`;
+    }
+    jobs.push({ kind: "rappel", sourceId: r.id, phone: r.phone, template: "vcampro_rappel_paiement", params: [r.name, amount, `${SITE}/pagar/${r.id}`] });
   }
 
   if (!opts.onlyReminderId) {

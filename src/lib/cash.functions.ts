@@ -134,9 +134,9 @@ export const listReminders = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Reminder[]> => {
     await assertAdmin(context);
     // Paid reminders disappear; the rest are sorted by due date (soonest first, undated last).
-    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id").is("paid_session_id", null).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id, installment, installments, charge_error").is("paid_session_id", null).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
     if (error) throw new Error("Impossible d'afficher les rappels.");
-    const manual: Reminder[] = (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at }));
+    const manual: Reminder[] = (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at, ...(r.installments > 1 && r.installment > 1 && { note: `${r.note ?? ""}${r.charge_error ? " — échec du prélèvement automatique" : " — prélèvement automatique"}`, failed: Boolean(r.charge_error) }) }));
     // Second instalments of site orders: read-only, dated on the automatic charge day, gone once paid.
     const { data: orders } = await context.supabase.from("orders").select("id, ref, name, phone, second_amount, second_charge_due_at, payment_status, created_at").in("payment_status", ["acompte_paye", "echec_solde"]);
     const paris = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
@@ -161,8 +161,10 @@ export const addReminder = createServerFn({ method: "POST" })
     const { splitReminder } = await import("@/lib/pricing");
     const first = data.dueDate ?? new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
     const parts = data.installments > 1 ? splitReminder(data.amount, data.installments, first) : [{ amount: data.amount, dueDate: data.dueDate }];
+    const groupId = parts.length > 1 ? crypto.randomUUID() : null;
     const rows = parts.map((p, i) => ({
       name: data.name, phone: data.phone, amount: p.amount, due_date: p.dueDate,
+      group_id: groupId, installment: i + 1, installments: parts.length, group_total: parts.length > 1 ? data.amount : null,
       note: parts.length > 1 ? `${data.note ? data.note + " — " : ""}${i + 1}/${parts.length}` : data.note,
     }));
     const { data: inserted, error } = await context.supabase.from("payment_reminders").insert(rows).select("id");

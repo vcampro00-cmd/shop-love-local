@@ -144,7 +144,7 @@ export async function chargeDueInstallments(): Promise<{ charged: number; failed
  */
 export async function applyPaidReminder(sessionId: string, env: StripeEnv): Promise<void> {
   const stripe = createStripeClient(env);
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["payment_intent"] });
   const reminderId = session.metadata?.['reminderId'];
   if (!reminderId || session.payment_status !== "paid") return;
 
@@ -155,8 +155,19 @@ export async function applyPaidReminder(sessionId: string, env: StripeEnv): Prom
     .update({ paid_session_id: session.id, paid_at: new Date().toISOString() })
     .eq("id", reminderId)
     .is("paid_session_id", null)
-    .select("id, name");
+    .select("id, name, group_id, installment, installments");
   if (error || !data?.length) return; // déjà traité ou rappel supprimé
+
+  // 1re échéance d'un rappel en plusieurs fois : la carte est gardée pour les suivantes.
+  const r0 = data[0]!;
+  if (r0.group_id && r0.installments > 1 && r0.installment === 1) {
+    const pi = session.payment_intent as { payment_method?: string | { id: string } | null } | null;
+    const pm = typeof pi?.payment_method === "string" ? pi.payment_method : pi?.payment_method?.id ?? null;
+    const customer = typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
+    await db.from("payment_reminders")
+      .update({ stripe_customer_id: customer, stripe_payment_method_id: pm, payment_env: env })
+      .eq("group_id", r0.group_id).gt("installment", 1);
+  }
 
   const amount = Math.round((session.amount_total ?? 0)) / 100;
   const today = new Intl.DateTimeFormat("en-CA", {
@@ -172,4 +183,59 @@ export async function applyPaidReminder(sessionId: string, env: StripeEnv): Prom
     spent_on: today,
   });
   if (ins) console.error("Cash entry for reminder payment failed", ins);
+}
+
+/** Prélève automatiquement les échéances suivantes des rappels en plusieurs fois (une tentative par échéance). */
+export async function chargeDueReminderInstallments(): Promise<{ charged: number; failed: number }> {
+  const db = await admin();
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const { data: due } = await db
+    .from("payment_reminders")
+    .select("*")
+    .is("paid_session_id", null)
+    .is("charge_error", null)
+    .gt("installment", 1)
+    .not("stripe_payment_method_id", "is", null)
+    .lte("due_date", today)
+    .limit(50);
+  let charged = 0, failed = 0;
+  for (const r of due ?? []) {
+    const env = (r.payment_env === "live" ? "live" : "sandbox") as StripeEnv;
+    try {
+      const stripe = createStripeClient(env);
+      const pi = await stripe.paymentIntents.create(
+        {
+          amount: Math.round(Number(r.amount) * 100), currency: "eur",
+          customer: r.stripe_customer_id!, payment_method: r.stripe_payment_method_id!,
+          off_session: true, confirm: true,
+          description: `Paiement ${r.installment}/${r.installments} — ${r.name}`,
+          metadata: { reminderId: r.id, installment: String(r.installment) },
+        },
+        { idempotencyKey: `reminder-${r.id}-charge` },
+      );
+      if (pi.status !== "succeeded") throw new Error(`Statut ${pi.status}`);
+      const { data: claimed } = await db.from("payment_reminders")
+        .update({ paid_session_id: pi.id, paid_at: new Date().toISOString() })
+        .eq("id", r.id).is("paid_session_id", null).select("id");
+      if (claimed?.length) {
+        await db.from("expenses").insert({ label: `Paiement convenu ${r.installment}/${r.installments} — ${r.name}`, amount: Number(r.amount), kind: "auto", spent_on: today });
+      }
+      charged++;
+    } catch (e) {
+      const reason = getStripeErrorMessage(e);
+      console.error("Reminder installment charge failed", r.id, reason);
+      await db.from("payment_reminders").update({ charge_error: reason || "échec" }).eq("id", r.id);
+      failed++;
+      try {
+        const { sendTemplateEmail } = await import("./email-templates/send-email");
+        await sendTemplateEmail("second-payment-failed", "", {
+          idempotencyKey: `reminder-charge-failed-${r.id}`,
+          templateData: { ref: `Rappel ${r.installment}/${r.installments}`, name: r.name, phone: r.phone, amount: `${Number(r.amount).toFixed(2).replace(".", ",")} €`, reason },
+        });
+      } catch (err) {
+        console.error("reminder-charge-failed email failed", err);
+      }
+    }
+  }
+  return { charged, failed };
 }
