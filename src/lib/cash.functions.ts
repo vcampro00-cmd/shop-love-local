@@ -153,11 +153,20 @@ export const addReminder = createServerFn({ method: "POST" })
       amount: z.number().positive().max(1_000_000),
       note: z.string().trim().max(300).default(""),
       dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+      installments: z.number().int().min(1).max(3).default(1),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { data: row, error } = await context.supabase.from("payment_reminders").insert({ name: data.name, phone: data.phone, amount: data.amount, note: data.note, due_date: data.dueDate }).select("id").single();
+    const { splitReminder } = await import("@/lib/pricing");
+    const first = data.dueDate ?? new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
+    const parts = data.installments > 1 ? splitReminder(data.amount, data.installments, first) : [{ amount: data.amount, dueDate: data.dueDate }];
+    const rows = parts.map((p, i) => ({
+      name: data.name, phone: data.phone, amount: p.amount, due_date: p.dueDate,
+      note: parts.length > 1 ? `${data.note ? data.note + " — " : ""}${i + 1}/${parts.length}` : data.note,
+    }));
+    const { data: inserted, error } = await context.supabase.from("payment_reminders").insert(rows).select("id");
+    const row = inserted?.[0];
     if (error || !row) throw new Error("Le rappel n'a pas pu être enregistré.");
     // Rappel dû aujourd'hui (ou sans date) : le client reçoit le WhatsApp tout de suite.
     let whatsapp: { sent: number; failed: number } | null = null;

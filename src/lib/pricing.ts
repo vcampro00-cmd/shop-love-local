@@ -75,6 +75,23 @@ export function splitPayment(total: number, plan: PaymentPlan): { now: number; l
 /** Le 2e prélèvement a lieu 7 jours après le 1er paiement. */
 export const SECOND_CHARGE_DELAY_DAYS = 7;
 
+/**
+ * Rappel divisé en 1 à 3 fois, une semaine d'écart entre chaque échéance.
+ * Le centime en trop va sur la 1re échéance. "2026-10-27", 100, 3 →
+ * [{2026-10-27, 33.34}, {2026-11-03, 33.33}, {2026-11-10, 33.33}].
+ */
+export function splitReminder(amount: number, count: number, firstDate: string): { amount: number; dueDate: string }[] {
+  const n = Math.min(Math.max(Math.trunc(count), 1), 3);
+  const cents = Math.round(amount * 100);
+  const base = Math.floor(cents / n);
+  const extra = cents - base * n;
+  const start = new Date(`${firstDate}T12:00:00Z`);
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(start.getTime() + i * 7 * 86_400_000);
+    return { amount: (base + (i < extra ? 1 : 0)) / 100, dueDate: d.toISOString().slice(0, 10) };
+  });
+}
+
 // Alphabet sans I, O, 0, 1 : lisible quand on l'écrit à la main.
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
