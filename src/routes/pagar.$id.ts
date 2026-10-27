@@ -35,7 +35,7 @@ function contractPage(tr: (k: string) => string, row: { name: string; amount: nu
   const t = (k: string) => tr(pt ? PT[k] ?? k : k);
   const L = pt
     ? { today: "HOJE", auto: "DEBITADO AUTOMATICAMENTE EM", total: "VALOR TOTAL", times: "VEZES", err: "MARQUE A CAIXA PARA ACEITAR O CONTRATO.", lang: "pt" }
-    : { today: "AUJOURD'HUI", auto: "PRÉLEVÉ AUTOMATIQUEMENT LE", total: "MONTANT TOTAL", times: "FOIS", err: "${L.err}", lang: "fr" };
+    : { today: "AUJOURD'HUI", auto: "PRÉLEVÉ AUTOMATIQUEMENT LE", total: "MONTANT TOTAL", times: "FOIS", err: "COCHEZ LA CASE POUR ACCEPTER LE CONTRAT.", lang: "fr" };
   const total = Number(row.group_total ?? row.amount);
   const lines = [`<li><b>${eur(Number(row.amount))}</b> — ${L.today}</li>`, ...rest.map((r) => `<li><b>${eur(Number(r.amount))}</b> — ${L.auto} ${frDay(r.due_date)}</li>`)].join("");
   return `<!doctype html><html lang="${L.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contrat — Vcampro</title><meta name="robots" content="noindex">
