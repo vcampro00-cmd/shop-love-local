@@ -52,7 +52,7 @@ export async function sendDueReminders(opts: { onlyReminderId?: string } = {}): 
   // Envoi ciblé (création d'un rappel) : le rappel sans date part aussi tout de suite.
   const q = db.from("payment_reminders").select("id, name, phone, amount").is("paid_session_id", null);
   const { data: reminders, error: e1 } = opts.onlyReminderId
-    ? await q.eq("id", opts.onlyReminderId).or(`due_date.is.null,due_date.lte.${today}`)
+    ? await q.eq("id", opts.onlyReminderId)
     : await q.lte("due_date", today);
   if (e1) throw e1;
   for (const r of reminders ?? []) {

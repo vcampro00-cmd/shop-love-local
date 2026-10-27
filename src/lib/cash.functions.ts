@@ -168,7 +168,8 @@ export const addReminder = createServerFn({ method: "POST" })
     const { data: inserted, error } = await context.supabase.from("payment_reminders").insert(rows).select("id");
     const row = inserted?.[0];
     if (error || !row) throw new Error("Le rappel n'a pas pu être enregistré.");
-    // Rappel dû aujourd'hui (ou sans date) : le client reçoit le WhatsApp tout de suite.
+    // À la création, le client reçoit tout de suite le lien du 1er rappel (même daté ou en plusieurs fois) ;
+    // les rappels suivants partent seuls le jour de leur date.
     let whatsapp: { sent: number; failed: number } | null = null;
     try {
       const { sendDueReminders } = await import("@/lib/whatsapp.server");
