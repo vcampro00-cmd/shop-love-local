@@ -232,39 +232,66 @@ export type Database = {
       payment_reminders: {
         Row: {
           amount: number
+          charge_error: string | null
+          contract_accepted_at: string | null
           created_at: string
           due_date: string | null
+          group_id: string | null
+          group_total: number | null
           id: string
+          installment: number
+          installments: number
           name: string
           note: string
           paid_at: string | null
           paid_session_id: string | null
+          payment_env: string | null
           payment_link: string | null
           phone: string
+          stripe_customer_id: string | null
+          stripe_payment_method_id: string | null
         }
         Insert: {
           amount: number
+          charge_error?: string | null
+          contract_accepted_at?: string | null
           created_at?: string
           due_date?: string | null
+          group_id?: string | null
+          group_total?: number | null
           id?: string
+          installment?: number
+          installments?: number
           name: string
           note?: string
           paid_at?: string | null
           paid_session_id?: string | null
+          payment_env?: string | null
           payment_link?: string | null
           phone: string
+          stripe_customer_id?: string | null
+          stripe_payment_method_id?: string | null
         }
         Update: {
           amount?: number
+          charge_error?: string | null
+          contract_accepted_at?: string | null
           created_at?: string
           due_date?: string | null
+          group_id?: string | null
+          group_total?: number | null
           id?: string
+          installment?: number
+          installments?: number
           name?: string
           note?: string
           paid_at?: string | null
           paid_session_id?: string | null
+          payment_env?: string | null
           payment_link?: string | null
           phone?: string
+          stripe_customer_id?: string | null
+          stripe_payment_method_id?: string | null
         }
         Relationships: []
       }
