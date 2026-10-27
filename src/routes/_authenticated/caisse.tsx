@@ -70,6 +70,7 @@ function Caisse() {
   const [remAmount, setRemAmount] = useState("");
   const [remNote, setRemNote] = useState("");
   const [remDate, setRemDate] = useState(today());
+  const [remTimes, setRemTimes] = useState(1);
   const saveDrawer = useServerFn(setCashDrawer);
   const [drawerInput, setDrawerInput] = useState("");
   const fixDrawer = useServerFn(correctCashDrawer);
@@ -176,10 +177,10 @@ function Caisse() {
     const digits = whatsappDigits(remPhone);
     if (!remName.trim() || !(value > 0) || digits.length < 8 || !remDate) { toast.error(t("cash.invalid")); return; }
     try {
-      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate } });
+      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate, installments: remTimes } });
       if (res.whatsapp?.sent) toast.success(t("cash.reminderWaSent"));
       else if (res.whatsapp?.failed) toast.error(t("cash.reminderWaFailed"));
-      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today());
+      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today()); setRemTimes(1);
       await qc.invalidateQueries({ queryKey: ["reminders"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
   }
@@ -367,11 +368,14 @@ function Caisse() {
           <span className="text-sm font-semibold">{t("cash.remindersOpenTotal")} ({reminders.filter((r) => !r.paid).length})</span>
           <span className="text-lg font-bold text-primary">{brl(reminders.filter((r) => !r.paid).reduce((s, r) => s + Number(r.amount || 0), 0))}</span>
         </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_140px_160px_auto]">
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_140px_160px_90px_auto]">
           <Input placeholder={t("cash.reminderName")} value={remName} onChange={(e) => setRemName(e.target.value)} maxLength={100} />
           <Input placeholder={t("cash.reminderPhone")} inputMode="tel" value={remPhone} onChange={(e) => setRemPhone(e.target.value)} maxLength={20} />
           <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={remAmount} onChange={(e) => setRemAmount(e.target.value)} />
           <Input type="date" aria-label={t("cash.reminderDate")} value={remDate} onChange={(e) => setRemDate(e.target.value)} />
+          <select aria-label={t("cash.reminderTimes")} value={remTimes} onChange={(e) => setRemTimes(Number(e.target.value))} className="h-9 rounded-md border bg-background px-2 text-sm">
+            {[1, 2, 3].map((n) => <option key={n} value={n}>{n}× {t("cash.reminderTimes")}</option>)}
+          </select>
           <Button type="submit" variant="outline">{t("cash.reminderAdd")}</Button>
         </div>
         <Input className="mt-3" placeholder={t("cash.reminderNote")} value={remNote} onChange={(e) => setRemNote(e.target.value)} maxLength={300} />
