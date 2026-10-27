@@ -154,6 +154,7 @@ export const addReminder = createServerFn({ method: "POST" })
       note: z.string().trim().max(300).default(""),
       dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
       installments: z.number().int().min(1).max(3).default(1),
+      contractLang: z.enum(["fr", "pt"]).default("fr"),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -164,7 +165,7 @@ export const addReminder = createServerFn({ method: "POST" })
     const groupId = parts.length > 1 ? crypto.randomUUID() : null;
     const rows = parts.map((p, i) => ({
       name: data.name, phone: data.phone, amount: p.amount, due_date: p.dueDate,
-      group_id: groupId, installment: i + 1, installments: parts.length, group_total: parts.length > 1 ? data.amount : null,
+      group_id: groupId, installment: i + 1, installments: parts.length, group_total: parts.length > 1 ? data.amount : null, contract_lang: data.contractLang,
       note: parts.length > 1 ? `${data.note ? data.note + " — " : ""}${i + 1}/${parts.length}` : data.note,
     }));
     const { data: inserted, error } = await context.supabase.from("payment_reminders").insert(rows).select("id");

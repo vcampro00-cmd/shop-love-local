@@ -71,6 +71,7 @@ function Caisse() {
   const [remNote, setRemNote] = useState("");
   const [remDate, setRemDate] = useState(today());
   const [remTimes, setRemTimes] = useState(1);
+  const [remLang, setRemLang] = useState<"fr" | "pt">("fr");
   const saveDrawer = useServerFn(setCashDrawer);
   const [drawerInput, setDrawerInput] = useState("");
   const fixDrawer = useServerFn(correctCashDrawer);
@@ -177,7 +178,7 @@ function Caisse() {
     const digits = whatsappDigits(remPhone);
     if (!remName.trim() || !(value > 0) || digits.length < 8 || !remDate) { toast.error(t("cash.invalid")); return; }
     try {
-      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate, installments: remTimes } });
+      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate, installments: remTimes, contractLang: remLang } });
       if (res.whatsapp?.sent) toast.success(t("cash.reminderWaSent"));
       else if (res.whatsapp?.failed) toast.error(t("cash.reminderWaFailed"));
       setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today()); setRemTimes(1);
@@ -376,6 +377,12 @@ function Caisse() {
           <select aria-label={t("cash.reminderTimes")} value={remTimes} onChange={(e) => setRemTimes(Number(e.target.value))} className="h-9 rounded-md border bg-background px-2 text-sm">
             {[1, 2, 3].map((n) => <option key={n} value={n}>{n}× {t("cash.reminderTimes")}</option>)}
           </select>
+          {remTimes > 1 && (
+            <select aria-label={t("cash.reminderLang")} value={remLang} onChange={(e) => setRemLang(e.target.value === "pt" ? "pt" : "fr")} className="h-9 rounded-md border bg-background px-2 text-sm">
+              <option value="fr">{t("cash.reminderLang")} : FRANÇAIS</option>
+              <option value="pt">{t("cash.reminderLang")} : PORTUGUÊS</option>
+            </select>
+          )}
           <Button type="submit" variant="outline">{t("cash.reminderAdd")}</Button>
         </div>
         <Input className="mt-3" placeholder={t("cash.reminderNote")} value={remNote} onChange={(e) => setRemNote(e.target.value)} maxLength={300} />

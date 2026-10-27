@@ -13,7 +13,7 @@ async function loadRow(id: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row } = await supabaseAdmin
     .from("payment_reminders")
-    .select("id, name, amount, group_id, group_total, installment, installments, paid_session_id")
+    .select("id, name, amount, group_id, group_total, installment, installments, paid_session_id, contract_lang")
     .eq("id", id).maybeSingle();
   if (!row) return null;
   const rest = row.group_id && row.installments > 1 && row.installment === 1
@@ -29,15 +29,22 @@ async function texts() {
   return (k: string) => (saved[k]?.trim() ? saved[k]! : DEFAULTS[k] ?? "");
 }
 
-function contractPage(t: (k: string) => string, row: { name: string; amount: number; group_total: number | null; installments: number }, rest: { amount: number; due_date: string | null }[], error = false) {
+function contractPage(tr: (k: string) => string, row: { name: string; amount: number; group_total: number | null; installments: number; contract_lang: string }, rest: { amount: number; due_date: string | null }[], error = false) {
+  const pt = row.contract_lang === "pt";
+  const PT: Record<string, string> = { "rappelContract.title": "rappelContract.ptTitle", "rappelContract.body": "rappelContract.ptBody", "rappelContract.accept": "rappelContract.ptAccept", "rappelContract.button": "rappelContract.ptButton", "rappelContract.warning": "rappelContract.ptWarning" };
+  const t = (k: string) => tr(pt ? PT[k] ?? k : k);
+  const L = pt
+    ? { today: "HOJE", auto: "DEBITADO AUTOMATICAMENTE EM", total: "VALOR TOTAL", times: "VEZES", err: "MARQUE A CAIXA PARA ACEITAR O CONTRATO.", lang: "pt" }
+    : { today: "AUJOURD'HUI", auto: "PRÉLEVÉ AUTOMATIQUEMENT LE", total: "MONTANT TOTAL", times: "FOIS", err: "${L.err}", lang: "fr" };
   const total = Number(row.group_total ?? row.amount);
-  const lines = [`<li><b>${eur(Number(row.amount))}</b> — AUJOURD'HUI</li>`, ...rest.map((r) => `<li><b>${eur(Number(r.amount))}</b> — PRÉLEVÉ AUTOMATIQUEMENT LE ${frDay(r.due_date)}</li>`)].join("");
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contrat — Vcampro</title><meta name="robots" content="noindex">
+  const lines = [`<li><b>${eur(Number(row.amount))}</b> — ${L.today}</li>`, ...rest.map((r) => `<li><b>${eur(Number(r.amount))}</b> — ${L.auto} ${frDay(r.due_date)}</li>`)].join("");
+  return `<!doctype html><html lang="${L.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contrat — Vcampro</title><meta name="robots" content="noindex">
 <style>body{margin:0;background:#000;color:#f4ecff;font-family:system-ui,sans-serif;text-transform:uppercase}main{max-width:560px;margin:0 auto;padding:32px 18px}h1{font-size:20px;color:#e04dff}.box{border:1px solid #3a2350;background:#0d0614;border-radius:14px;padding:18px;margin:16px 0}p{line-height:1.5;font-size:14px}ul{padding-left:18px;line-height:1.8}label{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin:16px 0}input{width:20px;height:20px;accent-color:#e04dff}button{width:100%;padding:16px;border:0;border-radius:12px;background:linear-gradient(90deg,#8b2cff,#e04dff);color:#fff;font-weight:800;font-size:16px;text-transform:uppercase}.err{color:#ff5d6c;font-weight:700}</style></head>
 <body><main><h1>VCAMPRO</h1><p>${esc(row.name)}</p>
-<div class="box"><p>MONTANT TOTAL : <b>${eur(total)}</b>, PAYABLE EN ${row.installments} FOIS :</p><ul>${lines}</ul></div>
+<div class="box" style="border-color:#ff5d6c"><p class="err" style="font-size:17px;margin:0">⚠ ${esc(t("rappelContract.warning"))}</p></div>
+<div class="box"><p>${L.total} : <b>${eur(total)}</b> — ${row.installments} ${L.times} :</p><ul>${lines}</ul></div>
 <div class="box"><h2 style="font-size:16px">${esc(t("rappelContract.title"))}</h2><p>${esc(t("rappelContract.body"))}</p></div>
-<form method="post">${error ? `<p class="err">COCHEZ LA CASE POUR ACCEPTER LE CONTRAT.</p>` : ""}
+<form method="post">${error ? `<p class="err">${L.err}</p>` : ""}
 <label><input type="checkbox" name="accept" value="1" required> ${esc(t("rappelContract.accept"))}</label>
 <button type="submit">${esc(t("rappelContract.button"))} — ${eur(Number(row.amount))}</button></form></main></body></html>`;
 }
