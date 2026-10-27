@@ -162,6 +162,13 @@
       "when": 1793091086599,
       "tag": "0022_reminder_installments",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793091425158,
+      "tag": "0023_reminder_contract_lang",
+      "breakpoints": true
     }
   ]
 }

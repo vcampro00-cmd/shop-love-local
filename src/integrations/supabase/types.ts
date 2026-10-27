@@ -234,6 +234,7 @@ export type Database = {
           amount: number
           charge_error: string | null
           contract_accepted_at: string | null
+          contract_lang: string
           created_at: string
           due_date: string | null
           group_id: string | null
@@ -255,6 +256,7 @@ export type Database = {
           amount: number
           charge_error?: string | null
           contract_accepted_at?: string | null
+          contract_lang?: string
           created_at?: string
           due_date?: string | null
           group_id?: string | null
@@ -276,6 +278,7 @@ export type Database = {
           amount?: number
           charge_error?: string | null
           contract_accepted_at?: string | null
+          contract_lang?: string
           created_at?: string
           due_date?: string | null
           group_id?: string | null
