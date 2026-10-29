@@ -12,12 +12,13 @@ describe("durée de la garantie", () => {
     const pdf = await buildWarrantyPdf({ name: "Kelvyn", amount: 300, months: 2, paidAt: "2026-10-29T17:45:00Z", ref: "abcdef12-0000", imei: "354789102345678" });
     const zlib = await import("node:zlib");
     const raw = Buffer.from(pdf);
+    // Le texte du PDF est compressé et écrit en hexadécimal : on décompresse puis on décode.
     let text = "";
-    // Le texte du PDF peut être compressé : on décompresse chaque flux du document.
     for (const m of raw.toString("latin1").matchAll(/stream\r?\n([\s\S]*?)endstream/g)) {
       try { text += zlib.inflateSync(Buffer.from(m[1], "latin1")).toString("latin1"); } catch { text += m[1]; }
     }
-    expect(text).toContain("IMEI du téléphone :");
+    const decoded = [...text.matchAll(/<([0-9A-F]+)>\s*Tj/g)].map((s) => Buffer.from(s[1], "hex").toString("latin1")).join("\n");
+    expect(decoded).toContain("IMEI du téléphone :");
   });
   it("produit un PDF", async () => {
     const pdf = await buildWarrantyPdf({ name: "Kelvyn", amount: 300, months: 2, paidAt: "2026-10-29T17:45:00Z", ref: "abcdef12-0000" });
