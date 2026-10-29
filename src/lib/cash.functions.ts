@@ -144,6 +144,16 @@ export const listReminders = createServerFn({ method: "GET" })
     return [...manual, ...fromOrders].sort((a, b) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999") || a.createdAt.localeCompare(b.createdAt));
   });
 
+/** Garanties des rappels payés, pour les télécharger et les envoyer à la main. */
+export const listWarranties = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ id: string; name: string; phone: string; months: number; token: string; paidAt: string; sent: boolean }[]> => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, warranty_months, warranty_token, warranty_sent_at, paid_at").not("warranty_months", "is", null).not("paid_at", "is", null).order("paid_at", { ascending: false }).limit(50);
+    if (error) throw new Error("Impossible d'afficher les garanties.");
+    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone ?? "", months: r.warranty_months, token: r.warranty_token, paidAt: r.paid_at, sent: Boolean(r.warranty_sent_at) }));
+  });
+
 export const addReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
