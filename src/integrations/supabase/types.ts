@@ -252,6 +252,7 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
           warranty_error: string | null
+          warranty_imei: string | null
           warranty_months: number | null
           warranty_sent_at: string | null
           warranty_token: string
@@ -278,6 +279,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           warranty_error?: string | null
+          warranty_imei?: string | null
           warranty_months?: number | null
           warranty_sent_at?: string | null
           warranty_token?: string
@@ -304,6 +306,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           warranty_error?: string | null
+          warranty_imei?: string | null
           warranty_months?: number | null
           warranty_sent_at?: string | null
           warranty_token?: string
