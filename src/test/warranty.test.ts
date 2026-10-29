@@ -8,6 +8,10 @@ describe("durée de la garantie", () => {
     expect(warrantyEnd("2026-10-29", 4)).toBe("2027-02-28");
     expect(warrantyEnd("2026-01-31", 1)).toBe("2026-02-28");
   });
+  it("imprime l'IMEI du téléphone quand il est renseigné", async () => {
+    const pdf = await buildWarrantyPdf({ name: "Kelvyn", amount: 300, months: 2, paidAt: "2026-10-29T17:45:00Z", ref: "abcdef12-0000", imei: "354789102345678" });
+    expect(new TextDecoder().decode(pdf)).toContain("IMEI du téléphone :");
+  });
   it("produit un PDF", async () => {
     const pdf = await buildWarrantyPdf({ name: "Kelvyn", amount: 300, months: 2, paidAt: "2026-10-29T17:45:00Z", ref: "abcdef12-0000" });
     expect(new TextDecoder().decode(pdf.slice(0, 5))).toBe("%PDF-");
