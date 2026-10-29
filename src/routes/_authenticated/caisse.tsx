@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders, listWarranties } from "@/lib/cash.functions";
 import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
 import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
@@ -30,6 +30,33 @@ export const Route = createFileRoute("/_authenticated/caisse")({
 });
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+function Warranties() {
+  const t = useText();
+  const fetchW = useServerFn(listWarranties);
+  const { data = [] } = useQuery({ queryKey: ["warranties"], queryFn: () => fetchW() });
+  if (data.length === 0) return null;
+  return (
+    <div className="mt-6">
+      <h3 className="text-sm font-semibold">{t("cash.warrantiesTitle")}</h3>
+      <ul className="mt-2 divide-y divide-border">
+        {data.map((w) => (
+          <li key={w.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <div className="min-w-0">
+              <p className="truncate font-medium">{w.name} — {w.months} MOIS{w.sent && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">ENVOYÉE</span>}</p>
+              <p className="truncate text-xs text-muted-foreground">{w.phone ? `+${w.phone} · ` : ""}{fmtDate(w.paidAt)}</p>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <a href={`/garantie/${w.token}`} download={`garantie-${w.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`}>
+                <Download className="h-4 w-4" /> {t("cash.warrantyDownload")}
+              </a>
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
 
 type Kind = "entree" | "lien" | "sortie" | "achat" | "salaire";
@@ -421,6 +448,7 @@ function Caisse() {
             ))}
           </ul>
         )}
+        <Warranties />
       </form>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
