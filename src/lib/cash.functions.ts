@@ -147,11 +147,22 @@ export const listReminders = createServerFn({ method: "GET" })
 /** Garanties des rappels payés, pour les télécharger et les envoyer à la main. */
 export const listWarranties = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ id: string; name: string; phone: string; months: number; token: string; paidAt: string; sent: boolean }[]> => {
+  .handler(async ({ context }): Promise<{ id: string; name: string; phone: string; months: number; token: string; paidAt: string; sent: boolean; imei: string }[]> => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, warranty_months, warranty_token, warranty_sent_at, paid_at").not("warranty_months", "is", null).not("paid_at", "is", null).order("paid_at", { ascending: false }).limit(50);
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, warranty_months, warranty_token, warranty_sent_at, warranty_imei, paid_at").not("warranty_months", "is", null).not("paid_at", "is", null).order("paid_at", { ascending: false }).limit(50);
     if (error) throw new Error("Impossible d'afficher les garanties.");
-    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone ?? "", months: r.warranty_months, token: r.warranty_token, paidAt: r.paid_at, sent: Boolean(r.warranty_sent_at) }));
+    return (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone ?? "", months: r.warranty_months, token: r.warranty_token, paidAt: r.paid_at, sent: Boolean(r.warranty_sent_at), imei: r.warranty_imei ?? "" }));
+  });
+
+/** Enregistre le numéro IMEI du téléphone d'une garantie (pour prouver de quel appareil il s'agit). */
+export const setWarrantyImei = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid(), imei: z.string().trim().max(30).default("") }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase.from("payment_reminders").update({ warranty_imei: data.imei || null }).eq("id", data.id);
+    if (error) throw new Error("L'IMEI n'a pas pu être enregistré.");
+    return { ok: true };
   });
 
 export const addReminder = createServerFn({ method: "POST" })
@@ -166,6 +177,7 @@ export const addReminder = createServerFn({ method: "POST" })
       installments: z.number().int().min(1).max(3).default(1),
       contractLang: z.enum(["fr", "pt"]).default("fr"),
       warrantyMonths: z.number().int().min(1).max(120).nullable().default(null),
+      imei: z.string().trim().max(30).default(""),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -178,6 +190,7 @@ export const addReminder = createServerFn({ method: "POST" })
       name: data.name, phone: data.phone, amount: p.amount, due_date: p.dueDate,
       // La garantie part au paiement de la 1re échéance.
       warranty_months: i === 0 ? data.warrantyMonths : null,
+      warranty_imei: i === 0 && data.imei ? data.imei : null,
       group_id: groupId, installment: i + 1, installments: parts.length, group_total: parts.length > 1 ? data.amount : null, contract_lang: data.contractLang,
       note: parts.length > 1 ? `${data.note ? data.note + " — " : ""}${i + 1}/${parts.length}` : data.note,
     }));

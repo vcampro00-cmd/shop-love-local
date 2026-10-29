@@ -176,6 +176,13 @@
       "when": 1793296197371,
       "tag": "0024_reminder_warranty",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793297001293,
+      "tag": "0025_create_reminder_warranty_imei",
+      "breakpoints": true
     }
   ]
 }

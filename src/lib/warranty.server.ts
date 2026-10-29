@@ -16,7 +16,7 @@ const parisParts = (iso: string) => {
   return { day: `${g("year")}-${g("month")}-${g("day")}`, time: `${g("hour")}h${g("minute")}` };
 };
 
-export type WarrantyRow = { name: string; amount: number; months: number; paidAt: string; ref: string };
+export type WarrantyRow = { name: string; amount: number; months: number; paidAt: string; ref: string; imei?: string | null };
 
 export async function buildWarrantyPdf(w: WarrantyRow, logo?: Uint8Array | null): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
@@ -52,6 +52,7 @@ export async function buildWarrantyPdf(w: WarrantyRow, logo?: Uint8Array | null)
   line("Date du paiement :", `${frDate(day)} à ${time}`);
   line("Durée de la garantie :", monthsLabel(w.months).toUpperCase());
   line("Valable jusqu'au :", frDate(end));
+  if (w.imei) line("IMEI du téléphone :", w.imei.toUpperCase());
   y -= 16;
   const para = `La société VCAM PRO garantit le travail de programmation qu'elle a réalisé pendant ${monthsLabel(w.months)}, à compter du ${frDate(day)}, jour du paiement, jusqu'au ${frDate(end)} inclus. Cette garantie ne sera valable que sur présentation de ce document PDF.`;
   const words = para.split(" ");

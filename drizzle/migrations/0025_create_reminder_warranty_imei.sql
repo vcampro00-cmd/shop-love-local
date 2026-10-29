@@ -1,0 +1,1 @@
+ALTER TABLE public.payment_reminders ADD COLUMN warranty_imei text;
