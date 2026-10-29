@@ -22,6 +22,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCaisseRouteImport } from './routes/_authenticated/caisse'
 import { Route as AuthenticatedMesCommandesRouteImport } from './routes/_authenticated/mes-commandes'
 import { Route as AuthenticatedStockRouteImport } from './routes/_authenticated/stock'
+import { Route as GarantieTokenRouteImport } from './routes/garantie.$token'
 import { Route as PagarIdRouteImport } from './routes/pagar.$id'
 import { Route as AuthenticatedPaiementIdRouteImport } from './routes/_authenticated/paiement.$id'
 import { Route as AuthenticatedPedidoIdRouteImport } from './routes/_authenticated/pedido.$id'
@@ -96,6 +97,11 @@ const AuthenticatedStockRoute = AuthenticatedStockRouteImport.update({
   path: '/stock',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const GarantieTokenRoute = GarantieTokenRouteImport.update({
+  id: '/garantie/$token',
+  path: '/garantie/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PagarIdRoute = PagarIdRouteImport.update({
   id: '/pagar/$id',
   path: '/pagar/$id',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
   '/stock': typeof AuthenticatedStockRoute
+  '/garantie/$token': typeof GarantieTokenRoute
   '/pagar/$id': typeof PagarIdRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/caisse': typeof AuthenticatedCaisseRoute
   '/mes-commandes': typeof AuthenticatedMesCommandesRoute
   '/stock': typeof AuthenticatedStockRoute
+  '/garantie/$token': typeof GarantieTokenRoute
   '/pagar/$id': typeof PagarIdRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/_authenticated/caisse': typeof AuthenticatedCaisseRoute
   '/_authenticated/mes-commandes': typeof AuthenticatedMesCommandesRoute
   '/_authenticated/stock': typeof AuthenticatedStockRoute
+  '/garantie/$token': typeof GarantieTokenRoute
   '/pagar/$id': typeof PagarIdRoute
   '/_authenticated/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/_authenticated/pedido/$id': typeof AuthenticatedPedidoIdRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/caisse'
     | '/mes-commandes'
     | '/stock'
+    | '/garantie/$token'
     | '/pagar/$id'
     | '/paiement/$id'
     | '/pedido/$id'
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/caisse'
     | '/mes-commandes'
     | '/stock'
+    | '/garantie/$token'
     | '/pagar/$id'
     | '/paiement/$id'
     | '/pedido/$id'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/_authenticated/caisse'
     | '/_authenticated/mes-commandes'
     | '/_authenticated/stock'
+    | '/garantie/$token'
     | '/pagar/$id'
     | '/_authenticated/paiement/$id'
     | '/_authenticated/pedido/$id'
@@ -290,6 +302,7 @@ export interface RootRouteChildren {
   PaiementRecuRoute: typeof PaiementRecuRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  GarantieTokenRoute: typeof GarantieTokenRoute
   PagarIdRoute: typeof PagarIdRoute
   ApiPublicCronSecondPaymentsRoute: typeof ApiPublicCronSecondPaymentsRoute
   ApiPublicCronWhatsappRemindersRoute: typeof ApiPublicCronWhatsappRemindersRoute
@@ -391,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStockRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/garantie/$token': {
+      id: '/garantie/$token'
+      path: '/garantie/$token'
+      fullPath: '/garantie/$token'
+      preLoaderRoute: typeof GarantieTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pagar/$id': {
       id: '/pagar/$id'
       path: '/pagar/$id'
@@ -481,6 +501,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaiementRecuRoute: PaiementRecuRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  GarantieTokenRoute: GarantieTokenRoute,
   PagarIdRoute: PagarIdRoute,
   ApiPublicCronSecondPaymentsRoute: ApiPublicCronSecondPaymentsRoute,
   ApiPublicCronWhatsappRemindersRoute: ApiPublicCronWhatsappRemindersRoute,

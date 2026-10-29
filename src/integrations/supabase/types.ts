@@ -251,6 +251,10 @@ export type Database = {
           phone: string
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
+          warranty_error: string | null
+          warranty_months: number | null
+          warranty_sent_at: string | null
+          warranty_token: string
         }
         Insert: {
           amount: number
@@ -273,6 +277,10 @@ export type Database = {
           phone: string
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
+          warranty_error?: string | null
+          warranty_months?: number | null
+          warranty_sent_at?: string | null
+          warranty_token?: string
         }
         Update: {
           amount?: number
@@ -295,6 +303,10 @@ export type Database = {
           phone?: string
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
+          warranty_error?: string | null
+          warranty_months?: number | null
+          warranty_sent_at?: string | null
+          warranty_token?: string
         }
         Relationships: []
       }

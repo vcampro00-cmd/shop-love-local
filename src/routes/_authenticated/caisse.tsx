@@ -72,6 +72,7 @@ function Caisse() {
   const [remDate, setRemDate] = useState(today());
   const [remTimes, setRemTimes] = useState(1);
   const [remLang, setRemLang] = useState<"fr" | "pt">("fr");
+  const [remWarranty, setRemWarranty] = useState(0);
   const saveDrawer = useServerFn(setCashDrawer);
   const [drawerInput, setDrawerInput] = useState("");
   const fixDrawer = useServerFn(correctCashDrawer);
@@ -178,10 +179,10 @@ function Caisse() {
     const digits = whatsappDigits(remPhone);
     if (!remName.trim() || !(value > 0) || digits.length < 8 || !remDate) { toast.error(t("cash.invalid")); return; }
     try {
-      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate, installments: remTimes, contractLang: remLang } });
+      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate, installments: remTimes, contractLang: remLang, warrantyMonths: remWarranty > 0 ? remWarranty : null } });
       if (res.whatsapp?.sent) toast.success(t("cash.reminderWaSent"));
       else if (res.whatsapp?.failed) toast.error(t("cash.reminderWaFailed"));
-      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today()); setRemTimes(1);
+      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today()); setRemTimes(1); setRemWarranty(0);
       await qc.invalidateQueries({ queryKey: ["reminders"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
   }
@@ -383,6 +384,10 @@ function Caisse() {
               <option value="pt">{t("cash.reminderLang")} : PORTUGUÊS</option>
             </select>
           )}
+          <select aria-label={t("cash.reminderWarranty")} value={remWarranty} onChange={(e) => setRemWarranty(Number(e.target.value))} className="h-9 rounded-md border bg-background px-2 text-sm">
+            <option value={0}>{t("cash.reminderWarranty")} : {t("cash.reminderWarrantyNone")}</option>
+            {[1, 2, 3, 4, 6, 12].map((n) => <option key={n} value={n}>{t("cash.reminderWarranty")} : {n} MOIS</option>)}
+          </select>
           <Button type="submit" variant="outline">{t("cash.reminderAdd")}</Button>
         </div>
         <Input className="mt-3" placeholder={t("cash.reminderNote")} value={remNote} onChange={(e) => setRemNote(e.target.value)} maxLength={300} />
