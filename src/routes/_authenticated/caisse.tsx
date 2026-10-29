@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders, listWarranties } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
 import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
 import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
@@ -100,6 +100,7 @@ function Caisse() {
   const [remTimes, setRemTimes] = useState(1);
   const [remLang, setRemLang] = useState<"fr" | "pt">("fr");
   const [remWarranty, setRemWarranty] = useState(0);
+  const [remImei, setRemImei] = useState("");
   const saveDrawer = useServerFn(setCashDrawer);
   const [drawerInput, setDrawerInput] = useState("");
   const fixDrawer = useServerFn(correctCashDrawer);
@@ -206,10 +207,10 @@ function Caisse() {
     const digits = whatsappDigits(remPhone);
     if (!remName.trim() || !(value > 0) || digits.length < 8 || !remDate) { toast.error(t("cash.invalid")); return; }
     try {
-      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate, installments: remTimes, contractLang: remLang, warrantyMonths: remWarranty > 0 ? remWarranty : null } });
+      const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate, installments: remTimes, contractLang: remLang, warrantyMonths: remWarranty > 0 ? remWarranty : null, imei: remWarranty > 0 ? remImei : "" } });
       if (res.whatsapp?.sent) toast.success(t("cash.reminderWaSent"));
       else if (res.whatsapp?.failed) toast.error(t("cash.reminderWaFailed"));
-      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today()); setRemTimes(1); setRemWarranty(0);
+      setRemName(""); setRemPhone(""); setRemAmount(""); setRemNote(""); setRemDate(today()); setRemTimes(1); setRemWarranty(0); setRemImei("");
       await qc.invalidateQueries({ queryKey: ["reminders"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
   }
@@ -415,6 +416,9 @@ function Caisse() {
             <option value={0}>{t("cash.reminderWarranty")} : {t("cash.reminderWarrantyNone")}</option>
             {[1, 2, 3, 4, 6, 12].map((n) => <option key={n} value={n}>{t("cash.reminderWarranty")} : {n} MOIS</option>)}
           </select>
+          {remWarranty > 0 && (
+            <Input placeholder={t("cash.reminderImei")} value={remImei} onChange={(e) => setRemImei(e.target.value)} maxLength={30} className="uppercase" />
+          )}
           <Button type="submit" variant="outline">{t("cash.reminderAdd")}</Button>
         </div>
         <Input className="mt-3" placeholder={t("cash.reminderNote")} value={remNote} onChange={(e) => setRemNote(e.target.value)} maxLength={300} />
