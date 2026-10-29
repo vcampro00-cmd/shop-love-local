@@ -1,0 +1,2 @@
+ALTER TABLE public.payment_reminders ADD COLUMN warranty_months integer, ADD COLUMN warranty_token uuid NOT NULL DEFAULT gen_random_uuid(), ADD COLUMN warranty_sent_at timestamptz, ADD COLUMN warranty_error text;
+CREATE UNIQUE INDEX payment_reminders_warranty_token_idx ON public.payment_reminders(warranty_token);
