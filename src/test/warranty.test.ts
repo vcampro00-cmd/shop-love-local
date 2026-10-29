@@ -15,9 +15,9 @@ describe("durée de la garantie", () => {
     // Le texte du PDF est compressé et écrit en hexadécimal : on décompresse puis on décode.
     let text = "";
     for (const m of raw.toString("latin1").matchAll(/stream\r?\n([\s\S]*?)endstream/g)) {
-      try { text += zlib.inflateSync(Buffer.from(m[1], "latin1")).toString("latin1"); } catch { text += m[1]; }
+      try { text += zlib.inflateSync(Buffer.from(m[1] ?? "", "latin1")).toString("latin1"); } catch { text += m[1] ?? ""; }
     }
-    const decoded = [...text.matchAll(/<([0-9A-F]+)>\s*Tj/g)].map((s) => Buffer.from(s[1], "hex").toString("latin1")).join("\n");
+    const decoded = [...text.matchAll(/<([0-9A-F]+)>\s*Tj/g)].map((s) => Buffer.from(s[1] ?? "", "hex").toString("latin1")).join("\n");
     expect(decoded).toContain("IMEI du téléphone :");
   });
   it("produit un PDF", async () => {
