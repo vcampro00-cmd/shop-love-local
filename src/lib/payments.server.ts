@@ -183,6 +183,8 @@ export async function applyPaidReminder(sessionId: string, env: StripeEnv): Prom
     spent_on: today,
   });
   if (ins) console.error("Cash entry for reminder payment failed", ins);
+  // Garantie de programmation demandée par le propriétaire : envoyée au paiement.
+  try { await (await import("./warranty.server")).sendWarranty(reminderId); } catch (e) { console.error("Warranty failed", e); }
 }
 
 /** Prélève automatiquement les échéances suivantes des rappels en plusieurs fois (une tentative par échéance). */

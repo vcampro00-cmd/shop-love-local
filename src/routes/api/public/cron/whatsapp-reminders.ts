@@ -11,6 +11,7 @@ export const Route = createFileRoute("/api/public/cron/whatsapp-reminders")({
         if (denied) return denied;
         const result = await sendDueReminders();
         await processPendingEvents(20);
+        try { await (await import("@/lib/warranty.server")).sendPendingWarranties(); } catch (e) { console.error("Warranties", e); }
         return Response.json(result);
       },
     },
