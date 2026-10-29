@@ -31,6 +31,41 @@ export const Route = createFileRoute("/_authenticated/caisse")({
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+type WarrantyInfo = { id: string; name: string; phone: string; months: number; token: string; paidAt: string; sent: boolean; imei: string };
+
+function WarrantyItem({ w }: { w: WarrantyInfo }) {
+  const t = useText();
+  const saveImei = useServerFn(setWarrantyImei);
+  const [imei, setImei] = useState(w.imei);
+  const [busy, setBusy] = useState(false);
+  async function save() {
+    setBusy(true);
+    try {
+      await saveImei({ data: { id: w.id, imei } });
+      toast.success(t("cash.reminderImeiSaved"));
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); } finally { setBusy(false); }
+  }
+  return (
+    <li className="flex items-center justify-between gap-3 py-2 text-sm">
+      <div className="min-w-0">
+        <p className="truncate font-medium">{w.name} — {w.months} MOIS{w.sent && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">ENVOYÉE</span>}</p>
+        <p className="truncate text-xs text-muted-foreground">{w.phone ? `+${w.phone} · ` : ""}{fmtDate(w.paidAt)}</p>
+        <div className="mt-1 flex items-center gap-1">
+          <Input value={imei} onChange={(e) => setImei(e.target.value)} maxLength={30} placeholder={t("cash.reminderImei")} aria-label={t("cash.reminderImei")} className="h-7 w-44 text-xs uppercase" />
+          <button type="button" aria-label={t("cash.reminderImeiSaved")} disabled={busy} onClick={save} className="text-muted-foreground hover:text-primary disabled:opacity-50">
+            <Check className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <Button asChild size="sm" variant="outline">
+        <a href={`/garantie/${w.token}`} download={`garantie-${w.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`}>
+          <Download className="h-4 w-4" /> {t("cash.warrantyDownload")}
+        </a>
+      </Button>
+    </li>
+  );
+}
+
 function Warranties() {
   const t = useText();
   const fetchW = useServerFn(listWarranties);
@@ -40,19 +75,7 @@ function Warranties() {
     <div className="mt-6">
       <h3 className="text-sm font-semibold">{t("cash.warrantiesTitle")}</h3>
       <ul className="mt-2 divide-y divide-border">
-        {data.map((w) => (
-          <li key={w.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-            <div className="min-w-0">
-              <p className="truncate font-medium">{w.name} — {w.months} MOIS{w.sent && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">ENVOYÉE</span>}</p>
-              <p className="truncate text-xs text-muted-foreground">{w.phone ? `+${w.phone} · ` : ""}{fmtDate(w.paidAt)}</p>
-            </div>
-            <Button asChild size="sm" variant="outline">
-              <a href={`/garantie/${w.token}`} download={`garantie-${w.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`}>
-                <Download className="h-4 w-4" /> {t("cash.warrantyDownload")}
-              </a>
-            </Button>
-          </li>
-        ))}
+        {data.map((w) => <WarrantyItem key={w.id} w={w} />)}
       </ul>
     </div>
   );
