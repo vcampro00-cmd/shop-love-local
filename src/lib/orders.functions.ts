@@ -280,6 +280,17 @@ export const cancelSecondPayment = createServerFn({ method: "POST" })
     return { ok: true, emailed };
   });
 
+/** Le propriétaire prélève le 2e paiement tout de suite ; le prélèvement auto ne se refait pas ensuite. */
+export const chargeSecondPaymentNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
+    const { chargeSecondNow } = await import("./payments.server");
+    const r = await chargeSecondNow(data.id);
+    return r.ok ? { ok: true as const } : { error: r.reason };
+  });
+
 const phonePayload = z.object({ id: z.string().uuid(), phone: z.string().trim().min(8, "Téléphone invalide").max(25) });
 
 /** Le propriétaire corrige le téléphone d'un client après la commande. */

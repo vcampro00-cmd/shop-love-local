@@ -81,6 +81,68 @@ export async function applyPaidSession(sessionId: string, env: StripeEnv): Promi
   }
 }
 
+type OrderRow = import("@/integrations/supabase/types").Database["public"]["Tables"]["orders"]["Row"];
+
+/**
+ * Prélève le 2e paiement d'une commande. Même clé d'idempotence pour le
+ * prélèvement auto et le bouton manuel : Stripe ne débite jamais deux fois.
+ * Une fois payé, la commande passe « payé » et le cron ne la reprend plus.
+ */
+async function chargeOrderSecond(o: OrderRow, retry = false): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const db = await admin();
+  const env = (o.payment_env === "live" ? "live" : "sandbox") as StripeEnv;
+  const amount = Math.round(Number(o.second_amount) * 100);
+  try {
+    if (!o.stripe_customer_id || !o.stripe_payment_method_id || amount < 50) throw new Error("Carte manquante");
+    const stripe = createStripeClient(env);
+    const key = retry ? `order-${o.id}-second-retry-${Math.floor(Date.now() / 60000)}` : `order-${o.id}-second`;
+    const pi = await stripe.paymentIntents.create(
+      {
+        amount,
+        currency: "eur",
+        customer: o.stripe_customer_id,
+        payment_method: o.stripe_payment_method_id,
+        off_session: true,
+        confirm: true,
+        description: `Commande ${o.ref} — 2e paiement`,
+        metadata: { orderId: o.id, installment: "2" },
+      },
+      { idempotencyKey: key },
+    );
+    if (pi.status !== "succeeded") throw new Error(`Statut ${pi.status}`);
+    await db
+      .from("orders")
+      .update({ payment_status: "paye", amount_paid: Number(o.total), second_charge_due_at: null })
+      .eq("id", o.id)
+      .in("payment_status", ["acompte_paye", "echec_solde"]);
+    return { ok: true };
+  } catch (e) {
+    const reason = getStripeErrorMessage(e);
+    console.error("Second charge failed", o.id, reason);
+    await db.from("orders").update({ payment_status: "echec_solde" }).eq("id", o.id).eq("payment_status", "acompte_paye");
+    try {
+      const { sendTemplateEmail } = await import("./email-templates/send-email");
+      await sendTemplateEmail("second-payment-failed", "", {
+        idempotencyKey: `second-payment-failed-${o.id}${retry ? `-${Date.now()}` : ""}`,
+        templateData: { ref: o.ref, name: o.name, phone: o.phone, amount: `${Number(o.second_amount).toFixed(2).replace(".", ",")} €`, reason },
+      });
+    } catch (err) {
+      console.error("second-payment-failed email failed", err);
+    }
+    return { ok: false, reason };
+  }
+}
+
+/** Bouton « Prélever maintenant » du propriétaire (rôle vérifié par l'appelant). */
+export async function chargeSecondNow(orderId: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const db = await admin();
+  const { data: o } = await db.from("orders").select("*").eq("id", orderId).maybeSingle();
+  if (!o || o.payment_plan !== "split") return { ok: false, reason: "Commande introuvable." };
+  if (o.payment_status === "paye") return { ok: false, reason: "Déjà payé." };
+  if (o.payment_status !== "acompte_paye" && o.payment_status !== "echec_solde") return { ok: false, reason: "Rien à prélever." };
+  return chargeOrderSecond(o, o.payment_status === "echec_solde");
+}
+
 /** Prélève le 2e paiement des commandes arrivées à échéance. Une seule fois par commande. */
 export async function chargeDueInstallments(): Promise<{ charged: number; failed: number }> {
   const db = await admin();
@@ -94,46 +156,9 @@ export async function chargeDueInstallments(): Promise<{ charged: number; failed
   let charged = 0;
   let failed = 0;
   for (const o of due ?? []) {
-    const env = (o.payment_env === "live" ? "live" : "sandbox") as StripeEnv;
-    const amount = Math.round(Number(o.second_amount) * 100);
-    try {
-      if (!o.stripe_customer_id || !o.stripe_payment_method_id || amount < 50) throw new Error("Carte manquante");
-      const stripe = createStripeClient(env);
-      const pi = await stripe.paymentIntents.create(
-        {
-          amount,
-          currency: "eur",
-          customer: o.stripe_customer_id,
-          payment_method: o.stripe_payment_method_id,
-          off_session: true,
-          confirm: true,
-          description: `Commande ${o.ref} — 2e paiement`,
-          metadata: { orderId: o.id, installment: "2" },
-        },
-        { idempotencyKey: `order-${o.id}-second` },
-      );
-      if (pi.status !== "succeeded") throw new Error(`Statut ${pi.status}`);
-      await db
-        .from("orders")
-        .update({ payment_status: "paye", amount_paid: Number(o.total), second_charge_due_at: null })
-        .eq("id", o.id)
-        .eq("payment_status", "acompte_paye");
-      charged++;
-    } catch (e) {
-      console.error("Second charge failed", o.id, getStripeErrorMessage(e));
-      const reason = getStripeErrorMessage(e);
-      await db.from("orders").update({ payment_status: "echec_solde" }).eq("id", o.id).eq("payment_status", "acompte_paye");
-      failed++;
-      try {
-        const { sendTemplateEmail } = await import("./email-templates/send-email");
-        await sendTemplateEmail("second-payment-failed", "", {
-          idempotencyKey: `second-payment-failed-${o.id}`,
-          templateData: { ref: o.ref, name: o.name, phone: o.phone, amount: `${Number(o.second_amount).toFixed(2).replace(".", ",")} €`, reason },
-        });
-      } catch (err) {
-        console.error("second-payment-failed email failed", err);
-      }
-    }
+    const r = await chargeOrderSecond(o);
+    if (r.ok) charged++;
+    else failed++;
   }
   return { charged, failed };
 }
