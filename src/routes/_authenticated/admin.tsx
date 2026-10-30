@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
 import { formatVisionxCode, isVisionxCode } from "@/lib/phone";
-import { cancelSecondPayment, listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
+import { cancelSecondPayment, chargeSecondPaymentNow, listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ function AdminOrders() {
   const queryClient = useQueryClient();
   const changeStatus = useServerFn(setOrderStatus);
   const cancelSecondFn = useServerFn(cancelSecondPayment);
+  const chargeNowFn = useServerFn(chargeSecondPaymentNow);
   const runAction = useServerFn(orderAction);
   const correct = useServerFn(correctText);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -141,6 +142,21 @@ function AdminOrders() {
     }
   }
 
+  async function chargeNow(id: string) {
+    if (!window.confirm(t("admin.chargeNow.confirm"))) return;
+    setBusyId(id);
+    try {
+      const r = await chargeNowFn({ data: { id } });
+      if ("error" in r) throw new Error(r.error);
+      toast.success(t("admin.chargeNow.saved"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action impossible.");
+    } finally {
+      await queryClient.invalidateQueries({ queryKey: ["all-orders"] });
+      setBusyId(null);
+    }
+  }
+
   /** Renonce au 2e prélèvement : il ne sera plus tenté ni affiché comme dû. */
   async function cancelSecond(id: string) {
     if (!window.confirm(t("admin.cancelSecond.confirm"))) return;
@@ -218,7 +234,10 @@ function AdminOrders() {
             )}
 
             {o.payment_plan === "split" && (o.payment_status === "acompte_paye" || o.payment_status === "echec_solde") && (
-              <div className="mt-3">
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" className="bg-brand" disabled={busyId === o.id} onClick={() => chargeNow(o.id)}>
+                  {t("admin.chargeNow.button")}
+                </Button>
                 <Button size="sm" variant="outline" disabled={busyId === o.id} onClick={() => cancelSecond(o.id)}>
                   <X className="mr-1 h-4 w-4" />{t("admin.cancelSecond.button")}
                 </Button>

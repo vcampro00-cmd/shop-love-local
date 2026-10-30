@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { cancelSecondPayment } from "@/lib/orders.functions";
+import { cancelSecondPayment, chargeSecondPaymentNow } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -110,6 +110,16 @@ function Caisse() {
   const addRem = useServerFn(addReminder);
   const delRem = useServerFn(deleteReminder);
   const cancelSecondFn = useServerFn(cancelSecondPayment);
+  const chargeNowFn = useServerFn(chargeSecondPaymentNow);
+  async function chargeNow(id: string) {
+    if (!window.confirm(t("admin.chargeNow.confirm"))) return;
+    try {
+      const r = await chargeNowFn({ data: { id } });
+      if ("error" in r) throw new Error(r.error);
+      toast.success(t("admin.chargeNow.saved"));
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
+    await qc.invalidateQueries();
+  }
   async function cancelSecond(id: string) {
     if (!window.confirm(t("admin.cancelSecond.confirm"))) return;
     try { await cancelSecondFn({ data: { id } }); toast.success(t("admin.cancelSecond.saved")); await qc.invalidateQueries({ queryKey: ["reminders"] }); }
@@ -458,6 +468,9 @@ function Caisse() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
+                {r.fromOrder && !r.paid && (
+                  <Button type="button" size="sm" className="bg-brand" onClick={() => chargeNow(r.id)}>{t("admin.chargeNow.button")}</Button>
+                )}
                 {r.failed && (
                   <Button type="button" size="sm" variant="destructive" onClick={() => cancelSecond(r.id)}>{t("admin.cancelSecond.button")}</Button>
                 )}
