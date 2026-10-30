@@ -81,7 +81,7 @@ export async function applyPaidSession(sessionId: string, env: StripeEnv): Promi
   }
 }
 
-type OrderRow = Record<string, any>;
+type OrderRow = import("@/integrations/supabase/types").Database["public"]["Tables"]["orders"]["Row"];
 
 /**
  * Prélève le 2e paiement d'une commande. Même clé d'idempotence pour le
