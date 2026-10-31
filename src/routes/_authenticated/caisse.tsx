@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { cancelSecondPayment, chargeSecondPaymentNow } from "@/lib/orders.functions";
+import { cancelSecondPayment, chargeSecondPaymentNow, setSecondChargeDate } from "@/lib/orders.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -32,6 +32,30 @@ export const Route = createFileRoute("/_authenticated/caisse")({
 const today = () => new Date().toISOString().slice(0, 10);
 
 type WarrantyInfo = { id: string; name: string; phone: string; months: number; token: string; paidAt: string; sent: boolean; imei: string; manual: boolean };
+
+function ReminderSecondDate({ id, dueDate }: { id: string; dueDate: string | null }) {
+  const t = useText();
+  const qc = useQueryClient();
+  const save = useServerFn(setSecondChargeDate);
+  const [date, setDate] = useState(dueDate ?? "");
+  const [busy, setBusy] = useState(false);
+  async function saveDate() {
+    setBusy(true);
+    try {
+      await save({ data: { id, date } });
+      toast.success(t("admin.secondDate.saved"));
+      await qc.invalidateQueries();
+    } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
+    finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <label htmlFor={`second-date-${id}`} className="text-xs text-muted-foreground">{t("admin.secondDate.label")}</label>
+      <Input id={`second-date-${id}`} type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 w-40" />
+      <Button type="button" size="sm" variant="outline" disabled={busy || !date || date === dueDate} onClick={saveDate}>{t("admin.secondDate.save")}</Button>
+    </div>
+  );
+}
 
 function WarrantyItem({ w }: { w: WarrantyInfo }) {
   const t = useText();
@@ -496,7 +520,7 @@ function Caisse() {
         {reminders.length > 0 && (
           <ul className="mt-3 divide-y divide-border">
             {reminders.map((r) => (
-              <li key={r.id} className={`flex items-center justify-between gap-3 py-2 text-sm ${r.failed ? "rounded-lg border border-destructive bg-destructive/15 px-2" : ""}`}>
+              <li key={r.id} className={`flex flex-wrap items-center justify-between gap-3 py-2 text-sm ${r.failed ? "rounded-lg border border-destructive bg-destructive/15 px-2" : ""}`}>
                 <div className="min-w-0">
                   <p className="truncate font-medium">
                     {r.name} — {brl(r.amount)}
@@ -505,6 +529,7 @@ function Caisse() {
                     {r.failed && <span className="ml-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">ÉCHEC</span>}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
+                  {r.fromOrder && !r.paid && <ReminderSecondDate key={`${r.id}-${r.dueDate}`} id={r.id} dueDate={r.dueDate} />}
                 </div>
                 {r.fromOrder && !r.paid && (!r.dueDate || r.dueDate <= todayParis()) && (
                   <Button type="button" size="sm" className="bg-brand" onClick={() => chargeNow(r.id)}>{t("admin.chargeNow.button")}</Button>

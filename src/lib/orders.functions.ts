@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULTS } from "./content.defaults";
 import { numFromText } from "./content";
-import { canPayInTwoTimes, computeTotals, makeOrderRef, secondChargeDueFrom, splitPayment, type CartItem } from "./pricing";
+import { canPayInTwoTimes, computeTotals, makeOrderRef, secondPaymentSchedule, splitPayment, type CartItem } from "./pricing";
 import { createStripeClient, getStripeErrorMessage } from "./stripe.server";
 
 const ORDER_STATUSES = ["nouveau", "prepare", "envoye", "livre", "annule"] as const;
@@ -238,15 +238,19 @@ export const setSecondChargeDate = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => secondDatePayload.parse(input))
   .handler(async ({ data, context }) => {
     if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
-    const due = secondChargeDueFrom(data.date.trim());
-    if (!due) throw new Error("Date invalide.");
-    const { error } = await context.supabase
+    const { data: order } = await context.supabase.from("orders").select("payment_status, payment_plan, second_charge_due_at").eq("id", data.id).maybeSingle();
+    if (!order || order.payment_plan !== "split") throw new Error("Commande introuvable.");
+    const schedule = secondPaymentSchedule(order.payment_status, data.date.trim());
+    if (!schedule) throw new Error("Date invalide ou 2e paiement déjà réglé ou annulé.");
+    const { data: updated, error } = await context.supabase
       .from("orders")
-      .update({ second_charge_due_at: due })
+      .update(schedule)
       .eq("id", data.id)
-      .in("payment_status", ["en_attente", "acompte_paye"]);
-    if (error) throw new Error("La date n'a pas pu être enregistrée.");
-    return { ok: true, due };
+      .eq("payment_plan", "split")
+      .eq("payment_status", order.payment_status)
+      .select("id");
+    if (error || !updated?.length) throw new Error("La date n'a pas pu être enregistrée. Actualisez la page.");
+    return { ok: true, due: schedule.second_charge_due_at };
   });
 
 /** Le propriétaire renonce au 2e prélèvement : il ne sera plus tenté ni montré comme dû. */

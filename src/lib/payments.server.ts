@@ -1,5 +1,5 @@
 import { createStripeClient, getStripeErrorMessage, type StripeEnv } from "./stripe.server";
-import { SECOND_CHARGE_DELAY_DAYS } from "./pricing";
+import { SECOND_CHARGE_DELAY_DAYS, secondPaymentKey } from "./pricing";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -95,7 +95,8 @@ async function chargeOrderSecond(o: OrderRow, retry = false): Promise<{ ok: true
   try {
     if (!o.stripe_customer_id || !o.stripe_payment_method_id || amount < 50) throw new Error("Carte manquante");
     const stripe = createStripeClient(env);
-    const key = retry ? `order-${o.id}-second-retry-${Math.floor(Date.now() / 60000)}` : `order-${o.id}-second`;
+    const baseKey = secondPaymentKey(o.id, o.second_charge_due_at);
+    const key = retry ? `${baseKey}-retry-${Math.floor(Date.now() / 60000)}` : baseKey;
     const pi = await stripe.paymentIntents.create(
       {
         amount,
