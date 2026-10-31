@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
 import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
 import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/caisse")({
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-type WarrantyInfo = { id: string; name: string; phone: string; months: number; token: string; paidAt: string; sent: boolean; imei: string };
+type WarrantyInfo = { id: string; name: string; phone: string; months: number; token: string; paidAt: string; sent: boolean; imei: string; manual: boolean };
 
 function WarrantyItem({ w }: { w: WarrantyInfo }) {
   const t = useText();
@@ -48,7 +48,7 @@ function WarrantyItem({ w }: { w: WarrantyInfo }) {
   return (
     <li className="flex items-center justify-between gap-3 py-2 text-sm">
       <div className="min-w-0">
-        <p className="truncate font-medium">{w.name} — {w.months} MOIS{w.sent && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">ENVOYÉE</span>}</p>
+        <p className="truncate font-medium">{w.name} — {w.months} MOIS{w.sent && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">ENVOYÉE</span>}{w.manual && <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold">{t("cash.warrantyOnlyTag")}</span>}</p>
         <p className="truncate text-xs text-muted-foreground">{w.phone ? `+${w.phone} · ` : ""}{fmtDate(w.paidAt)}</p>
         <div className="mt-1 flex items-center gap-1">
           <Input value={imei} onChange={(e) => setImei(e.target.value)} maxLength={30} placeholder={t("cash.reminderImei")} aria-label={t("cash.reminderImei")} className="h-7 w-44 text-xs uppercase" />
@@ -77,6 +77,44 @@ function Warranties() {
       <ul className="mt-2 divide-y divide-border">
         {data.map((w) => <WarrantyItem key={w.id} w={w} />)}
       </ul>
+    </div>
+  );
+}
+
+/** Garantie seule, sans paiement sur le site : pour les ventes en espèces. */
+function WarrantyOnlyForm() {
+  const t = useText();
+  const qc = useQueryClient();
+  const addWar = useServerFn(addWarranty);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [amount, setAmount] = useState("");
+  const [months, setMonths] = useState(1);
+  const [imei, setImei] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function submit() {
+    const value = Number(amount.replace(",", "."));
+    const digits = whatsappDigits(phone);
+    if (!name.trim() || !(value > 0) || digits.length < 8) { toast.error(t("cash.invalid")); return; }
+    setBusy(true);
+    try {
+      await addWar({ data: { name, phone: digits, amount: value, months, imei } });
+      toast.success(t("cash.warrantyOnlySaved"));
+      setName(""); setPhone(""); setAmount(""); setMonths(1); setImei("");
+      await qc.invalidateQueries({ queryKey: ["warranties"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
+    finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_120px_130px_1fr_auto]">
+      <Input placeholder={t("cash.reminderName")} value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
+      <Input placeholder={t("cash.reminderPhone")} inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
+      <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+      <select aria-label={t("cash.reminderWarranty")} value={months} onChange={(e) => setMonths(Number(e.target.value))} className="h-9 rounded-md border bg-background px-2 text-sm">
+        {[1, 2, 3, 4, 6, 12].map((n) => <option key={n} value={n}>{n} MOIS</option>)}
+      </select>
+      <Input placeholder={t("cash.reminderImei")} value={imei} onChange={(e) => setImei(e.target.value)} maxLength={30} className="uppercase" />
+      <Button type="button" variant="outline" disabled={busy} onClick={submit}>{t("cash.warrantyOnlyAdd")}</Button>
     </div>
   );
 }
@@ -488,8 +526,15 @@ function Caisse() {
             ))}
           </ul>
         )}
-        <Warranties />
       </form>
+
+      <div className="mt-6 rounded-2xl border bg-card p-5">
+        <h2 className="font-semibold">{t("cash.warrantyOnlyTitle")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("cash.warrantyOnlyIntro")}</p>
+        <WarrantyOnlyForm />
+        <Warranties />
+      </div>
+
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         <EntriesList title={t("cash.in")} empty={t("cash.emptyIn")} rows={book.entries} onDelete={remove} />
