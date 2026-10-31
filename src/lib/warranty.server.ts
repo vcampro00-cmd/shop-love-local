@@ -54,14 +54,20 @@ export async function buildWarrantyPdf(w: WarrantyRow, logo?: Uint8Array | null)
   line("Valable jusqu'au :", frDate(end));
   if (w.imei) line("IMEI du téléphone :", w.imei.toUpperCase());
   y -= 16;
-  const para = `La société VCAM PRO garantit le travail de programmation qu'elle a réalisé pendant ${monthsLabel(w.months)}, à compter du ${frDate(day)}, jour du paiement, jusqu'au ${frDate(end)} inclus. Cette garantie ne sera valable que sur présentation de ce document PDF.`;
-  const words = para.split(" ");
-  let cur = "";
-  for (const word of words) {
-    const t = cur ? `${cur} ${word}` : word;
-    if (font.widthOfTextAtSize(t, 12) > 455) { page.drawText(cur, { x: 70, y, size: 12, font }); y -= 18; cur = word; } else cur = t;
+  const paras = [
+    `La société VCAM PRO garantit le travail de programmation qu'elle a réalisé pendant ${monthsLabel(w.months)}, à compter du ${frDate(day)}, jour du paiement, jusqu'au ${frDate(end)} inclus. Cette garantie ne sera valable que sur présentation de ce document PDF.`,
+    `OBS : cette garantie couvre uniquement la programmation. Si celle-ci cesse de fonctionner, VCAM PRO s'engage à la refaire gratuitement. Elle ne couvre pas les comptes bloqués ni aucun autre problème sans lien avec la programmation.`,
+  ];
+  for (const para of paras) {
+    const words = para.split(" ");
+    let cur = "";
+    for (const word of words) {
+      const t = cur ? `${cur} ${word}` : word;
+      if (font.widthOfTextAtSize(t, 12) > 455) { page.drawText(cur, { x: 70, y, size: 12, font }); y -= 18; cur = word; } else cur = t;
+    }
+    if (cur) { page.drawText(cur, { x: 70, y, size: 12, font }); y -= 18; }
+    y -= 8;
   }
-  if (cur) { page.drawText(cur, { x: 70, y, size: 12, font }); y -= 18; }
 
   // Cachet VCAM PRO avec date et heure.
   const cx = 420, cy = Math.min(y - 110, 300);
