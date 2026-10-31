@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
 import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
-import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
+import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, todayParis, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -506,7 +506,7 @@ function Caisse() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
-                {r.fromOrder && !r.paid && (
+                {r.fromOrder && !r.paid && (!r.dueDate || r.dueDate <= todayParis()) && (
                   <Button type="button" size="sm" className="bg-brand" onClick={() => chargeNow(r.id)}>{t("admin.chargeNow.button")}</Button>
                 )}
                 {r.failed && (
