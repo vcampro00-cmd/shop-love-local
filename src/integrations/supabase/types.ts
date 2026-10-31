@@ -254,6 +254,7 @@ export type Database = {
           warranty_error: string | null
           warranty_imei: string | null
           warranty_months: number | null
+          warranty_only: boolean
           warranty_sent_at: string | null
           warranty_token: string
         }
@@ -281,6 +282,7 @@ export type Database = {
           warranty_error?: string | null
           warranty_imei?: string | null
           warranty_months?: number | null
+          warranty_only?: boolean
           warranty_sent_at?: string | null
           warranty_token?: string
         }
@@ -308,6 +310,7 @@ export type Database = {
           warranty_error?: string | null
           warranty_imei?: string | null
           warranty_months?: number | null
+          warranty_only?: boolean
           warranty_sent_at?: string | null
           warranty_token?: string
         }

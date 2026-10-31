@@ -117,7 +117,7 @@ export async function sendWarranty(reminderId: string): Promise<void> {
 /** Reprend les garanties payées pas encore parties (appelé par le cron horaire). */
 export async function sendPendingWarranties(): Promise<void> {
   const db = await admin();
-  const { data } = await db.from("payment_reminders").select("id").not("warranty_months", "is", null).not("paid_at", "is", null).is("warranty_sent_at", null).limit(20);
+  const { data } = await db.from("payment_reminders").select("id").not("warranty_months", "is", null).not("paid_at", "is", null).is("warranty_sent_at", null).eq("warranty_only", false).limit(20);
   for (const r of data ?? []) await sendWarranty(r.id);
 }
 

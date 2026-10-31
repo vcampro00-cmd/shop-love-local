@@ -1,0 +1,2 @@
+ALTER TABLE public.payment_reminders ADD COLUMN warranty_only boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.payment_reminders.warranty_only IS 'Garantie seule (vente en espèces) : pas de paiement sur le site, pas de rappel WhatsApp, PDF disponible tout de suite.';
