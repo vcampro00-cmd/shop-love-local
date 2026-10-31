@@ -81,7 +81,7 @@ describe("code promo et commissions", () => {
   });
 });
 
-import { secondChargeDueFrom } from "@/lib/pricing";
+import { secondChargeDueFrom, secondPaymentSchedule, secondPaymentKey } from "@/lib/pricing";
 describe("date du 2e paiement", () => {
   it("fixe le prélèvement à 12 h le jour choisi par le propriétaire", () => {
     expect(secondChargeDueFrom("2026-11-05")).toBe("2026-11-05T12:00:00.000Z");
@@ -89,5 +89,18 @@ describe("date du 2e paiement", () => {
   it("refuse une date invalide", () => {
     expect(secondChargeDueFrom("pas-une-date")).toBeNull();
     expect(secondChargeDueFrom("")).toBeNull();
+    expect(secondChargeDueFrom("2026-02-30")).toBeNull();
+  });
+  it("reprogramme un deuxième paiement échoué à la date négociée pour le cron", () => {
+    expect(secondPaymentSchedule("echec_solde", "2026-11-03")).toEqual({ second_charge_due_at: "2026-11-03T12:00:00.000Z", payment_status: "acompte_paye" });
+  });
+  it("ne reprogramme pas un paiement déjà payé ou annulé", () => {
+    expect(secondPaymentSchedule("paye", "2026-11-03")).toBeNull();
+    expect(secondPaymentSchedule("solde_annule", "2026-11-03")).toBeNull();
+  });
+  it("utilise une nouvelle tentative après changement de date sans séparer manuel et automatique", () => {
+    const scheduled = secondPaymentSchedule("echec_solde", "2026-11-03");
+    expect(secondPaymentKey("order1", scheduled?.second_charge_due_at ?? null)).toBe("order-order1-second-2026-11-03T12:00:00.000Z");
+    expect(secondPaymentKey("order1", "2026-11-03T12:00:00.000Z")).not.toBe(secondPaymentKey("order1", "2026-10-31T12:00:00.000Z"));
   });
 });

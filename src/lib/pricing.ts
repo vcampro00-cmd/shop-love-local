@@ -99,7 +99,19 @@ const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export function secondChargeDueFrom(date: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
   const d = new Date(`${date}T12:00:00Z`);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== date ? null : d.toISOString();
+}
+
+/** Reprogramme un solde non payé ; un échec redevient une échéance automatique. */
+export function secondPaymentSchedule(status: string, date: string) {
+  const due = secondChargeDueFrom(date);
+  if (!due || !["en_attente", "acompte_paye", "echec_solde"].includes(status)) return null;
+  return { second_charge_due_at: due, payment_status: status === "echec_solde" ? "acompte_paye" as const : status as "en_attente" | "acompte_paye" };
+}
+
+/** Manuel et automatique partagent la même tentative pour une échéance donnée. */
+export function secondPaymentKey(id: string, due: string | null): string {
+  return `order-${id}-second${due ? `-${due}` : ""}`;
 }
 
 /** "00ff2200ff22" → "VCA9CA9C". La partie aléatoire vient du serveur. */
