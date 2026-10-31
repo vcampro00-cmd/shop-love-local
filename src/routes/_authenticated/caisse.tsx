@@ -506,7 +506,7 @@ function Caisse() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                 </div>
-                {r.fromOrder && !r.paid && (
+                {r.fromOrder && !r.paid && (!r.dueDate || r.dueDate <= todayParis()) && (
                   <Button type="button" size="sm" className="bg-brand" onClick={() => chargeNow(r.id)}>{t("admin.chargeNow.button")}</Button>
                 )}
                 {r.failed && (
