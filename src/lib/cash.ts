@@ -49,6 +49,11 @@ export function whatsappDigits(phone: string): string {
   return d;
 }
 
+/** Date du jour à Paris, "YYYY-MM-DD" (pour comparer avec les dates d'échéance). */
+export function todayParis(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
 /** Date "YYYY-MM-DD" affichée en français (ex. : 20/10/2026). */
 export function formatDueDate(date: string | null | undefined): string {
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return "";
