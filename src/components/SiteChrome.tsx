@@ -74,12 +74,13 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   const t = useText();
+  const lang = useLang();
   return (
     <footer className="border-t py-8 text-center text-sm text-muted-foreground">
       <p>{t("footer.line1")}</p>
       <p className="mt-2">{t("footer.line2")}</p>
       <p className="mt-4">
-        <Link to="/editar" className="text-xs underline decoration-dotted underline-offset-4 hover:text-foreground">Espace propriétaire</Link>
+        <Link to="/editar" className="text-xs underline decoration-dotted underline-offset-4 hover:text-foreground">{lang === "pt" ? "Área do proprietário" : "Espace propriétaire"}</Link>
       </p>
     </footer>
   );
