@@ -7,6 +7,7 @@ export type CatalogProduct = {
   name: string;
   tag: string;
   description: string;
+  descriptionPt: string;
   price: number;
   commission: number;
   fullPaymentOnly: boolean;
@@ -24,6 +25,7 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async (): Pr
       name: r.name,
       tag: r.tag,
       description: r.description,
+      descriptionPt: (r as { description_pt?: string | null }).description_pt ?? "",
       price: Number(r.price),
       commission: Number(r.commission),
       fullPaymentOnly: r.full_payment_only,
@@ -46,6 +48,7 @@ const productInput = z.object({
   name: z.string().trim().min(2).max(80),
   tag: z.string().trim().max(40).default(""),
   description: z.string().trim().max(1000).default(""),
+  descriptionPt: z.string().trim().max(1000).default(""),
   price: z.number().min(0).max(100000),
   commission: z.number().min(0).max(100000),
   fullPaymentOnly: z.boolean(),
@@ -72,6 +75,7 @@ export const saveProduct = createServerFn({ method: "POST" })
       name: data.name,
       tag: data.tag,
       description: data.description,
+      description_pt: data.descriptionPt,
       price: data.price,
       commission: data.commission,
       full_payment_only: data.fullPaymentOnly,

@@ -6,6 +6,7 @@ import { brl } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
 import { useText } from "@/lib/content";
+import { useLang, useX } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -26,6 +27,8 @@ export const Route = createFileRoute("/")({
 function Shop() {
   const { add } = useCart();
   const t = useText();
+  const x = useX();
+  const lang = useLang();
   const { list: products } = useCatalog();
 
   const cards = [
@@ -68,6 +71,7 @@ function Shop() {
           {products.map((p) => {
             const name = p.name;
             const price = p.price;
+            const description = lang === "pt" && p.descriptionPt ? p.descriptionPt : p.description;
             return (
               <article key={p.id} className="flex flex-col rounded-3xl border bg-card p-6 transition hover:border-primary">
                 <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">{p.tag}</span>
@@ -75,22 +79,22 @@ function Shop() {
                   <img src={p.image} alt={name} loading="lazy" width={p.imageW} height={p.imageH} className="h-32 w-auto shrink-0 object-contain drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]" />
                   <div>
                     <h3 className="text-lg font-bold">{name}</h3>
-                    {p.description && (
-                      <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
+                    {description && (
+                      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
                     )}
                   </div>
                 </div>
                 <div className="mt-6 flex items-center justify-between">
                   <span className="text-xl font-bold">{brl(price)}</span>
-                  <Button size="sm" onClick={() => { add(p.id); toast.success(`${name} ajouté au panier`); }}>
-                    <Plus className="h-4 w-4" /> Ajouter
+                  <Button size="sm" onClick={() => { add(p.id); toast.success(x(`${name} ajouté au panier`, `${name} adicionado ao carrinho`)); }}>
+                    <Plus className="h-4 w-4" /> {x("Ajouter", "Adicionar")}
                   </Button>
                 </div>
               </article>
             );
           })}
         </div>
-        <p className="mt-6 rounded-2xl border bg-secondary p-4 text-sm text-muted-foreground">Remarque : {t("home.planNote")}.</p>
+        <p className="mt-6 rounded-2xl border bg-secondary p-4 text-sm text-muted-foreground">{x("Remarque : ", "Observação: ")}{t("home.planNote")}.</p>
       </section>
     </div>
   );
