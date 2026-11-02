@@ -7,7 +7,7 @@ import { getOrder, confirmPayment } from "@/lib/orders.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { brl } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
-import { useText, numFromText } from "@/lib/content";
+import { useText } from "@/lib/content";
 import { useLang, useX, dateLocale } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
 
