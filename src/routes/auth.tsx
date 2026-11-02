@@ -4,6 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useText } from "@/lib/content";
+import { useX } from "@/lib/lang";
 import { takeIntendedPath } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,18 +29,19 @@ export const Route = createFileRoute("/auth")({
 const OWNER_LOGIN = "vcamprovendas";
 const OWNER_EMAIL = "vcampro00@gmail.com";
 
-const schema = z.object({
-  email: z.string().trim().email("E-mail invalide").max(255),
-  password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)").max(200),
-});
-
 function Auth() {
   const t = useText();
+  const x = useX();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signup" | "signin">("signup");
   const [form, setForm] = useState({ email: "", password: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+
+  const schema = z.object({
+    email: z.string().trim().email(x("E-mail invalide", "E-mail inválido")).max(255),
+    password: z.string().min(8, x("Mot de passe trop court (8 caractères minimum)", "Senha muito curta (mínimo de 8 caracteres)")).max(200),
+  });
 
   const set = (k: "email" | "password") => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [k]: e.target.value });
@@ -51,7 +53,7 @@ function Auth() {
     const email = mode === "signin" && ident === OWNER_LOGIN ? OWNER_EMAIL : form.email;
     const r = schema.safeParse({ ...form, email });
     if (!r.success) {
-      toast.error(r.error.issues[0]?.message ?? "Vérifiez vos informations");
+      toast.error(r.error.issues[0]?.message ?? x("Vérifiez vos informations", "Confira suas informações"));
       return;
     }
     setBusy(true);
@@ -90,7 +92,7 @@ function Auth() {
   async function forgot() {
     const email = form.email.trim();
     if (!z.string().email().safeParse(email).success) {
-      toast.error("Écrivez d'abord votre e-mail ci-dessus");
+      toast.error(x("Écrivez d'abord votre e-mail ci-dessus", "Primeiro escreva seu e-mail acima"));
       return;
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
