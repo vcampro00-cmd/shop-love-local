@@ -1,16 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 export type Lang = "fr" | "pt";
 
 const STORAGE_KEY = "vcampro-lang";
 
-// Langue du site : « fr » par défaut, choix mémorisé dans le navigateur du visiteur.
-// La préférence est lue après l'hydratation pour éviter tout décalage serveur/navigateur.
+// Langue du site : « fr » côté serveur et au premier rendu, choix mémorisé du
+// visiteur appliqué après l'hydratation via useSyncExternalStore (le patron
+// prévu par React : le serveur et le premier rendu affichent le français, puis
+// le navigateur bascule sur la langue enregistrée sans erreur d'hydratation).
 let current: Lang = "fr";
 const listeners = new Set<() => void>();
 
+/** Instantané vu par le serveur : toujours le français. */
+function getServerLang(): Lang {
+  return "fr";
+}
+
 export function getLang(): Lang {
   return current;
+}
+
+function subscribeLang(notify: () => void): () => void {
+  listeners.add(notify);
+  return () => {
+    listeners.delete(notify);
+  };
 }
 
 export function setLang(lang: Lang) {
@@ -25,7 +39,7 @@ export function setLang(lang: Lang) {
 }
 
 export function useLang(): Lang {
-  const [, force] = useState(0);
+  // La préférence enregistrée est lue une fois par composant après le montage.
   useEffect(() => {
     let saved: string | null = null;
     try {
@@ -33,15 +47,9 @@ export function useLang(): Lang {
     } catch {
       // Stockage indisponible : on garde « fr ».
     }
-    if (saved === "pt") current = "pt";
-    const notify = () => force((n) => n + 1);
-    listeners.add(notify);
-    notify();
-    return () => {
-      listeners.delete(notify);
-    };
+    if (saved === "pt") setLang("pt");
   }, []);
-  return current;
+  return useSyncExternalStore(subscribeLang, getLang, getServerLang);
 }
 
 /** x("texte français", "texto em português") : renvoie le texte dans la langue choisie. */
