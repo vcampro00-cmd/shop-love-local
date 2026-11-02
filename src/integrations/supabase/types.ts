@@ -20,6 +20,7 @@ export type Database = {
           commission: number
           created_at: string
           description: string
+          description_pt: string
           full_payment_only: boolean
           id: string
           image_url: string | null
@@ -33,6 +34,7 @@ export type Database = {
           commission?: number
           created_at?: string
           description?: string
+          description_pt?: string
           full_payment_only?: boolean
           id: string
           image_url?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           commission?: number
           created_at?: string
           description?: string
+          description_pt?: string
           full_payment_only?: boolean
           id?: string
           image_url?: string | null
