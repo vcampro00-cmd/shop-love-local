@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart";
 import { brl } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
 import { useText, numFromText } from "@/lib/content";
+import { useX } from "@/lib/lang";
 import { canPayInTwoTimes, splitPayment, type PaymentPlan, type DeliveryMethod } from "@/lib/pricing";
 import { useAccount, rememberIntendedPath } from "@/lib/auth";
 import { createOrder, checkSplitCode } from "@/lib/orders.functions";
@@ -31,20 +32,6 @@ export const Route = createFileRoute("/carrinho")({
   }),
   component: Cart,
 });
-
-const schema = z
-  .object({
-    name: z.string().trim().min(2, "Indiquez votre nom").max(100),
-    phone: z.string().trim().min(8, "Téléphone invalide").max(20),
-    address: z.string().trim().max(300),
-    cep: z.string().trim().max(9),
-    method: z.enum(["livraison", "retrait"]),
-  })
-  .superRefine((v, ctx) => {
-    if (v.method !== "livraison") return;
-    if (v.address.length < 8) ctx.addIssue({ code: "custom", path: ["address"], message: "Indiquez l'adresse complète" });
-    if (v.cep.length < 4) ctx.addIssue({ code: "custom", path: ["cep"], message: "Code postal invalide" });
-  });
 
 function Cart() {
   const { lines, setQty, subtotal, clear } = useCart();
