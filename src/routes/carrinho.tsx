@@ -72,8 +72,11 @@ function Cart() {
   const discount = promo ? Math.min(promo.amount, subtotal + shipping) : 0;
   const total = subtotal + shipping - discount;
   const parts = splitPayment(total, "split");
-  // Certains téléphones (ex. iPhone 7 GPS Manager) se paient uniquement en une fois.
-  const twoTimesAllowed = false; // Paiement en 2 fois retiré du site : le propriétaire divise via un rappel 2× dans la Caisse.
+  // Le 2 fois s'ouvre seulement avec le code donné par le propriétaire, et jamais pour un téléphone « une seule fois ».
+  const verifySplit = useServerFn(checkSplitCode);
+  const [splitInput, setSplitInput] = useState("");
+  const [splitCode, setSplitCode] = useState<string | null>(null);
+  const twoTimesAllowed = Boolean(splitCode) && canPayInTwoTimes(lines.map((l) => ({ id: l.id, qty: l.qty })), catalog.fullOnlyIds);
   const effectivePlan: PaymentPlan = twoTimesAllowed ? plan : "full";
 
   if (lines.length === 0)
@@ -114,6 +117,7 @@ function Cart() {
           delivery_method: cash ? "retrait" : method,
           payment_method: payMethod,
           promo_code: promo?.code,
+          split_code: effectivePlan === "split" ? splitCode ?? undefined : undefined,
         },
       });
       clear();
