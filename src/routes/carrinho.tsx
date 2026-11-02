@@ -10,7 +10,7 @@ import { useCatalog } from "@/lib/catalog";
 import { useText, numFromText } from "@/lib/content";
 import { canPayInTwoTimes, splitPayment, type PaymentPlan, type DeliveryMethod } from "@/lib/pricing";
 import { useAccount, rememberIntendedPath } from "@/lib/auth";
-import { createOrder } from "@/lib/orders.functions";
+import { createOrder, checkSplitCode } from "@/lib/orders.functions";
 import { checkPromo } from "@/lib/inventory.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
