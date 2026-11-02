@@ -73,7 +73,7 @@ function Cart() {
   const total = subtotal + shipping - discount;
   const parts = splitPayment(total, "split");
   // Certains téléphones (ex. iPhone 7 GPS Manager) se paient uniquement en une fois.
-  const twoTimesAllowed = canPayInTwoTimes(lines, catalog.fullOnlyIds);
+  const twoTimesAllowed = false; // Paiement en 2 fois retiré du site : le propriétaire divise via un rappel 2× dans la Caisse.
   const effectivePlan: PaymentPlan = twoTimesAllowed ? plan : "full";
 
   if (lines.length === 0)
