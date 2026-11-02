@@ -90,7 +90,7 @@ export const getAccount = createServerFn({ method: "GET" })
 
 /** Code secret (variable SPLIT_PAYMENT_CODE) que le propriétaire donne au client pour ouvrir le paiement en 2 fois. */
 function isSplitCode(code: string): boolean {
-  const expected = (process.env.SPLIT_PAYMENT_CODE ?? "").trim().toUpperCase();
+  const expected = (process.env["SPLIT_PAYMENT_CODE"] ?? "").trim().toUpperCase();
   return expected.length > 0 && code.trim().toUpperCase().replace(/\s+/g, "") === expected;
 }
 
