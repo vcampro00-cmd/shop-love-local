@@ -45,6 +45,7 @@ export const DEFAULTS_PT: Record<string, string> = {
   "delivery.pickupHint": "Você retira o pedido no local, sem custo de entrega.",
   "delivery.method.livraison": "Entrega em domicílio",
   "delivery.method.retrait": "Retirada no local",
+  "delivery.free": "Grátis",
 
   // Comment ça marche
   "steps.titleA": "Como",

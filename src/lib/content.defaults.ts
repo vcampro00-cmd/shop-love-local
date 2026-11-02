@@ -46,6 +46,7 @@ export const DEFAULTS: Record<string, string> = {
   "delivery.pickupHint": "Vous récupérez la commande sur place, sans frais de livraison.",
   "delivery.method.livraison": "Livraison à domicile",
   "delivery.method.retrait": "Retrait sur place",
+  "delivery.free": "Gratuit",
 
   // Comment ça marche
   "steps.titleA": "Comment",
@@ -368,6 +369,7 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("delivery.pickupHint", "Option retrait — explication"),
       text("delivery.method.livraison", "Nom « livraison » sur la commande"),
       text("delivery.method.retrait", "Nom « retrait » sur la commande"),
+      text("delivery.free", "Mot « gratuit » quand il n'y a pas de frais"),
     ],
   },
   {

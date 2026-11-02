@@ -114,7 +114,7 @@ function Confirmed() {
 
         <div className="border-t pt-3 space-y-1">
           <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>{brl(order.subtotal)}</span></div>
-          <div className="flex justify-between"><span>{t("delivery.label")}</span><span>{brl(order.delivery_fee || fee)}</span></div>
+          <div className="flex justify-between"><span>{t("delivery.label")}</span><span>{order.delivery_fee > 0 ? brl(order.delivery_fee) : t("delivery.free")}</span></div>
           <div className="flex justify-between border-t pt-2 text-base font-bold"><span>{t("cart.total")}</span><span>{brl(order.total)}</span></div>
         </div>
 
