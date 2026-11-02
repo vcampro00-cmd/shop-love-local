@@ -37,6 +37,7 @@ function Cart() {
   const { lines, setQty, subtotal, clear } = useCart();
   const navigate = useNavigate();
   const t = useText();
+  const x = useX();
   const catalog = useCatalog();
   const { user, loading } = useAccount();
   const placeOrder = useServerFn(createOrder);
@@ -53,6 +54,20 @@ function Cart() {
   const verifyPromo = useServerFn(checkPromo);
   const [promoInput, setPromoInput] = useState("");
   const [promo, setPromo] = useState<{ code: string; amount: number } | null>(null);
+
+  const schema = z
+    .object({
+      name: z.string().trim().min(2, x("Indiquez votre nom", "Informe seu nome")).max(100),
+      phone: z.string().trim().min(8, x("Téléphone invalide", "Telefone inválido")).max(20),
+      address: z.string().trim().max(300),
+      cep: z.string().trim().max(9),
+      method: z.enum(["livraison", "retrait"]),
+    })
+    .superRefine((v, ctx) => {
+      if (v.method !== "livraison") return;
+      if (v.address.length < 8) ctx.addIssue({ code: "custom", path: ["address"], message: x("Indiquez l'adresse complète", "Informe o endereço completo") });
+      if (v.cep.length < 4) ctx.addIssue({ code: "custom", path: ["cep"], message: x("Code postal invalide", "Código postal inválido") });
+    });
 
   const fee = numFromText(t("delivery.fee"), 0);
   const shipping = subtotal > 0 && method === "livraison" ? fee : 0;
@@ -82,13 +97,13 @@ function Cart() {
       return;
     }
     if (!isCompletePhone(pc, phoneDigits)) {
-      toast.error("Téléphone invalide");
+      toast.error(x("Téléphone invalide", "Telefone inválido"));
       return;
     }
     const fullPhone = formatPhone(pc, phoneDigits);
     const r = schema.safeParse({ ...form, phone: fullPhone, method });
     if (!r.success) {
-      toast.error(r.error.issues[0]?.message ?? "Vérifiez vos informations");
+      toast.error(r.error.issues[0]?.message ?? x("Vérifiez vos informations", "Confira suas informações"));
       return;
     }
     setBusy(true);
@@ -113,7 +128,7 @@ function Cart() {
         navigate({ to: "/pedido/$id", params: { id: order.id } });
       } else navigate({ to: "/paiement/$id", params: { id: order.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Commande impossible. Réessayez.");
+      toast.error(err instanceof Error ? err.message : x("Commande impossible. Réessayez.", "Não foi possível pedir. Tente novamente."));
     } finally {
       setBusy(false);
     }
@@ -139,9 +154,9 @@ function Cart() {
                     <div><p className="font-medium">{name}</p><p className="text-sm text-muted-foreground">{brl(price)}</p></div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button type="button" size="icon" variant="outline" onClick={() => setQty(l.id, l.qty - 1)} aria-label="Diminuer"><Minus className="h-4 w-4" /></Button>
+                    <Button type="button" size="icon" variant="outline" onClick={() => setQty(l.id, l.qty - 1)} aria-label={x("Diminuer", "Diminuir")}><Minus className="h-4 w-4" /></Button>
                     <span className="w-6 text-center">{l.qty}</span>
-                    <Button type="button" size="icon" variant="outline" onClick={() => setQty(l.id, l.qty + 1)} aria-label="Augmenter"><Plus className="h-4 w-4" /></Button>
+                    <Button type="button" size="icon" variant="outline" onClick={() => setQty(l.id, l.qty + 1)} aria-label={x("Augmenter", "Aumentar")}><Plus className="h-4 w-4" /></Button>
                   </div>
                 </div>
               );
@@ -236,8 +251,8 @@ function Cart() {
                 try {
                   const r = await verifyPromo({ data: { code: promoInput } });
                   if (r.valid) { setPromo(r); toast.success(r.amount > 0 ? `${r.code} : −${brl(r.amount)}` : `${r.code} ✓`); }
-                  else { setPromo(null); toast.error("Code promo invalide"); }
-                } catch { toast.error("Code promo invalide"); }
+                  else { setPromo(null); toast.error(x("Code promo invalide", "Código promocional inválido")); }
+                } catch { toast.error(x("Code promo invalide", "Código promocional inválido")); }
               }}
             >
               {t("cart.promoApply")}
