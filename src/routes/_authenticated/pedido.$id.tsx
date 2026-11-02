@@ -68,8 +68,6 @@ function Confirmed() {
       .catch(() => {});
   }, [session_id, id, order.payment_status, confirm, queryClient]);
 
-  const fee = numFromText(t("delivery.fee"), 0);
-
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
       <CheckCircle2 className="mx-auto h-16 w-16 text-accent" />
