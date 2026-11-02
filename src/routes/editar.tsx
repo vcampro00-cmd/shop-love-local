@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { KeyRound, Save, Sparkles } from "lucide-react";
 import { DEFAULTS, EDITOR_GROUPS } from "@/lib/content.defaults";
+import { DEFAULTS_PT } from "@/lib/content.defaults.pt";
+import { ptKey } from "@/lib/content";
 import { checkEditCode, saveSiteTexts } from "@/lib/content.functions";
 import { siteTextsQueryOptions } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,8 @@ function Editor() {
   const [code, setCode] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  // Langue en cours d'écriture : les textes portugais sont enregistrés avec le suffixe __pt.
+  const [editLang, setEditLang] = useState<"fr" | "pt">("fr");
   const check = useServerFn(checkEditCode);
   const [unlocked, setUnlocked] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -61,7 +65,16 @@ function Editor() {
   const touched = useMemo(() => Object.keys(values).length, [values]);
 
   function field(key: string) {
-    return values[key] ?? saved?.[key] ?? "";
+    return values[ptKeyFor(key)] ?? saved?.[ptKeyFor(key)] ?? "";
+  }
+
+  function ptKeyFor(key: string) {
+    return editLang === "pt" ? ptKey(key) : key;
+  }
+
+  // Valeur par défaut affichée comme exemple : la traduction portugaise en mode português.
+  function defVal(key: string) {
+    return (editLang === "pt" ? DEFAULTS_PT[key] : DEFAULTS[key]) ?? "";
   }
 
   async function submit(e: React.FormEvent) {
