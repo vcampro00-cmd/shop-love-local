@@ -88,6 +88,17 @@ export const getAccount = createServerFn({ method: "GET" })
     isAdmin: await isAdmin(context.supabase, context.userId),
   }));
 
+/** Code secret (variable SPLIT_PAYMENT_CODE) que le propriétaire donne au client pour ouvrir le paiement en 2 fois. */
+function isSplitCode(code: string): boolean {
+  const expected = (process.env["SPLIT_PAYMENT_CODE"] ?? "").trim().toUpperCase();
+  return expected.length > 0 && code.trim().toUpperCase().replace(/\s+/g, "") === expected;
+}
+
+export const checkSplitCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ code: z.string().max(30) }).parse(input))
+  .handler(async ({ data }) => ({ valid: isSplitCode(data.code) }));
+
 const orderPayload = z
   .object({
     name: z.string().trim().min(2, "Indiquez votre nom").max(100),
@@ -103,6 +114,7 @@ const orderPayload = z
     delivery_method: z.enum(["livraison", "retrait"]).default("livraison"),
     payment_method: z.enum(["carte", "especes"]).default("carte"),
     promo_code: z.string().max(30).optional(),
+    split_code: z.string().max(30).optional(),
   })
   .superRefine((v, ctx) => {
     if (v.payment_method === "especes" && v.delivery_method !== "retrait")
@@ -123,8 +135,12 @@ export const createOrder = createServerFn({ method: "POST" })
     for (const item of data.items) {
       if (!catalog.has(item.id)) throw new Error("Cet article n'est plus en vente.");
     }
-    if (data.plan === "split")
-      throw new Error("Le paiement en 2 fois n’est plus proposé sur le site.");
+    if (data.plan === "split") {
+      // Le 2 fois n'est ouvert qu'avec le code donné par le propriétaire, et jamais pour un téléphone « une seule fois ».
+      if (!isSplitCode(data.split_code ?? "")) throw new Error("Code de paiement en 2 fois invalide.");
+      const fullOnly = data.items.some((i) => (catalog.get(i.id) as { fullPaymentOnly?: boolean } | undefined)?.fullPaymentOnly);
+      if (fullOnly) throw new Error("Un article du panier se paie uniquement en une fois.");
+    }
 
     const { readSiteTexts } = await import("./site-texts.server");
     const texts = await readSiteTexts();

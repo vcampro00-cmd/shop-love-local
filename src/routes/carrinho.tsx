@@ -10,7 +10,7 @@ import { useCatalog } from "@/lib/catalog";
 import { useText, numFromText } from "@/lib/content";
 import { canPayInTwoTimes, splitPayment, type PaymentPlan, type DeliveryMethod } from "@/lib/pricing";
 import { useAccount, rememberIntendedPath } from "@/lib/auth";
-import { createOrder } from "@/lib/orders.functions";
+import { createOrder, checkSplitCode } from "@/lib/orders.functions";
 import { checkPromo } from "@/lib/inventory.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,8 +72,11 @@ function Cart() {
   const discount = promo ? Math.min(promo.amount, subtotal + shipping) : 0;
   const total = subtotal + shipping - discount;
   const parts = splitPayment(total, "split");
-  // Certains téléphones (ex. iPhone 7 GPS Manager) se paient uniquement en une fois.
-  const twoTimesAllowed = false; // Paiement en 2 fois retiré du site : le propriétaire divise via un rappel 2× dans la Caisse.
+  // Le 2 fois s'ouvre seulement avec le code donné par le propriétaire, et jamais pour un téléphone « une seule fois ».
+  const verifySplit = useServerFn(checkSplitCode);
+  const [splitInput, setSplitInput] = useState("");
+  const [splitCode, setSplitCode] = useState<string | null>(null);
+  const twoTimesAllowed = Boolean(splitCode) && canPayInTwoTimes(lines.map((l) => ({ id: l.id, qty: l.qty })), catalog.fullOnlyIds);
   const effectivePlan: PaymentPlan = twoTimesAllowed ? plan : "full";
 
   if (lines.length === 0)
@@ -114,6 +117,7 @@ function Cart() {
           delivery_method: cash ? "retrait" : method,
           payment_method: payMethod,
           promo_code: promo?.code,
+          split_code: effectivePlan === "split" ? splitCode ?? undefined : undefined,
         },
       });
       clear();
@@ -257,6 +261,27 @@ function Cart() {
         {user && (
           <fieldset className="mt-5 space-y-2 text-sm">
             <legend className="mb-2 font-bold">{t("pay.choose")}</legend>
+            {!splitCode && (
+              <div className="mb-2 flex gap-2">
+                <Input placeholder={t("cart.splitCodeLabel")} value={splitInput} onChange={(e) => setSplitInput(e.target.value)} maxLength={30} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    if (!splitInput.trim()) return;
+                    try {
+                      const r = await verifySplit({ data: { code: splitInput } });
+                      if (!r.valid) { toast.error(t("cart.splitCodeInvalid")); return; }
+                      if (!canPayInTwoTimes(lines.map((l) => ({ id: l.id, qty: l.qty })), catalog.fullOnlyIds)) { toast.error(t("cart.splitCodeFullOnly")); return; }
+                      setSplitCode(splitInput.trim().toUpperCase()); setPlan("split"); setPayMethod("carte");
+                      toast.success(t("cart.splitCodeOk"));
+                    } catch { toast.error(t("cart.splitCodeInvalid")); }
+                  }}
+                >
+                  {t("cart.promoApply")}
+                </Button>
+              </div>
+            )}
             {(["full", "split"] as const).filter((p) => p !== "split" || twoTimesAllowed).map((p) => (
               <label key={p} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${!cash && plan === p ? "border-primary bg-primary/10" : ""}`}>
                 <input type="radio" name="plan" className="mt-1" checked={!cash && plan === p} onChange={() => { setPlan(p); setPayMethod("carte"); }} />
