@@ -8,6 +8,7 @@ import { getStripeEnvironment } from "@/lib/stripe";
 import { brl } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
 import { useText, numFromText } from "@/lib/content";
+import { useLang, useX, dateLocale } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
 
 const orderQueryOptions = (id: string) =>
@@ -34,19 +35,27 @@ export const Route = createFileRoute("/_authenticated/pedido/$id")({
     ],
   }),
   component: Confirmed,
-  errorComponent: () => (
-    <div className="mx-auto max-w-md px-4 py-24 text-center">
-      <h1 className="text-2xl font-bold">Commande introuvable</h1>
-      <p className="mt-2 text-muted-foreground">Cette commande n'existe pas ou a été supprimée.</p>
-      <Button asChild className="mt-6"><Link to="/mes-commandes">Mes commandes</Link></Button>
-    </div>
-  ),
+  errorComponent: OrderNotFound,
 });
+
+function OrderNotFound() {
+  const x = useX();
+  const t = useText();
+  return (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="text-2xl font-bold">{x("Commande introuvable", "Pedido não encontrado")}</h1>
+      <p className="mt-2 text-muted-foreground">{x("Cette commande n'existe pas ou a été supprimée.", "Este pedido não existe ou foi excluído.")}</p>
+      <Button asChild className="mt-6"><Link to="/mes-commandes">{t("account.ordersTitle")}</Link></Button>
+    </div>
+  );
+}
 
 function Confirmed() {
   const { id } = Route.useParams();
   const { data: order } = useSuspenseQuery(orderQueryOptions(id));
   const t = useText();
+  const x = useX();
+  const lang = useLang();
   const catalog = useCatalog();
   const { session_id } = Route.useSearch();
   const confirm = useServerFn(confirmPayment);
@@ -74,7 +83,7 @@ function Confirmed() {
 
       <p className="mt-1 text-sm text-muted-foreground">
         {t(`pay.status.${order.payment_status}`)} · {order.payment_method === "especes" ? t("pay.cash") : order.payment_plan === "split" ? t("pay.split") : t("pay.full")} · {brl(order.amount_paid)} / {brl(order.total)}
-        {order.second_charge_due_at && <> · {t("pay.secondOn")} {new Date(order.second_charge_due_at).toLocaleDateString("fr-FR")}</>}
+        {order.second_charge_due_at && <> · {t("pay.secondOn")} {new Date(order.second_charge_due_at).toLocaleDateString(dateLocale(lang))}</>}
       </p>
       {order.payment_status === "en_attente" && order.payment_method !== "especes" && !session_id && (
         <Button asChild className="mt-4 bg-brand shadow-glow">

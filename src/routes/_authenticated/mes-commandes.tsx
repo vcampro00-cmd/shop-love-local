@@ -4,6 +4,7 @@ import { PackageOpen } from "lucide-react";
 import { listMyOrders } from "@/lib/orders.functions";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
+import { useLang, dateLocale } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
 
 const myOrdersQueryOptions = queryOptions({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/mes-commandes")({
 function MyOrders() {
   const { data } = useSuspenseQuery(myOrdersQueryOptions);
   const t = useText();
+  const lang = useLang();
 
   if (data.length === 0)
     return (
@@ -54,7 +56,7 @@ function MyOrders() {
               <div>
                 <p className="font-bold">{o.ref}</p>
                 <p className="text-xs text-muted-foreground">
-                  {t("account.orderDate")} : {new Date(o.created_at).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })}
+                  {t("account.orderDate")} : {new Date(o.created_at).toLocaleString(dateLocale(lang), { dateStyle: "medium", timeStyle: "short" })}
                 </p>
               </div>
               <span className="flex flex-col items-end gap-1 text-xs">
