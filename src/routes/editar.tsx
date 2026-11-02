@@ -130,6 +130,20 @@ function Editor() {
         <Button asChild variant="outline" size="sm"><Link to="/">Voir le site</Link></Button>
       </div>
 
+      <div className="mt-4 inline-flex rounded-full border bg-card p-1 text-sm font-medium">
+        <button type="button" onClick={() => setEditLang("fr")} className={`rounded-full px-4 py-2 ${editLang === "fr" ? "bg-brand text-primary-foreground" : "text-muted-foreground"}`}>
+          Français
+        </button>
+        <button type="button" onClick={() => setEditLang("pt")} className={`rounded-full px-4 py-2 ${editLang === "pt" ? "bg-brand text-primary-foreground" : "text-muted-foreground"}`}>
+          Português (Brasil)
+        </button>
+      </div>
+      {editLang === "pt" && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Textos em português: o que você deixar vazio usa a tradução automática. Os campos de preço são iguais nas duas línguas.
+        </p>
+      )}
+
       <div className="mt-6 flex items-start gap-3 rounded-2xl border bg-card p-4 text-sm">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
         <p className="text-muted-foreground">
@@ -160,13 +174,16 @@ function Editor() {
       )}
 
       <div className="mt-8 space-y-8">
-        {EDITOR_GROUPS.map((group) => (
+        {EDITOR_GROUPS.map((group) => {
+          // Les prix sont communs aux deux langues : pas de champ prix en mode português.
+          const fields = editLang === "pt" ? group.fields.filter((f) => f.kind !== "money") : group.fields;
+          return (
           <section key={group.title} className="rounded-3xl border bg-card p-6">
             <h2 className="text-lg font-bold">{group.title}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {group.fields.map((f) => {
+              {fields.map((f) => {
                 const value = field(f.key);
-                const isCustom = Boolean(saved?.[f.key]?.trim());
+                const isCustom = Boolean(saved?.[ptKeyFor(f.key)]?.trim());
                 return (
                   <div key={f.key} className={f.kind === "long" ? "sm:col-span-2" : ""}>
                     <Label className="flex items-center gap-2">
@@ -178,8 +195,8 @@ function Editor() {
                         className="mt-2"
                         value={value}
                         maxLength={1000}
-                        placeholder={DEFAULTS[f.key]}
-                        onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                        placeholder={defVal(f.key)}
+                        onChange={(e) => setValues((v) => ({ ...v, [ptKeyFor(f.key)]: e.target.value }))}
                       />
                     ) : (
                       <Input
@@ -187,19 +204,20 @@ function Editor() {
                         value={value}
                         maxLength={200}
                         inputMode={f.kind === "money" ? "decimal" : undefined}
-                        placeholder={DEFAULTS[f.key]}
-                        onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                        placeholder={defVal(f.key)}
+                        onChange={(e) => setValues((v) => ({ ...v, [ptKeyFor(f.key)]: e.target.value }))}
                       />
                     )}
-                    {!isCustom && DEFAULTS[f.key] && (
-                      <p className="mt-1 truncate text-xs text-muted-foreground">Actuel : {DEFAULTS[f.key]}</p>
+                    {!isCustom && defVal(f.key) && (
+                      <p className="mt-1 truncate text-xs text-muted-foreground">Actuel : {defVal(f.key)}</p>
                     )}
                   </div>
                 );
               })}
             </div>
           </section>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-8 flex justify-end">
