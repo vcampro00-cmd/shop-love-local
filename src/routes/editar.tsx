@@ -89,7 +89,7 @@ function Editor() {
     }
 
     const texts: Record<string, string> = {};
-    for (const [key, value] of Object.entries(values)) texts[key] = value.trim();
+    for (const [key, value] of Object.entries(values)) texts[ptKeyFor(key.replace(/__pt$/, ""))] = value.trim();
 
     setSaving(true);
     try {
