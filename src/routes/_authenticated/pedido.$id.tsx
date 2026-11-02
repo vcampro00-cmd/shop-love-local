@@ -7,7 +7,8 @@ import { getOrder, confirmPayment } from "@/lib/orders.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { brl } from "@/lib/products";
 import { useCatalog } from "@/lib/catalog";
-import { useText, numFromText } from "@/lib/content";
+import { useText } from "@/lib/content";
+import { useLang, useX, dateLocale } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
 
 const orderQueryOptions = (id: string) =>
@@ -34,19 +35,27 @@ export const Route = createFileRoute("/_authenticated/pedido/$id")({
     ],
   }),
   component: Confirmed,
-  errorComponent: () => (
-    <div className="mx-auto max-w-md px-4 py-24 text-center">
-      <h1 className="text-2xl font-bold">Commande introuvable</h1>
-      <p className="mt-2 text-muted-foreground">Cette commande n'existe pas ou a été supprimée.</p>
-      <Button asChild className="mt-6"><Link to="/mes-commandes">Mes commandes</Link></Button>
-    </div>
-  ),
+  errorComponent: OrderNotFound,
 });
+
+function OrderNotFound() {
+  const x = useX();
+  const t = useText();
+  return (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="text-2xl font-bold">{x("Commande introuvable", "Pedido não encontrado")}</h1>
+      <p className="mt-2 text-muted-foreground">{x("Cette commande n'existe pas ou a été supprimée.", "Este pedido não existe ou foi excluído.")}</p>
+      <Button asChild className="mt-6"><Link to="/mes-commandes">{t("account.ordersTitle")}</Link></Button>
+    </div>
+  );
+}
 
 function Confirmed() {
   const { id } = Route.useParams();
   const { data: order } = useSuspenseQuery(orderQueryOptions(id));
   const t = useText();
+  const x = useX();
+  const lang = useLang();
   const catalog = useCatalog();
   const { session_id } = Route.useSearch();
   const confirm = useServerFn(confirmPayment);
@@ -58,8 +67,6 @@ function Confirmed() {
       .then(() => queryClient.invalidateQueries({ queryKey: ["order", id] }))
       .catch(() => {});
   }, [session_id, id, order.payment_status, confirm, queryClient]);
-
-  const fee = numFromText(t("delivery.fee"), 0);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
@@ -74,7 +81,7 @@ function Confirmed() {
 
       <p className="mt-1 text-sm text-muted-foreground">
         {t(`pay.status.${order.payment_status}`)} · {order.payment_method === "especes" ? t("pay.cash") : order.payment_plan === "split" ? t("pay.split") : t("pay.full")} · {brl(order.amount_paid)} / {brl(order.total)}
-        {order.second_charge_due_at && <> · {t("pay.secondOn")} {new Date(order.second_charge_due_at).toLocaleDateString("fr-FR")}</>}
+        {order.second_charge_due_at && <> · {t("pay.secondOn")} {new Date(order.second_charge_due_at).toLocaleDateString(dateLocale(lang))}</>}
       </p>
       {order.payment_status === "en_attente" && order.payment_method !== "especes" && !session_id && (
         <Button asChild className="mt-4 bg-brand shadow-glow">
@@ -105,7 +112,7 @@ function Confirmed() {
 
         <div className="border-t pt-3 space-y-1">
           <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>{brl(order.subtotal)}</span></div>
-          <div className="flex justify-between"><span>{t("delivery.label")}</span><span>{brl(order.delivery_fee || fee)}</span></div>
+          <div className="flex justify-between"><span>{t("delivery.label")}</span><span>{order.delivery_fee > 0 ? brl(order.delivery_fee) : t("delivery.free")}</span></div>
           <div className="flex justify-between border-t pt-2 text-base font-bold"><span>{t("cart.total")}</span><span>{brl(order.total)}</span></div>
         </div>
 

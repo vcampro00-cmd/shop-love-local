@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useX } from "@/lib/lang";
 
 // Page où Stripe renvoie le client après avoir payé un rappel via le lien /pagar.
 export const Route = createFileRoute("/paiement-recu")({
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/paiement-recu")({
 
 function PaiementRecu() {
   const { paiement } = Route.useSearch();
+  const x = useX();
   const annule = paiement !== "ok";
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-20 text-center">
@@ -32,15 +34,15 @@ function PaiementRecu() {
         {annule ? "✕" : "✓"}
       </div>
       <h1 className="mt-6 text-3xl font-bold">
-        {annule ? "Paiement annulé" : "Paiement confirmé, merci !"}
+        {annule ? x("Paiement annulé", "Pagamento cancelado") : x("Paiement confirmé, merci !", "Pagamento confirmado, obrigado!")}
       </h1>
       <p className="mt-4 text-muted-foreground">
         {annule
-          ? "Aucun montant n'a été débité. Vous pouvez rouvrir le lien reçu sur WhatsApp pour réessayer."
-          : "Votre paiement a bien été reçu par Vcampro. Vous pouvez fermer cette page, rien d'autre est à faire."}
+          ? x("Aucun montant n'a été débité. Vous pouvez rouvrir le lien reçu sur WhatsApp pour réessayer.", "Nenhum valor foi debitado. Você pode reabrir o link recebido no WhatsApp para tentar de novo.")
+          : x("Votre paiement a bien été reçu par Vcampro. Vous pouvez fermer cette page, rien d'autre est à faire.", "Seu pagamento foi recebido pela Vcampro. Você pode fechar esta página, nada mais precisa fazer.")}
       </p>
       <Link to="/" className="mt-8 rounded-xl bg-brand px-6 py-3 font-bold text-primary-foreground">
-        Retour à l'accueil
+        {x("Retour à l'accueil", "Voltar ao início")}
       </Link>
     </div>
   );

@@ -46,6 +46,7 @@ export const DEFAULTS: Record<string, string> = {
   "delivery.pickupHint": "Vous récupérez la commande sur place, sans frais de livraison.",
   "delivery.method.livraison": "Livraison à domicile",
   "delivery.method.retrait": "Retrait sur place",
+  "delivery.free": "Gratuit",
 
   // Comment ça marche
   "steps.titleA": "Comment",
@@ -198,6 +199,7 @@ export const DEFAULTS: Record<string, string> = {
   "catalog.name": "Nom",
   "catalog.tag": "Étiquette (ex. Apple)",
   "catalog.description": "Description",
+  "catalog.descriptionPt": "Description (portugais)",
   "catalog.price": "Prix (€)",
   "catalog.commission": "Commission vendeur (€)",
   "catalog.fullOnly": "Paiement en une seule fois uniquement",
@@ -367,6 +369,7 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("delivery.pickupHint", "Option retrait — explication"),
       text("delivery.method.livraison", "Nom « livraison » sur la commande"),
       text("delivery.method.retrait", "Nom « retrait » sur la commande"),
+      text("delivery.free", "Mot « gratuit » quand il n'y a pas de frais"),
     ],
   },
   {
@@ -537,6 +540,7 @@ export const EDITOR_GROUPS: EditorGroup[] = [
       text("catalog.name", "Téléphones — champ nom"),
       text("catalog.tag", "Téléphones — champ étiquette"),
       text("catalog.description", "Téléphones — champ description"),
+      text("catalog.descriptionPt", "Téléphones — champ description en portugais (Brésil)"),
       text("catalog.price", "Téléphones — champ prix"),
       text("catalog.commission", "Téléphones — champ commission"),
       text("catalog.fullOnly", "Téléphones — case une fois"),

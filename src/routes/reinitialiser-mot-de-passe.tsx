@@ -4,6 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useText } from "@/lib/content";
+import { useX } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,16 +25,17 @@ export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
   component: ResetPassword,
 });
 
-const schema = z.object({
-  password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)").max(200),
-});
-
 function ResetPassword() {
   const t = useText();
+  const x = useX();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const schema = z.object({
+    password: z.string().min(8, x("Mot de passe trop court (8 caractères minimum)", "Senha muito curta (mínimo de 8 caracteres)")).max(200),
+  });
 
   useEffect(() => {
     let alive = true;
@@ -50,7 +52,7 @@ function ResetPassword() {
     e.preventDefault();
     const r = schema.safeParse({ password });
     if (!r.success) {
-      toast.error(r.error.issues[0]?.message ?? "Mot de passe trop court");
+      toast.error(r.error.issues[0]?.message ?? x("Mot de passe trop court", "Senha muito curta"));
       return;
     }
     setBusy(true);
@@ -61,15 +63,15 @@ function ResetPassword() {
       const code = (error as { code?: string }).code ?? "";
       const msg = error.message.toLowerCase();
       if (code === "same_password" || msg.includes("different from the old"))
-        toast.error("Ce mot de passe est déjà le vôtre. Choisissez-en un nouveau.");
+        toast.error(x("Ce mot de passe est déjà le vôtre. Choisissez-en un nouveau.", "Essa senha já é a sua. Escolha outra."));
       else if (code === "weak_password" || msg.includes("weak") || msg.includes("easy to guess"))
-        toast.error("Mot de passe trop facile à deviner. Choisissez-en un plus original (mélangez lettres, chiffres et symboles).");
+        toast.error(x("Mot de passe trop facile à deviner. Choisissez-en un plus original (mélangez lettres, chiffres et symboles).", "Senha muito fácil de adivinhar. Escolha uma mais original (misture letras, números e símbolos)."));
       else if (code === "session_not_found" || msg.includes("session") || msg.includes("expired"))
-        toast.error("Ce lien a expiré. Demandez un nouveau lien de réinitialisation.");
+        toast.error(x("Ce lien a expiré. Demandez un nouveau lien de réinitialisation.", "Este link expirou. Peça um novo link de redefinição."));
       else toast.error(error.message);
       return;
     }
-    toast.success("Mot de passe enregistré.");
+    toast.success(x("Mot de passe enregistré.", "Senha salva."));
     navigate({ to: "/mes-commandes" });
   }
 

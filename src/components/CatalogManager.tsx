@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-type Form = { id?: string; name: string; tag: string; description: string; price: string; commission: string; fullOnly: boolean; image: string | null; preview: string };
-const empty: Form = { name: "", tag: "", description: "", price: "", commission: "", fullOnly: false, image: null, preview: "" };
+type Form = { id?: string; name: string; tag: string; description: string; descriptionPt: string; price: string; commission: string; fullOnly: boolean; image: string | null; preview: string };
+const empty: Form = { name: "", tag: "", description: "", descriptionPt: "", price: "", commission: "", fullOnly: false, image: null, preview: "" };
 const num = (v: string) => parseFloat(v.replace(",", "."));
 
 export function CatalogManager() {
@@ -27,7 +27,7 @@ export function CatalogManager() {
   const refresh = () => Promise.all([qc.invalidateQueries({ queryKey: ["catalog"] }), qc.invalidateQueries({ queryKey: ["inventory"] })]);
 
   const edit = (p: ShopProduct) =>
-    setForm({ id: p.id, name: p.name, tag: p.tag, description: p.description, price: String(p.price), commission: String(p.commission), fullOnly: p.fullPaymentOnly, image: null, preview: p.image });
+    setForm({ id: p.id, name: p.name, tag: p.tag, description: p.description, descriptionPt: p.descriptionPt, price: String(p.price), commission: String(p.commission), fullOnly: p.fullPaymentOnly, image: null, preview: p.image });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +37,7 @@ export function CatalogManager() {
     if (form.name.trim().length < 2 || !(price >= 0) || !(commission >= 0)) { toast.error("Nom et prix obligatoires"); return; }
     setBusy(true);
     try {
-      await save({ data: { id: form.id, name: form.name, tag: form.tag, description: form.description, price, commission, fullPaymentOnly: form.fullOnly, image: form.image } });
+      await save({ data: { id: form.id, name: form.name, tag: form.tag, description: form.description, descriptionPt: form.descriptionPt, price, commission, fullPaymentOnly: form.fullOnly, image: form.image } });
       await refresh();
       setForm(null);
       toast.success("OK");
@@ -64,6 +64,7 @@ export function CatalogManager() {
           <div><label className="text-sm">{t("catalog.name")}</label><Input value={form.name} maxLength={80} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
           <div><label className="text-sm">{t("catalog.tag")}</label><Input value={form.tag} maxLength={40} onChange={(e) => setForm({ ...form, tag: e.target.value })} /></div>
           <div className="sm:col-span-2"><label className="text-sm">{t("catalog.description")}</label><Textarea value={form.description} maxLength={1000} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+          <div className="sm:col-span-2"><label className="text-sm">{t("catalog.descriptionPt")}</label><Textarea value={form.descriptionPt} maxLength={1000} onChange={(e) => setForm({ ...form, descriptionPt: e.target.value })} /></div>
           <div><label className="text-sm">{t("catalog.price")}</label><Input inputMode="decimal" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
           <div><label className="text-sm">{t("catalog.commission")}</label><Input inputMode="decimal" value={form.commission} onChange={(e) => setForm({ ...form, commission: e.target.value })} /></div>
           <label className="flex items-center gap-2 text-sm sm:col-span-2">
