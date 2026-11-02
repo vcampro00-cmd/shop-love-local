@@ -123,9 +123,8 @@ export const createOrder = createServerFn({ method: "POST" })
     for (const item of data.items) {
       if (!catalog.has(item.id)) throw new Error("Cet article n'est plus en vente.");
     }
-    const fullOnly = [...catalog.values()].filter((p) => p.full_payment_only).map((p) => p.id);
-    if (data.plan === "split" || !canPayInTwoTimes(data.items, fullOnly) && false)
-      throw new Error("Cet article se paie en une seule fois.");
+    if (data.plan === "split")
+      throw new Error("Le paiement en 2 fois n’est plus proposé sur le site.");
 
     const { readSiteTexts } = await import("./site-texts.server");
     const texts = await readSiteTexts();
