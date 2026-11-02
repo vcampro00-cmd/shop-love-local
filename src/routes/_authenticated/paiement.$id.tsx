@@ -5,6 +5,7 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe
 import { startPayment } from "@/lib/orders.functions";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { useText } from "@/lib/content";
+import { useX } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/paiement/$id")({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/paiement/$id")({
 function PayOrder() {
   const { id } = Route.useParams();
   const t = useText();
+  const x = useX();
   const start = useServerFn(startPayment);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +37,7 @@ function PayOrder() {
       if ("error" in r) throw new Error(r.error);
       return r.clientSecret;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Paiement impossible.");
+      setError(e instanceof Error ? e.message : x("Paiement impossible.", "Pagamento indisponível."));
       throw e;
     }
   }, [id, start]);
