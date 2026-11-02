@@ -74,6 +74,7 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   const t = useText();
+  const lang = useLang();
   return (
     <footer className="border-t py-8 text-center text-sm text-muted-foreground">
       <p>{t("footer.line1")}</p>
