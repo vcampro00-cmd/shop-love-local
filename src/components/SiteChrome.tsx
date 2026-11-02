@@ -23,6 +23,7 @@ function CashLink({ label }: { label: string }) {
 export function SiteHeader() {
   const { count } = useCart();
   const t = useText();
+  const lang = useLang();
   const { user, isAdmin } = useAccount();
   const navigate = useNavigate();
 
@@ -54,6 +55,11 @@ export function SiteHeader() {
           ) : (
             <Link to="/auth" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>{t("account.signIn")}</Link>
           )}
+
+          <div className="flex items-center rounded-full border px-1 py-0.5 text-[11px] font-semibold">
+            <button type="button" onClick={() => setLang("fr")} className={`rounded-full px-2 py-1 ${lang === "fr" ? "bg-brand text-primary-foreground" : "text-muted-foreground"}`}>FR</button>
+            <button type="button" onClick={() => setLang("pt")} className={`rounded-full px-2 py-1 ${lang === "pt" ? "bg-brand text-primary-foreground" : "text-muted-foreground"}`}>PT-BR</button>
+          </div>
 
           <Link to="/carrinho" className="relative flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-primary-foreground shadow-glow">
             <ShoppingBag className="h-4 w-4" />
