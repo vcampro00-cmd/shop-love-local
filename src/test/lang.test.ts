@@ -33,8 +33,15 @@ describe("resolveText", () => {
     expect(resolveText("nav.shop", "pt", { [ptKey("nav.shop")]: "Minha loja" })).toBe("Minha loja");
   });
 
-  it("reste sur le français si le propriétaire a écrit un texte et qu'aucun portugais n'existe", () => {
-    expect(resolveText("home.heroTitleA", "pt", { "home.heroTitleA": "Achetez ici" })).toBe("Achetez ici");
+  it("garde le texte français du propriétaire quand la clé n'a pas de texte par défaut", () => {
+    // « product.iphone-7-gps-manager.description » n'a pas de valeur par défaut.
+    expect(resolveText("product.iphone-7-gps-manager.description", "pt", { "product.iphone-7-gps-manager.description": "Bon téléphone" })).toBe("Bon téléphone");
+  });
+
+  it("la traduction portugaise par défaut passe devant le texte français du propriétaire", () => {
+    // Le portugais reste traduit même si le français a été personnalisé :
+    // pour changer le portugais, le propriétaire écrit l'onglet Português dans /editar.
+    expect(resolveText("home.heroTitleA", "pt", { "home.heroTitleA": "Achetez ici" })).toBe("Compre online na");
   });
 
   it("garde le prix et les frais identiques dans les deux langues", () => {
