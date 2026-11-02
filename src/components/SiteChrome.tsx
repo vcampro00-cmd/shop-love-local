@@ -4,6 +4,7 @@ import logo from "@/assets/vcampro-logo.png";
 import { useCart } from "@/lib/cart";
 import { useText } from "@/lib/content";
 import { useAccount } from "@/lib/auth";
+import { useLang, setLang } from "@/lib/lang";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { listReminders } from "@/lib/cash.functions";
