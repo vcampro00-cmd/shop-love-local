@@ -1,14 +1,22 @@
-# Welcome to your Lovable project
+# VCAM PRO VENDAS
+
+Quero um site de venda chamado Vcampro, onde os meus clientes vão poder fazer a compra online e fazer o pagamento pelo site, colocar o endereço de entrega ou recuperar no local.
+
+Quero colocar as explicações dos pedidos
+
+E o site tem que seguir o modelo do último site que foi criamoso juntos
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://shop-love-local.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/dd8a545a-9b26-441b-9471-301f585c6dce).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +28,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
