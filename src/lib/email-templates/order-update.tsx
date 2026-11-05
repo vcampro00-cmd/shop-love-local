@@ -1,4 +1,4 @@
-import { Body, Container, Head, Heading, Html, Preview, Text } from '@react-email/components'
+import { Body, Button, Container, Head, Heading, Html, Preview, Text } from '@react-email/components'
 import type { TemplateEntry } from './registry'
 
 type Kind = 'accepted' | 'refused' | 'ready' | 'secondCancelled'
@@ -8,6 +8,7 @@ interface Props {
   ref?: string
   name?: string
   message?: string
+  receiptUrl?: string
 }
 
 const COPY: Record<Kind, { subject: string; title: string; body: string }> = {
@@ -33,7 +34,7 @@ const COPY: Record<Kind, { subject: string; title: string; body: string }> = {
   },
 }
 
-function OrderUpdate({ kind = 'accepted', ref = 'VCPXXXXX', name, message }: Props) {
+function OrderUpdate({ kind = 'accepted', ref = 'VCPXXXXX', name, message, receiptUrl }: Props) {
   const c = COPY[kind] ?? COPY.accepted
   return (
     <Html lang="fr">
@@ -48,6 +49,11 @@ function OrderUpdate({ kind = 'accepted', ref = 'VCPXXXXX', name, message }: Pro
                 <Text key={i} style={{ color: '#f3e8ff', fontSize: 14, margin: '0 0 10px' }}>{line}</Text>
               ))
             : <Text style={{ color: '#f3e8ff', fontSize: 14 }}>{c.body}</Text>}
+          {receiptUrl && (
+            <Button href={receiptUrl} style={{ backgroundColor: '#c026d3', color: '#ffffff', borderRadius: 8, padding: '12px 18px', fontSize: 14, fontWeight: 700 }}>
+              Télécharger le justificatif d'annulation (PDF)
+            </Button>
+          )}
           <Text style={{ color: '#c4b5fd', fontSize: 14 }}>Numéro de commande : <strong>{ref}</strong></Text>
           <Text style={{ color: '#a78bfa', fontSize: 12, marginTop: 16 }}>Merci, l'équipe Vcampro</Text>
         </Container>

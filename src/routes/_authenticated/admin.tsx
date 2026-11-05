@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { Check, CheckCheck, Inbox, MapPin, Trash2, X } from "lucide-react";
 import { formatVisionxCode, isVisionxCode } from "@/lib/phone";
 import { todayParis } from "@/lib/cash";
-import { cancelSecondPayment, chargeSecondPaymentNow, listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
+import { whatsappDigits } from "@/lib/cash";
+import { cancelSecondPayment, resendCancelReceipt, chargeSecondPaymentNow, listAllOrders, orderAction, setOrderPhone, setOrderStatus, setOrderVisionx, setSecondChargeDate, type Order } from "@/lib/orders.functions";
 import { concludeSale, getInventory } from "@/lib/inventory.functions";
 import { correctText } from "@/lib/correct.functions";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ function AdminOrders() {
   const queryClient = useQueryClient();
   const changeStatus = useServerFn(setOrderStatus);
   const cancelSecondFn = useServerFn(cancelSecondPayment);
+  const resendReceiptFn = useServerFn(resendCancelReceipt);
   const chargeNowFn = useServerFn(chargeSecondPaymentNow);
   const runAction = useServerFn(orderAction);
   const correct = useServerFn(correctText);
@@ -158,6 +160,18 @@ function AdminOrders() {
     }
   }
 
+  async function resendReceipt(id: string) {
+    setBusyId(id);
+    try {
+      await resendReceiptFn({ data: { id } });
+      toast.success(t("admin.cancelReceipt.sent"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action impossible.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   /** Renonce au 2e prélèvement : il ne sera plus tenté ni affiché comme dû. */
   async function cancelSecond(id: string) {
     if (!window.confirm(t("admin.cancelSecond.confirm"))) return;
@@ -243,6 +257,26 @@ function AdminOrders() {
                 )}
                 <Button size="sm" variant="outline" disabled={busyId === o.id} onClick={() => cancelSecond(o.id)}>
                   <X className="mr-1 h-4 w-4" />{t("admin.cancelSecond.button")}
+                </Button>
+              </div>
+            )}
+
+            {o.payment_plan === "split" && o.payment_status === "solde_annule" && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <a href={`/annulation/${o.cancel_token}`} target="_blank" rel="noreferrer">{t("admin.cancelReceipt.pdf")}</a>
+                </Button>
+                <Button size="sm" variant="outline" disabled={busyId === o.id} onClick={() => resendReceipt(o.id)}>
+                  {t("admin.cancelReceipt.email")}
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <a
+                    href={`https://wa.me/${whatsappDigits(o.phone)}?text=${encodeURIComponent(`Bonjour ${o.name}, le 2e paiement de votre commande ${o.ref} a été annulé : aucun prélèvement ne sera plus effectué. Votre justificatif : https://vcampro.shop/annulation/${o.cancel_token}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t("admin.cancelReceipt.whatsapp")}
+                  </a>
                 </Button>
               </div>
             )}

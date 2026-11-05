@@ -137,6 +137,7 @@ export type Database = {
         Row: {
           address: string
           amount_paid: number
+          cancel_token: string
           created_at: string
           customer_email: string
           customer_id: string
@@ -156,6 +157,7 @@ export type Database = {
           promo_code: string | null
           ref: string
           second_amount: number
+          second_cancelled_at: string | null
           second_charge_due_at: string | null
           seller_id: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -169,6 +171,7 @@ export type Database = {
         Insert: {
           address: string
           amount_paid?: number
+          cancel_token?: string
           created_at?: string
           customer_email: string
           customer_id: string
@@ -188,6 +191,7 @@ export type Database = {
           promo_code?: string | null
           ref: string
           second_amount?: number
+          second_cancelled_at?: string | null
           second_charge_due_at?: string | null
           seller_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -201,6 +205,7 @@ export type Database = {
         Update: {
           address?: string
           amount_paid?: number
+          cancel_token?: string
           created_at?: string
           customer_email?: string
           customer_id?: string
@@ -220,6 +225,7 @@ export type Database = {
           promo_code?: string | null
           ref?: string
           second_amount?: number
+          second_cancelled_at?: string | null
           second_charge_due_at?: string | null
           seller_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]

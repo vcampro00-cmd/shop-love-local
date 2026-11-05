@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS second_cancelled_at timestamptz, ADD COLUMN IF NOT EXISTS cancel_token uuid NOT NULL DEFAULT gen_random_uuid();
+UPDATE public.orders SET second_cancelled_at = updated_at WHERE payment_status = 'solde_annule' AND second_cancelled_at IS NULL;

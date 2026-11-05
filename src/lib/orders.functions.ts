@@ -39,6 +39,7 @@ export type Order = {
   second_charge_due_at: string | null;
   seller_id: string | null;
   visionx_code: string | null;
+  cancel_token: string;
 };
 
 function toOrder(r: OrderRow): Order {
@@ -68,6 +69,7 @@ function toOrder(r: OrderRow): Order {
     second_charge_due_at: r.second_charge_due_at,
     seller_id: r.seller_id ?? null,
     visionx_code: r.visionx_code ?? null,
+    cancel_token: r.cancel_token,
   };
 }
 
@@ -276,27 +278,43 @@ export const cancelSecondPayment = createServerFn({ method: "POST" })
     if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
     const { data: rows, error } = await context.supabase
       .from("orders")
-      .update({ payment_status: "solde_annule", second_charge_due_at: null })
+      .update({ payment_status: "solde_annule", second_charge_due_at: null, second_cancelled_at: new Date().toISOString() })
       .eq("id", data.id)
       .eq("payment_plan", "split")
       .in("payment_status", ["acompte_paye", "echec_solde"])
-      .select("id, ref, name, customer_email");
+      .select("id, ref, name, customer_email, cancel_token");
     if (error) throw new Error("Le 2e paiement n'a pas pu être annulé.");
     const row = rows?.[0];
-    let emailed = false;
-    if (row?.customer_email) {
-      try {
-        const { sendTemplateEmail } = await import("./email-templates/send-email");
-        const r = await sendTemplateEmail("order-update", row.customer_email, {
-          idempotencyKey: `order-update-second-cancelled-${row.id}`,
-          templateData: { kind: "secondCancelled", ref: row.ref, name: row.name },
-        });
-        emailed = r.sent;
-      } catch (e) {
-        console.error("second-cancelled email failed", e);
-      }
-    }
+    const emailed = row ? await emailCancelReceipt(row, `order-update-second-cancelled-${row.id}`) : false;
     return { ok: true, emailed };
+  });
+
+async function emailCancelReceipt(row: { id: string; ref: string; name: string; customer_email: string | null; cancel_token: string }, key: string) {
+  if (!row.customer_email) return false;
+  try {
+    const { sendTemplateEmail } = await import("./email-templates/send-email");
+    const r = await sendTemplateEmail("order-update", row.customer_email, {
+      idempotencyKey: key,
+      templateData: { kind: "secondCancelled", ref: row.ref, name: row.name, receiptUrl: `https://vcampro.shop/annulation/${row.cancel_token}` },
+    });
+    return r.sent;
+  } catch (e) {
+    console.error("second-cancelled email failed", e);
+    return false;
+  }
+}
+
+/** Renvoie au client, par e-mail, le justificatif d'annulation du 2e paiement. */
+export const resendCancelReceipt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Accès réservé au propriétaire.");
+    const { data: row } = await context.supabase.from("orders").select("id, ref, name, customer_email, cancel_token").eq("id", data.id).eq("payment_status", "solde_annule").maybeSingle();
+    if (!row) throw new Error("Commande introuvable.");
+    const emailed = await emailCancelReceipt(row, `cancel-receipt-${row.id}-${Date.now()}`);
+    if (!emailed) throw new Error("L'e-mail n'a pas pu être envoyé.");
+    return { ok: true };
   });
 
 /** Le propriétaire prélève le 2e paiement tout de suite ; le prélèvement auto ne se refait pas ensuite. */
