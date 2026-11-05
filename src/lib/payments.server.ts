@@ -222,6 +222,7 @@ export async function chargeDueReminderInstallments(): Promise<{ charged: number
     .select("*")
     .is("paid_session_id", null)
     .is("charge_error", null)
+    .is("cancelled_at", null)
     .gt("installment", 1)
     .not("stripe_payment_method_id", "is", null)
     .lte("due_date", today)

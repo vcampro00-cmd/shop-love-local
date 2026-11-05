@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, listCancelledReminders, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
 import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
 import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, todayParis, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
@@ -172,6 +172,7 @@ function Caisse() {
   const addRem = useServerFn(addReminder);
   const delRem = useServerFn(deleteReminder);
   const cancelSecondFn = useServerFn(cancelSecondPayment);
+  const cancelRemFn = useServerFn(cancelReminder);
   const chargeNowFn = useServerFn(chargeSecondPaymentNow);
   async function chargeNow(id: string) {
     if (!window.confirm(t("admin.chargeNow.confirm"))) return;
@@ -190,7 +191,7 @@ function Caisse() {
   // Rappel manuel en échec : l'annuler = le retirer, plus aucun prélèvement automatique.
   async function cancelManual(id: string) {
     if (!window.confirm(t("admin.cancelSecond.confirm"))) return;
-    try { await delRem({ data: { id } }); toast.success(t("admin.cancelSecond.saved")); await qc.invalidateQueries({ queryKey: ["reminders"] }); }
+    try { await cancelRemFn({ data: { id } }); toast.success(t("admin.cancelSecond.saved")); await qc.invalidateQueries({ queryKey: ["reminders"] }); await qc.invalidateQueries({ queryKey: ["cancelled-reminders"] }); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
   const [remName, setRemName] = useState("");
@@ -545,6 +546,9 @@ function Caisse() {
                 )}
                 {!r.fromOrder && (
                 <div className="flex items-center gap-2">
+                  {!r.failed && (
+                    <Button type="button" size="sm" variant="destructive" onClick={() => cancelManual(r.id)}>ANNULER</Button>
+                  )}
                   <Button type="button" size="sm" variant="outline" onClick={() => sendWhatsApp(r)}>
                     <MessageCircle className="h-4 w-4" /> {t("cash.reminderSend")}
                   </Button>
@@ -557,6 +561,7 @@ function Caisse() {
             ))}
           </ul>
         )}
+        <CancelledReminders />
       </form>
 
       <div className="mt-6 rounded-2xl border bg-card p-5">
@@ -573,6 +578,34 @@ function Caisse() {
         <List title={t("cash.purchases")} empty={t("cash.emptyPurchases")} rows={book.purchases} sign="−" onDelete={remove} />
         <List title={t("cash.employees")} empty={t("cash.emptyEmployees")} rows={book.employees} sign="−" onDelete={remove} />
       </div>
+    </div>
+  );
+}
+
+function CancelledReminders() {
+  const fetchC = useServerFn(listCancelledReminders);
+  const { data = [] } = useQuery({ queryKey: ["cancelled-reminders"], queryFn: () => fetchC(), retry: false });
+  if (!data.length) return null;
+  return (
+    <div className="mt-5">
+      <h3 className="text-sm font-semibold">RAPPELS ANNULÉS</h3>
+      <ul className="mt-2 divide-y divide-border">
+        {data.map((r) => {
+          const url = `https://vcampro.shop/annulation/${r.token}`;
+          const msg = `Bonjour ${r.name}, votre paiement de ${r.amount.toFixed(2).replace(".", ",")} € a été annulé : aucun prélèvement ne sera effectué. Votre justificatif d'annulation : ${url}`;
+          return (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+              <span className="font-medium">{r.name} — {r.amount.toFixed(2).replace(".", ",")} € <span className="ml-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">ANNULÉ</span></span>
+              <div className="flex gap-2">
+                <Button asChild size="sm" variant="outline"><a href={url} target="_blank" rel="noreferrer">PDF</a></Button>
+                {r.phone && (
+                  <Button asChild size="sm" variant="outline"><a href={`https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer"><MessageCircle className="h-4 w-4" /> WHATSAPP</a></Button>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

@@ -1,0 +1,2 @@
+ALTER TABLE public.payment_reminders ADD COLUMN IF NOT EXISTS cancelled_at timestamptz, ADD COLUMN IF NOT EXISTS cancel_token uuid NOT NULL DEFAULT gen_random_uuid();
+CREATE UNIQUE INDEX IF NOT EXISTS payment_reminders_cancel_token_idx ON public.payment_reminders(cancel_token);

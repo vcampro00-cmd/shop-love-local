@@ -51,7 +51,7 @@ export async function sendDueReminders(opts: { onlyReminderId?: string } = {}): 
   const jobs: Job[] = [];
 
   // Envoi ciblé (création d'un rappel) : le rappel sans date part aussi tout de suite.
-  const q = db.from("payment_reminders").select("id, name, phone, amount, due_date, installment, installments, group_id, group_total, charge_error").is("paid_session_id", null);
+  const q = db.from("payment_reminders").select("id, name, phone, amount, due_date, installment, installments, group_id, group_total, charge_error").is("paid_session_id", null).is("cancelled_at", null);
   // Envoi ciblé : seulement si le paiement est dû aujourd'hui (ou sans date) ; sinon le cron l'envoie le jour J.
   const { data: reminders, error: e1 } = opts.onlyReminderId
     ? await q.eq("id", opts.onlyReminderId).or(`due_date.is.null,due_date.lte.${today}`)

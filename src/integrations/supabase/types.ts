@@ -241,6 +241,8 @@ export type Database = {
       payment_reminders: {
         Row: {
           amount: number
+          cancel_token: string
+          cancelled_at: string | null
           charge_error: string | null
           contract_accepted_at: string | null
           contract_lang: string
@@ -269,6 +271,8 @@ export type Database = {
         }
         Insert: {
           amount: number
+          cancel_token?: string
+          cancelled_at?: string | null
           charge_error?: string | null
           contract_accepted_at?: string | null
           contract_lang?: string
@@ -297,6 +301,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          cancel_token?: string
+          cancelled_at?: string | null
           charge_error?: string | null
           contract_accepted_at?: string | null
           contract_lang?: string
