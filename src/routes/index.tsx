@@ -56,6 +56,12 @@ function Shop() {
         </div>
       </section>
 
+      {t("home.video") && (
+        <section className="mx-auto -mt-[3cm] max-w-4xl px-4 relative">
+          <video src={t("home.video")} controls playsInline preload="metadata" className="aspect-video w-full rounded-3xl border bg-card shadow-glow" />
+        </section>
+      )}
+
       <section className="mx-auto grid max-w-6xl gap-4 px-4 py-8 sm:grid-cols-3">
         {cards.map(({ i: I, t: title, d }) => (
           <div key={title} className="flex items-center gap-3 rounded-2xl border bg-card p-4">

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { HomeVideoManager } from "@/components/HomeVideoManager";
 
 export const Route = createFileRoute("/editar")({
   staticData: { sitemap: false },
@@ -174,6 +175,7 @@ function Editor() {
       )}
 
       <div className="mt-8 space-y-8">
+        <HomeVideoManager code={code} current={saved?.["home.video"] ?? ""} />
         {EDITOR_GROUPS.map((group) => {
           // Les prix sont communs aux deux langues : pas de champ prix en mode português.
           const fields = editLang === "pt" ? group.fields.filter((f) => f.kind !== "money") : group.fields;

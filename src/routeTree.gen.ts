@@ -25,6 +25,7 @@ import { Route as AuthenticatedStockRouteImport } from './routes/_authenticated/
 import { Route as AnnulationTokenRouteImport } from './routes/annulation.$token'
 import { Route as GarantieTokenRouteImport } from './routes/garantie.$token'
 import { Route as PagarIdRouteImport } from './routes/pagar.$id'
+import { Route as VideoSplatRouteImport } from './routes/video.$'
 import { Route as AuthenticatedPaiementIdRouteImport } from './routes/_authenticated/paiement.$id'
 import { Route as AuthenticatedPedidoIdRouteImport } from './routes/_authenticated/pedido.$id'
 import { Route as ApiPublicCronSecondPaymentsRouteImport } from './routes/api/public/cron/second-payments'
@@ -113,6 +114,11 @@ const PagarIdRoute = PagarIdRouteImport.update({
   path: '/pagar/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VideoSplatRoute = VideoSplatRouteImport.update({
+  id: '/video/$',
+  path: '/video/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedPaiementIdRoute = AuthenticatedPaiementIdRouteImport.update({
   id: '/paiement/$id',
   path: '/paiement/$id',
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/annulation/$token': typeof AnnulationTokenRoute
   '/garantie/$token': typeof GarantieTokenRoute
   '/pagar/$id': typeof PagarIdRoute
+  '/video/$': typeof VideoSplatRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/annulation/$token': typeof AnnulationTokenRoute
   '/garantie/$token': typeof GarantieTokenRoute
   '/pagar/$id': typeof PagarIdRoute
+  '/video/$': typeof VideoSplatRoute
   '/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/annulation/$token': typeof AnnulationTokenRoute
   '/garantie/$token': typeof GarantieTokenRoute
   '/pagar/$id': typeof PagarIdRoute
+  '/video/$': typeof VideoSplatRoute
   '/_authenticated/paiement/$id': typeof AuthenticatedPaiementIdRoute
   '/_authenticated/pedido/$id': typeof AuthenticatedPedidoIdRoute
   '/api/public/cron/second-payments': typeof ApiPublicCronSecondPaymentsRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/annulation/$token'
     | '/garantie/$token'
     | '/pagar/$id'
+    | '/video/$'
     | '/paiement/$id'
     | '/pedido/$id'
     | '/api/public/cron/second-payments'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/annulation/$token'
     | '/garantie/$token'
     | '/pagar/$id'
+    | '/video/$'
     | '/paiement/$id'
     | '/pedido/$id'
     | '/api/public/cron/second-payments'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/annulation/$token'
     | '/garantie/$token'
     | '/pagar/$id'
+    | '/video/$'
     | '/_authenticated/paiement/$id'
     | '/_authenticated/pedido/$id'
     | '/api/public/cron/second-payments'
@@ -317,6 +329,7 @@ export interface RootRouteChildren {
   AnnulationTokenRoute: typeof AnnulationTokenRoute
   GarantieTokenRoute: typeof GarantieTokenRoute
   PagarIdRoute: typeof PagarIdRoute
+  VideoSplatRoute: typeof VideoSplatRoute
   ApiPublicCronSecondPaymentsRoute: typeof ApiPublicCronSecondPaymentsRoute
   ApiPublicCronWhatsappRemindersRoute: typeof ApiPublicCronWhatsappRemindersRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -438,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagarIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/video/$': {
+      id: '/video/$'
+      path: '/video/$'
+      fullPath: '/video/$'
+      preLoaderRoute: typeof VideoSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/paiement/$id': {
       id: '/_authenticated/paiement/$id'
       path: '/paiement/$id'
@@ -524,6 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnnulationTokenRoute: AnnulationTokenRoute,
   GarantieTokenRoute: GarantieTokenRoute,
   PagarIdRoute: PagarIdRoute,
+  VideoSplatRoute: VideoSplatRoute,
   ApiPublicCronSecondPaymentsRoute: ApiPublicCronSecondPaymentsRoute,
   ApiPublicCronWhatsappRemindersRoute: ApiPublicCronWhatsappRemindersRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,

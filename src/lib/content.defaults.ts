@@ -4,6 +4,7 @@
 
 export const DEFAULTS: Record<string, string> = {
   // Accueil
+  "home.video": "",
   "home.heroTitleA": "Achetez en ligne chez",
   "home.heroTitleB": "Vcampro",
   "home.heroSubtitle": "Payez sur le site, faites-vous livrer ou retirez votre commande sur place.",
