@@ -22,9 +22,11 @@ export function HomeVideoManager({ code, current }: { code: string; current: str
   async function onFile(file: File | undefined) {
     if (input.current) input.current.value = "";
     if (!file) return;
-    if (!file.type.startsWith("video/")) return toast.error(x("Ce fichier n'est pas une vidéo.", "Este arquivo não é um vídeo."));
-    if (file.size > MAX)
-      return toast.error(x(`Vidéo trop lourde (${(file.size / 1048576).toFixed(0)} Mo). Maximum : 100 Mo.`, `Vídeo muito grande (${(file.size / 1048576).toFixed(0)} MB). Máximo: 100 MB.`));
+    if (!file.type.startsWith("video/")) { toast.error(x("Ce fichier n'est pas une vidéo.", "Este arquivo não é um vídeo.")); return; }
+    if (file.size > MAX) {
+      toast.error(x(`Vidéo trop lourde (${(file.size / 1048576).toFixed(0)} Mo). Maximum : 100 Mo.`, `Vídeo muito grande (${(file.size / 1048576).toFixed(0)} MB). Máximo: 100 MB.`));
+      return;
+    }
     setBusy(true);
     try {
       const ext = file.name.split(".").pop() ?? "mp4";
