@@ -5,9 +5,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, listCancelledReminders, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, chargeReminderNow, listCancelledReminders, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
 import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
-import { purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, todayParis, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
+import { canChargeReminder, purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, todayParis, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
@@ -174,14 +174,19 @@ function Caisse() {
   const cancelSecondFn = useServerFn(cancelSecondPayment);
   const cancelRemFn = useServerFn(cancelReminder);
   const chargeNowFn = useServerFn(chargeSecondPaymentNow);
-  async function chargeNow(id: string) {
+  const chargeReminderFn = useServerFn(chargeReminderNow);
+  const [chargingId, setChargingId] = useState<string | null>(null);
+  async function chargeNow(id: string, fromOrder = true) {
+    if (chargingId) return;
     if (!window.confirm(t("admin.chargeNow.confirm"))) return;
+    setChargingId(id);
     try {
-      const r = await chargeNowFn({ data: { id } });
+      const r = await (fromOrder ? chargeNowFn({ data: { id } }) : chargeReminderFn({ data: { id } }));
       if ("error" in r) throw new Error(r.error);
       toast.success(t("admin.chargeNow.saved"));
     } catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
     await qc.invalidateQueries();
+    setChargingId(null);
   }
   async function cancelSecond(id: string) {
     if (!window.confirm(t("admin.cancelSecond.confirm"))) return;
@@ -538,14 +543,14 @@ function Caisse() {
                   <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
                   {r.fromOrder && !r.paid && <ReminderSecondDate key={`${r.id}-${r.dueDate}`} id={r.id} dueDate={r.dueDate} />}
                 </div>
-                {r.fromOrder && !r.paid && (!r.dueDate || r.dueDate <= todayParis()) && (
-                  <Button type="button" size="sm" className="bg-brand" onClick={() => chargeNow(r.id)}>{t("admin.chargeNow.button")}</Button>
+                {canChargeReminder(r) && (
+                  <Button type="button" size="sm" className="bg-brand h-auto min-h-9 max-w-full whitespace-normal" disabled={chargingId !== null} onClick={() => chargeNow(r.id, Boolean(r.fromOrder))}>{t("admin.chargeNow.button")}</Button>
                 )}
                 {r.failed && (
                   <Button type="button" size="sm" variant="destructive" onClick={() => (r.fromOrder ? cancelSecond(r.id) : cancelManual(r.id))}>{t("admin.cancelSecond.button")}</Button>
                 )}
                 {!r.fromOrder && (
-                <div className="flex items-center gap-2">
+                <div className="flex max-w-full flex-wrap items-center gap-2">
                   {!r.failed && (
                     <Button type="button" size="sm" variant="destructive" onClick={() => cancelManual(r.id)}>ANNULER</Button>
                   )}

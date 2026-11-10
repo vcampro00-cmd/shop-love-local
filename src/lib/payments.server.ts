@@ -214,47 +214,39 @@ export async function applyPaidReminder(sessionId: string, env: StripeEnv): Prom
 }
 
 /** Prélève automatiquement les échéances suivantes des rappels en plusieurs fois (une tentative par échéance). */
-export async function chargeDueReminderInstallments(): Promise<{ charged: number; failed: number }> {
+type ReminderRow = import("@/integrations/supabase/types").Database["public"]["Tables"]["payment_reminders"]["Row"];
+
+async function chargeReminderInstallment(r: ReminderRow): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (r.paid_session_id || r.cancelled_at || r.installment <= 1 || !r.stripe_customer_id || !r.stripe_payment_method_id) {
+    return { ok: false, reason: "Aucun prélèvement disponible pour ce rappel." };
+  }
   const db = await admin();
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  const { data: due } = await db
-    .from("payment_reminders")
-    .select("*")
-    .is("paid_session_id", null)
-    .is("charge_error", null)
-    .is("cancelled_at", null)
-    .gt("installment", 1)
-    .not("stripe_payment_method_id", "is", null)
-    .lte("due_date", today)
-    .limit(50);
-  let charged = 0, failed = 0;
-  for (const r of due ?? []) {
     const env = (r.payment_env === "live" ? "live" : "sandbox") as StripeEnv;
     try {
       const stripe = createStripeClient(env);
       const pi = await stripe.paymentIntents.create(
         {
           amount: Math.round(Number(r.amount) * 100), currency: "eur",
-          customer: r.stripe_customer_id!, payment_method: r.stripe_payment_method_id!,
+          customer: r.stripe_customer_id, payment_method: r.stripe_payment_method_id,
           off_session: true, confirm: true,
           description: `Paiement ${r.installment}/${r.installments} — ${r.name}`,
           metadata: { reminderId: r.id, installment: String(r.installment) },
         },
-        { idempotencyKey: `reminder-${r.id}-charge` },
+        { idempotencyKey: `reminder-${r.id}-charge${r.charge_error ? `-retry-${Math.floor(Date.now() / 60000)}` : ""}` },
       );
       if (pi.status !== "succeeded") throw new Error(`Statut ${pi.status}`);
       const { data: claimed } = await db.from("payment_reminders")
-        .update({ paid_session_id: pi.id, paid_at: new Date().toISOString() })
+        .update({ paid_session_id: pi.id, paid_at: new Date().toISOString(), charge_error: null })
         .eq("id", r.id).is("paid_session_id", null).select("id");
       if (claimed?.length) {
         await db.from("expenses").insert({ label: `Paiement convenu ${r.installment}/${r.installments} — ${r.name}`, amount: Number(r.amount), kind: "auto", spent_on: today });
       }
-      charged++;
+      return { ok: true };
     } catch (e) {
       const reason = getStripeErrorMessage(e);
       console.error("Reminder installment charge failed", r.id, reason);
       await db.from("payment_reminders").update({ charge_error: reason || "échec" }).eq("id", r.id);
-      failed++;
       try {
         const { sendTemplateEmail } = await import("./email-templates/send-email");
         await sendTemplateEmail("second-payment-failed", "", {
@@ -264,7 +256,30 @@ export async function chargeDueReminderInstallments(): Promise<{ charged: number
       } catch (err) {
         console.error("reminder-charge-failed email failed", err);
       }
+      return { ok: false, reason };
     }
+}
+
+/** Owner-only caller; amount and saved card are always read from the stored reminder. */
+export async function chargeReminderInstallmentNow(id: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const db = await admin();
+  const { data: row, error } = await db.from("payment_reminders").select("*").eq("id", id).maybeSingle();
+  if (error || !row) return { ok: false, reason: "Rappel introuvable." };
+  return chargeReminderInstallment(row);
+}
+
+/** Automatic and manual collection share the same payment routine and idempotency key. */
+export async function chargeDueReminderInstallments(): Promise<{ charged: number; failed: number }> {
+  const db = await admin();
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const { data: due } = await db.from("payment_reminders").select("*")
+    .is("paid_session_id", null).is("charge_error", null).is("cancelled_at", null)
+    .gt("installment", 1).not("stripe_payment_method_id", "is", null).lte("due_date", today).limit(50);
+  let charged = 0, failed = 0;
+  for (const r of due ?? []) {
+    const result = await chargeReminderInstallment(r);
+    if (result.ok) charged++;
+    else failed++;
   }
   return { charged, failed };
 }

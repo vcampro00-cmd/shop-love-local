@@ -39,7 +39,12 @@ export type Reminder = {
   /** 2e paiement d'une commande du site : ne peut pas être supprimé, disparaît une fois payé. */
   fromOrder?: boolean;
   failed?: boolean;
+  canCharge?: boolean;
 };
+
+export function canChargeReminder(r: Pick<Reminder, "paid" | "fromOrder" | "canCharge">): boolean {
+  return !r.paid && Boolean(r.fromOrder || r.canCharge);
+}
 
 /** Numéro WhatsApp au format international, chiffres uniquement (33… pour la France). */
 export function whatsappDigits(phone: string): string {

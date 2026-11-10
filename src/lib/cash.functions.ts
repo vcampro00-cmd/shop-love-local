@@ -134,9 +134,9 @@ export const listReminders = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Reminder[]> => {
     await assertAdmin(context);
     // Paid reminders disappear; the rest are sorted by due date (soonest first, undated last).
-    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id, installment, installments, charge_error").is("paid_session_id", null).is("cancelled_at", null).eq("warranty_only", false).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id, installment, installments, charge_error, stripe_customer_id, stripe_payment_method_id").is("paid_session_id", null).is("cancelled_at", null).eq("warranty_only", false).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
     if (error) throw new Error("Impossible d'afficher les rappels.");
-    const manual: Reminder[] = (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at, ...(r.installments > 1 && r.installment > 1 && { note: `${r.note ?? ""}${r.charge_error ? " — échec du prélèvement automatique" : " — prélèvement automatique"}`, failed: Boolean(r.charge_error) }) }));
+    const manual: Reminder[] = (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at, canCharge: r.installment > 1 && Boolean(r.stripe_customer_id && r.stripe_payment_method_id), ...(r.installments > 1 && r.installment > 1 && { note: `${r.note ?? ""}${r.charge_error ? " — échec du prélèvement automatique" : " — prélèvement automatique"}`, failed: Boolean(r.charge_error) }) }));
     // Second instalments of site orders: read-only, dated on the automatic charge day, gone once paid.
     const { data: orders } = await context.supabase.from("orders").select("id, ref, name, phone, second_amount, second_charge_due_at, payment_status, created_at").in("payment_status", ["acompte_paye", "echec_solde"]);
     const paris = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
@@ -245,6 +245,16 @@ export const deleteReminder = createServerFn({ method: "POST" })
   });
 
 /** Annule un rappel non payé : plus aucun envoi ni prélèvement ; il reste visible pour le justificatif. */
+export const chargeReminderNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { chargeReminderInstallmentNow } = await import("./payments.server");
+    const result = await chargeReminderInstallmentNow(data.id);
+    return result.ok ? { ok: true as const } : { error: result.reason };
+  });
+
 export const cancelReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))

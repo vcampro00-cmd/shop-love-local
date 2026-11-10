@@ -250,7 +250,7 @@ function AdminOrders() {
 
             {o.payment_plan === "split" && (o.payment_status === "acompte_paye" || o.payment_status === "echec_solde") && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {(o.payment_status === "echec_solde" || !o.second_charge_due_at || o.second_charge_due_at.slice(0, 10) <= todayParis()) && (
+                {(
                   <Button size="sm" className="bg-brand" disabled={busyId === o.id} onClick={() => chargeNow(o.id)}>
                     {t("admin.chargeNow.button")}
                   </Button>
