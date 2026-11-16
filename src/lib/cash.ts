@@ -40,6 +40,8 @@ export type Reminder = {
   fromOrder?: boolean;
   failed?: boolean;
   canCharge?: boolean;
+  /** Reste d'une vente en espèces : le client paie en main propre, le propriétaire valide à la main. */
+  cash?: boolean;
 };
 
 export function canChargeReminder(r: Pick<Reminder, "paid" | "fromOrder" | "canCharge">): boolean {

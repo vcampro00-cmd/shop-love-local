@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, chargeReminderNow, listCancelledReminders, getCashBook, listReminders, listWarranties, setWarrantyImei } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, chargeReminderNow, listCancelledReminders, getCashBook, listReminders, listWarranties, markReminderPaid, setWarrantyImei } from "@/lib/cash.functions";
 import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
 import { canChargeReminder, purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, todayParis, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
@@ -329,7 +329,7 @@ function Caisse() {
         if (rest > 0 && remTimes > 0) {
           // Le reste devient des rappels par carte, une échéance par semaine à partir de dans 7 jours.
           const first = new Date(`${today()}T12:00:00Z`); first.setUTCDate(first.getUTCDate() + 7);
-          await addRem({ data: { name: remName, phone: digits, amount: rest, note: t("cash.remRestNote"), dueDate: first.toISOString().slice(0, 10), installments: remTimes, contractLang: remLang, warrantyMonths: null, imei: "" } });
+          await addRem({ data: { name: remName, phone: digits, amount: rest, note: t("cash.remRestNote"), dueDate: first.toISOString().slice(0, 10), installments: remTimes, contractLang: remLang, warrantyMonths: null, imei: "", cash: true } });
           await qc.invalidateQueries({ queryKey: ["reminders"] });
         }
         const msg = t("cash.remCashMessage").replaceAll("{nom}", remName.trim()).replaceAll("{montant}", f(value)).replaceAll("{paye}", f(paid))
@@ -354,6 +354,16 @@ function Caisse() {
     if (!confirm(t("cash.confirmDelete"))) return;
     try { await delRem({ data: { id } }); await qc.invalidateQueries({ queryKey: ["reminders"] }); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
+  }
+
+  const markPaidFn = useServerFn(markReminderPaid);
+  async function markPaid(id: string) {
+    if (!confirm(t("cash.reminderPaidConfirm"))) return;
+    try {
+      await markPaidFn({ data: { id } });
+      toast.success(t("cash.reminderPaidDone"));
+      await qc.invalidateQueries({ queryKey: ["reminders"] });
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
 
   function sendWhatsApp(r: { id: string; name: string; phone: string; amount: number; dueDate: string | null; paymentLink: string | null }) {
@@ -584,6 +594,7 @@ function Caisse() {
                     {r.name} — {brl(r.amount)}
                     {r.paid && <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">PAYÉ</span>}
                     {r.fromOrder && <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold">VENTE DU SITE</span>}
+                    {r.cash && <span className="ml-2 rounded-full bg-success/20 px-2 py-0.5 text-xs font-semibold text-success">{t("cash.reminderCashBadge")}</span>}
                     {r.failed && <span className="ml-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">ÉCHEC</span>}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{r.phone ? `+${r.phone}` : ""}{r.dueDate ? ` · ${t("cash.reminderDate")} : ${formatDueDate(r.dueDate)}` : ""}{r.note ? ` · ${r.note}` : ""}</p>
@@ -597,12 +608,17 @@ function Caisse() {
                 )}
                 {!r.fromOrder && (
                 <div className="flex max-w-full flex-wrap items-center gap-2">
+                  {r.cash && !r.paid && (
+                    <Button type="button" size="sm" className="bg-success text-background hover:bg-success/85" onClick={() => markPaid(r.id)}>{t("cash.reminderPaidCash")}</Button>
+                  )}
                   {!r.failed && (
                     <Button type="button" size="sm" variant="destructive" onClick={() => cancelManual(r.id)}>ANNULER</Button>
                   )}
+                  {!r.cash && (
                   <Button type="button" size="sm" variant="outline" onClick={() => sendWhatsApp(r)}>
                     <MessageCircle className="h-4 w-4" /> {t("cash.reminderSend")}
                   </Button>
+                  )}
                   <button type="button" aria-label="Supprimer" onClick={() => removeReminder(r.id)} className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>

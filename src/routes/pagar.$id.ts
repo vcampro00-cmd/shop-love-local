@@ -13,9 +13,10 @@ async function loadRow(id: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row } = await supabaseAdmin
     .from("payment_reminders")
-    .select("id, name, amount, group_id, group_total, installment, installments, paid_session_id, contract_lang, cancelled_at")
+    .select("id, name, amount, group_id, group_total, installment, installments, paid_session_id, contract_lang, cancelled_at, cash")
     .eq("id", id).maybeSingle();
-  if (!row || row.cancelled_at) return null;
+  // Un rappel en espèces se règle en main propre : pas de paiement par carte.
+  if (!row || row.cancelled_at || row.cash) return null;
   const rest = row.group_id && row.installments > 1 && row.installment === 1
     ? ((await supabaseAdmin.from("payment_reminders").select("amount, due_date, installment").eq("group_id", row.group_id).gt("installment", 1).order("installment")).data ?? [])
     : [];

@@ -243,6 +243,7 @@ export type Database = {
           amount: number
           cancel_token: string
           cancelled_at: string | null
+          cash: boolean
           charge_error: string | null
           contract_accepted_at: string | null
           contract_lang: string
@@ -273,6 +274,7 @@ export type Database = {
           amount: number
           cancel_token?: string
           cancelled_at?: string | null
+          cash?: boolean
           charge_error?: string | null
           contract_accepted_at?: string | null
           contract_lang?: string
@@ -303,6 +305,7 @@ export type Database = {
           amount?: number
           cancel_token?: string
           cancelled_at?: string | null
+          cash?: boolean
           charge_error?: string | null
           contract_accepted_at?: string | null
           contract_lang?: string

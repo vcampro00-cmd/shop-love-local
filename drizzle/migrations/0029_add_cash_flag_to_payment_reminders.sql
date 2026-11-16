@@ -1,0 +1,1 @@
+ALTER TABLE public.payment_reminders ADD COLUMN cash boolean NOT NULL DEFAULT false;

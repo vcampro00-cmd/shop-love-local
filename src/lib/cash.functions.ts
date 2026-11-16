@@ -134,9 +134,9 @@ export const listReminders = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Reminder[]> => {
     await assertAdmin(context);
     // Paid reminders disappear; the rest are sorted by due date (soonest first, undated last).
-    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id, installment, installments, charge_error, stripe_customer_id, stripe_payment_method_id").is("paid_session_id", null).is("cancelled_at", null).eq("warranty_only", false).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
+    const { data, error } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, note, due_date, payment_link, created_at, paid_session_id, installment, installments, charge_error, stripe_customer_id, stripe_payment_method_id, cash").is("paid_session_id", null).is("cancelled_at", null).eq("warranty_only", false).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true });
     if (error) throw new Error("Impossible d'afficher les rappels.");
-    const manual: Reminder[] = (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at, canCharge: r.installment > 1 && Boolean(r.stripe_customer_id && r.stripe_payment_method_id), ...(r.installments > 1 && r.installment > 1 && { note: `${r.note ?? ""}${r.charge_error ? " — échec du prélèvement automatique" : " — prélèvement automatique"}`, failed: Boolean(r.charge_error) }) }));
+    const manual: Reminder[] = (data ?? []).map((r: any) => ({ id: r.id, name: r.name, phone: r.phone, amount: Number(r.amount), note: r.note ?? "", dueDate: r.due_date ?? null, paymentLink: r.payment_link, paid: Boolean(r.paid_session_id), createdAt: r.created_at, cash: Boolean(r.cash), canCharge: r.installment > 1 && Boolean(r.stripe_customer_id && r.stripe_payment_method_id), ...(r.installments > 1 && r.installment > 1 && { note: `${r.note ?? ""}${r.charge_error ? " — échec du prélèvement automatique" : " — prélèvement automatique"}`, failed: Boolean(r.charge_error) }) }));
     // Second instalments of site orders: read-only, dated on the automatic charge day, gone once paid.
     const { data: orders } = await context.supabase.from("orders").select("id, ref, name, phone, second_amount, second_charge_due_at, payment_status, created_at").in("payment_status", ["acompte_paye", "echec_solde"]);
     const paris = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
@@ -178,6 +178,8 @@ export const addReminder = createServerFn({ method: "POST" })
       contractLang: z.enum(["fr", "pt"]).default("fr"),
       warrantyMonths: z.number().int().min(1).max(120).nullable().default(null),
       imei: z.string().trim().max(30).default(""),
+      /** Reste d'une vente en espèces : pas de lien carte, le propriétaire valide à la main. */
+      cash: z.boolean().default(false),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -192,21 +194,25 @@ export const addReminder = createServerFn({ method: "POST" })
       warranty_months: i === 0 ? data.warrantyMonths : null,
       warranty_imei: i === 0 && data.imei ? data.imei : null,
       group_id: groupId, installment: i + 1, installments: parts.length, group_total: parts.length > 1 ? data.amount : null, contract_lang: data.contractLang,
+      cash: data.cash,
       note: parts.length > 1 ? `${data.note ? data.note + " — " : ""}${i + 1}/${parts.length}` : data.note,
     }));
     const { data: inserted, error } = await context.supabase.from("payment_reminders").insert(rows).select("id");
     const row = inserted?.[0];
     if (error || !row) throw new Error("Le rappel n'a pas pu être enregistré.");
     // À la création, le client reçoit tout de suite le lien du 1er rappel (même daté ou en plusieurs fois) ;
-    // les rappels suivants partent seuls le jour de leur date.
+    // les rappels suivants partent seuls le jour de leur date. Un rappel en espèces n'a pas de lien carte :
+    // aucun envoi automatique, le propriétaire confirme la vente lui-même sur WhatsApp.
     let whatsapp: { sent: number; failed: number } | null = null;
-    try {
-      const { sendDueReminders } = await import("@/lib/whatsapp.server");
-      const r = await sendDueReminders({ onlyReminderId: row.id });
-      whatsapp = { sent: r.sent, failed: r.failed };
-    } catch (e) {
-      console.error("Immediate WhatsApp reminder failed", e);
-      whatsapp = { sent: 0, failed: 1 };
+    if (!data.cash) {
+      try {
+        const { sendDueReminders } = await import("@/lib/whatsapp.server");
+        const r = await sendDueReminders({ onlyReminderId: row.id });
+        whatsapp = { sent: r.sent, failed: r.failed };
+      } catch (e) {
+        console.error("Immediate WhatsApp reminder failed", e);
+        whatsapp = { sent: 0, failed: 1 };
+      }
     }
     return { ok: true, whatsapp };
   });
@@ -253,6 +259,21 @@ export const chargeReminderNow = createServerFn({ method: "POST" })
     const { chargeReminderInstallmentNow } = await import("./payments.server");
     const result = await chargeReminderInstallmentNow(data.id);
     return result.ok ? { ok: true as const } : { error: result.reason };
+  });
+
+/** Vente en espèces : le client a payé en main propre, le propriétaire valide à la main. Le rappel disparaît alors de la liste. */
+export const markReminderPaid = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    // Seuls les rappels en espèces peuvent être validés à la main ; un rappel carte passe par Stripe.
+    const { data: updated, error } = await context.supabase.from("payment_reminders")
+      .update({ paid_at: new Date().toISOString(), paid_session_id: "cash-manual" })
+      .eq("id", data.id).eq("cash", true).is("paid_session_id", null).is("cancelled_at", null)
+      .select("id");
+    if (error || !updated?.length) throw new Error("Ce rappel ne peut pas être marqué payé.");
+    return { ok: true };
   });
 
 export const cancelReminder = createServerFn({ method: "POST" })
