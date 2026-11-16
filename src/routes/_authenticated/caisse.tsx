@@ -208,6 +208,10 @@ function Caisse() {
   const [remLang, setRemLang] = useState<"fr" | "pt">("fr");
   const [remWarranty, setRemWarranty] = useState(0);
   const [remImei, setRemImei] = useState("");
+  const [remMethod, setRemMethod] = useState<"card" | "cash">("card");
+  const [remPaid, setRemPaid] = useState("");
+  const [cashWa, setCashWa] = useState<string | null>(null);
+  const addCashWarranty = useServerFn(addWarranty);
   const saveDrawer = useServerFn(setCashDrawer);
   const [drawerInput, setDrawerInput] = useState("");
   const fixDrawer = useServerFn(correctCashDrawer);
@@ -312,6 +316,24 @@ function Caisse() {
     ev.preventDefault();
     const value = num(remAmount);
     const digits = whatsappDigits(remPhone);
+    if (remMethod === "cash") {
+      const paid = num(remPaid);
+      if (!remName.trim() || !(value > 0) || !(paid > 0) || paid > value || digits.length < 8) { toast.error(t("cash.invalid")); return; }
+      try {
+        if (remWarranty > 0) {
+          await addCashWarranty({ data: { name: remName, phone: digits, amount: paid, months: remWarranty, imei: remImei } });
+          await qc.invalidateQueries({ queryKey: ["warranties"] });
+        }
+        const f = (n: number) => n.toFixed(2).replace(".", ",").replace(",00", "");
+        const rest = value - paid;
+        const msg = t("cash.remCashMessage").replaceAll("{nom}", remName.trim()).replaceAll("{montant}", f(value)).replaceAll("{paye}", f(paid))
+          .replaceAll("{reste}", rest > 0 ? t("cash.remCashRest").replaceAll("{reste}", f(rest)) : "");
+        setCashWa(`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`);
+        toast.success(t("cash.remCashReady"));
+        setRemName(""); setRemPhone(""); setRemAmount(""); setRemPaid(""); setRemNote(""); setRemWarranty(0); setRemImei("");
+      } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
+      return;
+    }
     if (!remName.trim() || !(value > 0) || digits.length < 8 || !remDate) { toast.error(t("cash.invalid")); return; }
     try {
       const res = await addRem({ data: { name: remName, phone: digits, amount: value, note: remNote, dueDate: remDate, installments: remTimes, contractLang: remLang, warrantyMonths: remWarranty > 0 ? remWarranty : null, imei: remWarranty > 0 ? remImei : "" } });
@@ -509,6 +531,14 @@ function Caisse() {
           <Input placeholder={t("cash.reminderName")} value={remName} onChange={(e) => setRemName(e.target.value)} maxLength={100} />
           <Input placeholder={t("cash.reminderPhone")} inputMode="tel" value={remPhone} onChange={(e) => setRemPhone(e.target.value)} maxLength={20} />
           <Input placeholder={t("cash.amountPlaceholder")} inputMode="decimal" value={remAmount} onChange={(e) => setRemAmount(e.target.value)} />
+          <select aria-label={t("cash.remMethodCard")} value={remMethod} onChange={(e) => { setRemMethod(e.target.value === "cash" ? "cash" : "card"); setCashWa(null); }} className="h-9 rounded-md border bg-background px-2 text-sm">
+            <option value="card">{t("cash.remMethodCard")}</option>
+            <option value="cash">{t("cash.remMethodCash")}</option>
+          </select>
+          {remMethod === "cash" && (
+            <Input placeholder={t("cash.remPaid")} inputMode="decimal" value={remPaid} onChange={(e) => setRemPaid(e.target.value)} />
+          )}
+          {remMethod === "card" && <>
           <Input type="date" aria-label={t("cash.reminderDate")} value={remDate} onChange={(e) => setRemDate(e.target.value)} />
           <select aria-label={t("cash.reminderTimes")} value={remTimes} onChange={(e) => setRemTimes(Number(e.target.value))} className="h-9 rounded-md border bg-background px-2 text-sm">
             {[1, 2, 3].map((n) => <option key={n} value={n}>{n}× {t("cash.reminderTimes")}</option>)}
@@ -519,6 +549,7 @@ function Caisse() {
               <option value="pt">{t("cash.reminderLang")} : PORTUGUÊS</option>
             </select>
           )}
+          </>}
           <select aria-label={t("cash.reminderWarranty")} value={remWarranty} onChange={(e) => setRemWarranty(Number(e.target.value))} className="h-9 rounded-md border bg-background px-2 text-sm">
             <option value={0}>{t("cash.reminderWarranty")} : {t("cash.reminderWarrantyNone")}</option>
             {[1, 2, 3, 4, 6, 12].map((n) => <option key={n} value={n}>{t("cash.reminderWarranty")} : {n} MOIS</option>)}
@@ -528,6 +559,9 @@ function Caisse() {
           )}
           <Button type="submit" variant="outline">{t("cash.reminderAdd")}</Button>
         </div>
+        {cashWa && (
+          <Button asChild className="mt-3 w-full"><a href={cashWa} target="_blank" rel="noreferrer" onClick={() => setTimeout(() => setCashWa(null), 500)}><MessageCircle className="h-4 w-4" /> {t("cash.remCashSend")}</a></Button>
+        )}
         <Input className="mt-3" placeholder={t("cash.reminderNote")} value={remNote} onChange={(e) => setRemNote(e.target.value)} maxLength={300} />
         {reminders.length > 0 && (
           <ul className="mt-3 divide-y divide-border">
