@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, chargeReminderNow, listCancelledReminders, getCashBook, listReminders, listWarranties, markReminderPaid, setWarrantyImei } from "@/lib/cash.functions";
-import { setCashDrawer, payDebt, correctCashDrawer } from "@/lib/cash.functions";
+import { setCashDrawer, payDebt, correctCashDrawer, sendCashConfirmationFn } from "@/lib/cash.functions";
 import { canChargeReminder, purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, todayParis, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
@@ -212,6 +212,7 @@ function Caisse() {
   const [remPaid, setRemPaid] = useState("");
   const [cashWa, setCashWa] = useState<string | null>(null);
   const addCashWarranty = useServerFn(addWarranty);
+  const sendCashConf = useServerFn(sendCashConfirmationFn);
   const saveDrawer = useServerFn(setCashDrawer);
   const [drawerInput, setDrawerInput] = useState("");
   const fixDrawer = useServerFn(correctCashDrawer);
@@ -335,7 +336,8 @@ function Caisse() {
         const msg = t("cash.remCashMessage").replaceAll("{nom}", remName.trim()).replaceAll("{montant}", f(value)).replaceAll("{paye}", f(paid))
           .replaceAll("{reste}", rest > 0 ? t("cash.remCashRest").replaceAll("{reste}", f(rest)) : "");
         setCashWa(`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`);
-        toast.success(t("cash.remCashReady"));
+        const wa = await sendCashConf({ data: { name: remName, phone: digits, total: value, paid } }).catch(() => ({ sent: false }));
+        if (wa.sent) toast.success(t("cash.reminderWaSent")); else toast.error(t("cash.reminderWaFailed"));
         setRemName(""); setRemPhone(""); setRemAmount(""); setRemPaid(""); setRemNote(""); setRemWarranty(0); setRemImei(""); setRemTimes(1);
       } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
       return;

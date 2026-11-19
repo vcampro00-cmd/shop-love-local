@@ -153,3 +153,20 @@ export async function processPendingEvents(limit = 10): Promise<void> {
     try { await processWebhookEvent(r.id); } catch { /* reste en attente */ }
   }
 }
+
+/** Confirmation automatique d'une vente en espèces (modèle Meta approuvé vcampro_confirmation_especes). */
+export async function sendCashConfirmation(phone: string, name: string, total: number, paid: number): Promise<{ sent: boolean; error?: string }> {
+  const to = whatsappDigits(phone);
+  if (to.length < 8) return { sent: false, error: "Numéro invalide" };
+  const rest = Math.max(0, Math.round((total - paid) * 100) / 100);
+  const db = await admin();
+  try {
+    const waId = await sendTemplate(to, "vcampro_confirmation_especes", [name.trim(), `${euros(total)} €`, `${euros(paid)} €`, `${euros(rest)} €`]);
+    await db.from("whatsapp_messages").insert({ kind: "especes", source_id: crypto.randomUUID(), due_on: parisDay(), phone: to, wa_message_id: waId, status: "accepted" });
+    await reconcileStatuses(waId);
+    return { sent: true };
+  } catch (e) {
+    console.error("WhatsApp cash confirmation failed", e);
+    return { sent: false, error: String((e as Error).message).slice(0, 300) };
+  }
+}

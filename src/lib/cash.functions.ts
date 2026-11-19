@@ -347,3 +347,13 @@ export const correctCashDrawer = createServerFn({ method: "POST" })
     await context.supabase.from("expenses").delete().eq("id", last.id);
     return { ok: true };
   });
+
+/** Vente en espèces : envoie automatiquement la confirmation WhatsApp au client. */
+export const sendCashConfirmationFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ name: z.string().trim().min(1).max(120), phone: z.string().max(30), total: z.number().positive().max(100000), paid: z.number().positive().max(100000) }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { sendCashConfirmation } = await import("./whatsapp.server");
+    return sendCashConfirmation(data.phone, data.name, data.total, Math.min(data.paid, data.total));
+  });
