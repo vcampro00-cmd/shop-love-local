@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
 import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, chargeReminderNow, listCancelledReminders, getCashBook, listReminders, listWarranties, markReminderPaid, setWarrantyImei } from "@/lib/cash.functions";
-import { setCashDrawer, payDebt, correctCashDrawer, sendCashConfirmationFn } from "@/lib/cash.functions";
+import { setCashDrawer, payDebt, correctCashDrawer, sendCashConfirmationFn, sendCashConfirmationFn } from "@/lib/cash.functions";
 import { canChargeReminder, purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, todayParis, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
