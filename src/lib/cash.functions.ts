@@ -180,6 +180,8 @@ export const addReminder = createServerFn({ method: "POST" })
       imei: z.string().trim().max(30).default(""),
       /** Reste d'une vente en espèces : pas de lien carte, le propriétaire valide à la main. */
       cash: z.boolean().default(false),
+      /** Dates choisies à la main pour chaque échéance (ventes en espèces). */
+      dueDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(3).optional(),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -187,6 +189,7 @@ export const addReminder = createServerFn({ method: "POST" })
     const { splitReminder } = await import("@/lib/pricing");
     const first = data.dueDate ?? new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
     const parts = data.installments > 1 ? splitReminder(data.amount, data.installments, first) : [{ amount: data.amount, dueDate: data.dueDate }];
+    if (data.dueDates && data.dueDates.length === parts.length) parts.forEach((p, i) => { p.dueDate = data.dueDates![i]!; });
     const groupId = parts.length > 1 ? crypto.randomUUID() : null;
     const rows = parts.map((p, i) => ({
       name: data.name, phone: data.phone, amount: p.amount, due_date: p.dueDate,

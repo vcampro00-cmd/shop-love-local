@@ -319,6 +319,7 @@ export const DEFAULTS_PT: Record<string, string> = {
   "cash.remMethodCash": "Pagamento em dinheiro",
   "cash.remPaid": "Valor pago (€)",
   "cash.remCashMessage": "Olá {nom}, confirmamos a sua compra de {montant} € na VCAM PRO. Valor pago em dinheiro: {paye} €.{reste} Obrigado pela confiança!",
+  "cash.remDueN": "Data do pagamento {n}",
   "cash.remRestTimes": "Restante em lembretes",
   "cash.remRestNone": "Não criar lembrete para o restante",
   "cash.remRestNote": "Restante da venda em dinheiro",

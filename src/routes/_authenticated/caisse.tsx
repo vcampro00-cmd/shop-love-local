@@ -210,6 +210,7 @@ function Caisse() {
   const [remImei, setRemImei] = useState("");
   const [remMethod, setRemMethod] = useState<"card" | "cash">("card");
   const [remPaid, setRemPaid] = useState("");
+  const [cashDates, setCashDates] = useState<string[]>([]);
   const [cashWa, setCashWa] = useState<string | null>(null);
   const addCashWarranty = useServerFn(addWarranty);
   const sendCashConf = useServerFn(sendCashConfirmationFn);
@@ -319,7 +320,7 @@ function Caisse() {
     const digits = whatsappDigits(remPhone);
     if (remMethod === "cash") {
       const paid = num(remPaid);
-      if (!remName.trim() || !(value > 0) || !(paid > 0) || paid > value || digits.length < 8) { toast.error(t("cash.invalid")); return; }
+      if (!remName.trim() || !(value > 0) || paid < 0 || paid > value || digits.length < 8) { toast.error(t("cash.invalid")); return; }
       try {
         if (remWarranty > 0) {
           await addCashWarranty({ data: { name: remName, phone: digits, amount: paid, months: remWarranty, imei: remImei } });
@@ -330,14 +331,18 @@ function Caisse() {
         if (rest > 0 && remTimes > 0) {
           // Le reste devient des rappels par carte, une échéance par semaine à partir de dans 7 jours.
           const first = new Date(`${today()}T12:00:00Z`); first.setUTCDate(first.getUTCDate() + 7);
-          await addRem({ data: { name: remName, phone: digits, amount: rest, note: t("cash.remRestNote"), dueDate: first.toISOString().slice(0, 10), installments: remTimes, contractLang: remLang, warrantyMonths: null, imei: "", cash: true } });
+          const dates = Array.from({ length: remTimes }, (_, i) => { const d = new Date(first.getTime() + i * 7 * 86_400_000); return cashDates[i] || d.toISOString().slice(0, 10); });
+          await addRem({ data: { name: remName, phone: digits, amount: rest, note: t("cash.remRestNote"), dueDate: dates[0]!, installments: remTimes, contractLang: remLang, warrantyMonths: null, imei: "", cash: true, dueDates: dates } });
           await qc.invalidateQueries({ queryKey: ["reminders"] });
         }
         const msg = t("cash.remCashMessage").replaceAll("{nom}", remName.trim()).replaceAll("{montant}", f(value)).replaceAll("{paye}", f(paid))
           .replaceAll("{reste}", rest > 0 ? t("cash.remCashRest").replaceAll("{reste}", f(rest)) : "");
         setCashWa(`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`);
-        const wa = await sendCashConf({ data: { name: remName, phone: digits, total: value, paid } }).catch(() => ({ sent: false }));
-        if (wa.sent) toast.success(t("cash.reminderWaSent")); else toast.error(t("cash.reminderWaFailed"));
+        if (paid > 0) {
+          const wa = await sendCashConf({ data: { name: remName, phone: digits, total: value, paid } }).catch(() => ({ sent: false }));
+          if (wa.sent) toast.success(t("cash.reminderWaSent")); else toast.error(t("cash.reminderWaFailed"));
+        } else toast.success(t("cash.reminderAdd"));
+        setCashDates([]);
         setRemName(""); setRemPhone(""); setRemAmount(""); setRemPaid(""); setRemNote(""); setRemWarranty(0); setRemImei(""); setRemTimes(1);
       } catch (e) { toast.error(e instanceof Error ? e.message : t("cash.invalid")); }
       return;
@@ -556,12 +561,18 @@ function Caisse() {
           {remMethod === "cash" && (
             <Input placeholder={t("cash.remPaid")} inputMode="decimal" value={remPaid} onChange={(e) => setRemPaid(e.target.value)} />
           )}
-          {remMethod === "cash" && num(remAmount) > num(remPaid) && num(remPaid) > 0 && (
+          {remMethod === "cash" && num(remAmount) > num(remPaid) && (
             <select aria-label={t("cash.remRestTimes")} value={remTimes} onChange={(e) => setRemTimes(Number(e.target.value))} className="h-9 rounded-md border bg-background px-2 text-sm">
               <option value={0}>{t("cash.remRestNone")}</option>
               {[1, 2, 3].map((n) => <option key={n} value={n}>{t("cash.remRestTimes")} : {n}×</option>)}
             </select>
           )}
+          {remMethod === "cash" && num(remAmount) > num(remPaid) && Array.from({ length: remTimes }, (_, i) => (
+            <label key={i} className="flex flex-col gap-1 text-xs text-muted-foreground">
+              {t("cash.remDueN").replaceAll("{n}", String(i + 1))}
+              <Input type="date" value={cashDates[i] ?? ""} onChange={(e) => setCashDates((d) => { const n = [...d]; n[i] = e.target.value; return n; })} />
+            </label>
+          ))}
           {remMethod === "card" && <>
           <Input type="date" aria-label={t("cash.reminderDate")} value={remDate} onChange={(e) => setRemDate(e.target.value)} />
           <select aria-label={t("cash.reminderTimes")} value={remTimes} onChange={(e) => setRemTimes(Number(e.target.value))} className="h-9 rounded-md border bg-background px-2 text-sm">
