@@ -175,6 +175,7 @@ function Caisse() {
   const cancelRemFn = useServerFn(cancelReminder);
   const chargeNowFn = useServerFn(chargeSecondPaymentNow);
   const chargeReminderFn = useServerFn(chargeReminderNow);
+  const markPaidFn = useServerFn(markReminderPaid);
   const [chargingId, setChargingId] = useState<string | null>(null);
   async function chargeNow(id: string, fromOrder = true) {
     if (chargingId) return;
@@ -363,7 +364,6 @@ function Caisse() {
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
 
-  const markPaidFn = useServerFn(markReminderPaid);
   async function markPaid(id: string) {
     if (!confirm(t("cash.reminderPaidConfirm"))) return;
     try {
