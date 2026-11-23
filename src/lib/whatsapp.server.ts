@@ -1,4 +1,5 @@
 import { whatsappDigits } from "./cash";
+import { paymentSchedule, type ScheduledPayment } from "./payment-schedule";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/whatsapp";
 const SITE = "https://vcampro.shop";
@@ -61,11 +62,12 @@ export async function sendDueReminders(opts: { onlyReminderId?: string } = {}): 
   for (const r of reminders ?? []) {
     // Échéances suivantes d'un rappel en plusieurs fois : prélevées automatiquement, pas de message (sauf échec).
     if (r.installments > 1 && r.installment > 1 && !r.charge_error) continue;
-    let amount = euros(Number(r.amount));
+    let amount = `${euros(Number(r.amount))}${r.due_date ? ` (le ${frDay(r.due_date)})` : ""}`;
     if (r.installments > 1 && r.installment === 1 && r.group_id) {
-      const { data: rest } = await db.from("payment_reminders").select("amount, due_date, installment").eq("group_id", r.group_id).gt("installment", 1).order("installment");
+      const { data: rest, error } = await db.from("payment_reminders").select("amount, due_date, installment").eq("group_id", r.group_id).gt("installment", 1).order("installment");
+      if (error) throw error;
       const next = (rest ?? []).map((x) => `${euros(Number(x.amount))} € prélevé automatiquement le ${frDay(x.due_date)}`).join(", ");
-      amount = `${euros(Number(r.group_total ?? r.amount))} au total, payable en ${r.installments} fois : ${euros(Number(r.amount))} € aujourd'hui, puis ${next}. À payer maintenant : ${euros(Number(r.amount))}`;
+      amount = `${euros(Number(r.group_total ?? r.amount))} au total, payable en ${r.installments} fois : ${euros(Number(r.amount))} € le ${frDay(r.due_date ?? today)}, puis ${next}. À payer maintenant : ${euros(Number(r.amount))}`;
     }
     jobs.push({ kind: "rappel", sourceId: r.id, phone: r.phone, template: "vcampro_rappel_paiement", params: [r.name, amount, `${SITE}/pagar/${r.id}`] });
   }
@@ -74,8 +76,8 @@ export async function sendDueReminders(opts: { onlyReminderId?: string } = {}): 
     const { data: orders, error: e2 } = await db.from("orders").select("id, name, phone, ref, second_amount, second_charge_due_at").eq("payment_status", "acompte_paye").not("second_charge_due_at", "is", null);
     if (e2) throw e2;
     for (const o of orders ?? []) {
-      if (!isDueNow(parisDay(o.second_charge_due_at!), today)) continue;
-      jobs.push({ kind: "second", sourceId: o.id, phone: o.phone, template: "vcampro_second_paiement", params: [o.name, o.ref, euros(Number(o.second_amount))] });
+      if (!o.second_charge_due_at || !isDueNow(parisDay(o.second_charge_due_at), today)) continue;
+      jobs.push({ kind: "second", sourceId: o.id, phone: o.phone, template: "vcampro_second_paiement", params: [o.name, o.ref, `${euros(Number(o.second_amount))} (le ${frDay(parisDay(o.second_charge_due_at))})`] });
     }
   }
 
@@ -155,14 +157,16 @@ export async function processPendingEvents(limit = 10): Promise<void> {
 }
 
 /** Confirmation automatique d'une vente en espèces (modèle Meta approuvé vcampro_confirmation_especes). */
-export async function sendCashConfirmation(phone: string, name: string, total: number, paid: number): Promise<{ sent: boolean; error?: string }> {
+export async function sendCashConfirmation(phone: string, name: string, total: number, paid: number, payments: ScheduledPayment[] = []): Promise<{ sent: boolean; error?: string }> {
   const to = whatsappDigits(phone);
   if (to.length < 8) return { sent: false, error: "Numéro invalide" };
   const rest = Math.max(0, Math.round((total - paid) * 100) / 100);
   const db = await admin();
   try {
-    const waId = await sendTemplate(to, "vcampro_confirmation_especes", [name.trim(), `${euros(total)} €`, `${euros(paid)} €`, `${euros(rest)} €`]);
-    await db.from("whatsapp_messages").insert({ kind: "especes", source_id: crypto.randomUUID(), due_on: parisDay(), phone: to, wa_message_id: waId, status: "accepted" });
+    const schedule = paymentSchedule(payments);
+    const waId = await sendTemplate(to, "vcampro_confirmation_especes", [name.trim(), `${euros(total)} €`, `${euros(paid)} €`, `${euros(rest)} €${schedule ? ` (${schedule})` : ""}`]);
+    const { error } = await db.from("whatsapp_messages").insert({ kind: "especes", source_id: crypto.randomUUID(), due_on: parisDay(), phone: to, wa_message_id: waId, status: "accepted" });
+    if (error) throw error;
     await reconcileStatuses(waId);
     return { sent: true };
   } catch (e) {

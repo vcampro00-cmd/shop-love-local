@@ -189,7 +189,8 @@ export const addReminder = createServerFn({ method: "POST" })
     const { splitReminder } = await import("@/lib/pricing");
     const first = data.dueDate ?? new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
     const parts = data.installments > 1 ? splitReminder(data.amount, data.installments, first) : [{ amount: data.amount, dueDate: data.dueDate }];
-    if (data.dueDates && data.dueDates.length === parts.length) parts.forEach((p, i) => { p.dueDate = data.dueDates![i]!; });
+    const dueDates = data.dueDates;
+    if (dueDates && dueDates.length === parts.length) parts.forEach((p, i) => { const day = dueDates[i]; if (day) p.dueDate = day; });
     const groupId = parts.length > 1 ? crypto.randomUUID() : null;
     const rows = parts.map((p, i) => ({
       name: data.name, phone: data.phone, amount: p.amount, due_date: p.dueDate,
@@ -200,7 +201,7 @@ export const addReminder = createServerFn({ method: "POST" })
       cash: data.cash,
       note: parts.length > 1 ? `${data.note ? data.note + " — " : ""}${i + 1}/${parts.length}` : data.note,
     }));
-    const { data: inserted, error } = await context.supabase.from("payment_reminders").insert(rows).select("id");
+    const { data: inserted, error } = await context.supabase.from("payment_reminders").insert(rows).select("id, amount, due_date");
     const row = inserted?.[0];
     if (error || !row) throw new Error("Le rappel n'a pas pu être enregistré.");
     // À la création, le client reçoit tout de suite le lien du 1er rappel (même daté ou en plusieurs fois) ;
@@ -217,7 +218,7 @@ export const addReminder = createServerFn({ method: "POST" })
         whatsapp = { sent: 0, failed: 1 };
       }
     }
-    return { ok: true, whatsapp };
+    return { ok: true, whatsapp, id: row.id, payments: (inserted ?? []).map((p) => ({ amount: Number(p.amount), dueDate: p.due_date })) };
   });
 
 /** Garantie seule, sans paiement sur le site (vente en espèces) : le PDF compte à partir d'aujourd'hui et aucun rappel WhatsApp ne part. */
@@ -354,9 +355,18 @@ export const correctCashDrawer = createServerFn({ method: "POST" })
 /** Vente en espèces : envoie automatiquement la confirmation WhatsApp au client. */
 export const sendCashConfirmationFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ name: z.string().trim().min(1).max(120), phone: z.string().max(30), total: z.number().positive().max(100000), paid: z.number().positive().max(100000) }).parse(i))
+  .inputValidator((i: unknown) => z.object({ name: z.string().trim().min(1).max(120), phone: z.string().max(30), total: z.number().positive().max(100000), paid: z.number().positive().max(100000), reminderId: z.string().uuid().optional() }).parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { sendCashConfirmation } = await import("./whatsapp.server");
-    return sendCashConfirmation(data.phone, data.name, data.total, Math.min(data.paid, data.total));
+    let payments: { amount: number; dueDate: string | null }[] = [];
+    if (data.reminderId) {
+      const { data: reminder, error } = await context.supabase.from("payment_reminders").select("id, group_id, cash, phone").eq("id", data.reminderId).single();
+      if (error || !reminder || !reminder.cash || reminder.phone !== data.phone) throw new Error("Rappel introuvable.");
+      const query = context.supabase.from("payment_reminders").select("amount, due_date").eq("cash", true).is("paid_session_id", null).is("cancelled_at", null);
+      const { data: rows, error: scheduleError } = await (reminder.group_id ? query.eq("group_id", reminder.group_id) : query.eq("id", reminder.id));
+      if (scheduleError) throw scheduleError;
+      payments = (rows ?? []).map((p) => ({ amount: Number(p.amount), dueDate: p.due_date }));
+    }
+    return sendCashConfirmation(data.phone, data.name, data.total, Math.min(data.paid, data.total), payments);
   });

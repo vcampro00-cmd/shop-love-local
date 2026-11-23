@@ -12,6 +12,7 @@ import { brl } from "@/lib/products";
 import { useText } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { paymentSchedule } from "@/lib/payment-schedule";
 
 export const Route = createFileRoute("/_authenticated/caisse")({
   staticData: { sitemap: false },
@@ -329,18 +330,20 @@ function Caisse() {
         }
         const f = (n: number) => n.toFixed(2).replace(".", ",").replace(",00", "");
         const rest = Math.round((value - paid) * 100) / 100;
+        let savedReminder: { id: string; payments: { amount: number; dueDate: string | null }[] } | null = null;
         if (rest > 0 && remTimes > 0) {
           // Le reste devient des rappels par carte, une échéance par semaine à partir de dans 7 jours.
           const first = new Date(`${today()}T12:00:00Z`); first.setUTCDate(first.getUTCDate() + 7);
           const dates = Array.from({ length: remTimes }, (_, i) => { const d = new Date(first.getTime() + i * 7 * 86_400_000); return cashDates[i] || d.toISOString().slice(0, 10); });
-          await addRem({ data: { name: remName, phone: digits, amount: rest, note: t("cash.remRestNote"), dueDate: dates[0]!, installments: remTimes, contractLang: remLang, warrantyMonths: null, imei: "", cash: true, dueDates: dates } });
+          savedReminder = await addRem({ data: { name: remName, phone: digits, amount: rest, note: t("cash.remRestNote"), dueDate: dates[0] ?? null, installments: remTimes, contractLang: remLang, warrantyMonths: null, imei: "", cash: true, dueDates: dates } });
           await qc.invalidateQueries({ queryKey: ["reminders"] });
         }
         const msg = t("cash.remCashMessage").replaceAll("{nom}", remName.trim()).replaceAll("{montant}", f(value)).replaceAll("{paye}", f(paid))
           .replaceAll("{reste}", rest > 0 ? t("cash.remCashRest").replaceAll("{reste}", f(rest)) : "");
-        setCashWa(`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`);
+        const schedule = paymentSchedule(savedReminder?.payments ?? []);
+        setCashWa(`https://wa.me/${digits}?text=${encodeURIComponent(`${msg}${schedule ? `\n${schedule}` : ""}`)}`);
         if (paid > 0) {
-          const wa = await sendCashConf({ data: { name: remName, phone: digits, total: value, paid } }).catch(() => ({ sent: false }));
+          const wa = await sendCashConf({ data: { name: remName, phone: digits, total: value, paid, ...(savedReminder ? { reminderId: savedReminder.id } : {}) } }).catch(() => ({ sent: false }));
           if (wa.sent) toast.success(t("cash.reminderWaSent")); else toast.error(t("cash.reminderWaFailed"));
         } else toast.success(t("cash.reminderAdd"));
         setCashDates([]);
