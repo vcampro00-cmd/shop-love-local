@@ -335,7 +335,7 @@ function Caisse() {
           // Le reste devient des rappels par carte, une échéance par semaine à partir de dans 7 jours.
           const first = new Date(`${today()}T12:00:00Z`); first.setUTCDate(first.getUTCDate() + 7);
           const dates = Array.from({ length: remTimes }, (_, i) => { const d = new Date(first.getTime() + i * 7 * 86_400_000); return cashDates[i] || d.toISOString().slice(0, 10); });
-          savedReminder = await addRem({ data: { name: remName, phone: digits, amount: rest, note: t("cash.remRestNote"), dueDate: dates[0] ?? null, installments: remTimes, contractLang: remLang, warrantyMonths: null, imei: "", cash: true, dueDates: dates } });
+          savedReminder = await addRem({ data: { name: remName, phone: digits, amount: rest, note: t("cash.remRestNote"), dueDate: dates[0] ?? null, installments: remTimes, contractLang: remLang, warrantyMonths: null, imei: "", cash: true, dueDates: dates, saleTotal: value } });
           await qc.invalidateQueries({ queryKey: ["reminders"] });
         }
         const msg = t("cash.remCashMessage").replaceAll("{nom}", remName.trim()).replaceAll("{montant}", f(value)).replaceAll("{paye}", f(paid))
@@ -370,8 +370,9 @@ function Caisse() {
   async function markPaid(id: string) {
     if (!confirm(t("cash.reminderPaidConfirm"))) return;
     try {
-      await markPaidFn({ data: { id } });
+      const res = await markPaidFn({ data: { id } });
       toast.success(t("cash.reminderPaidDone"));
+      if (res.whatsapp === true) toast.success(t("cash.reminderWaSent")); else if (res.whatsapp === false) toast.error(t("cash.reminderWaFailed"));
       await qc.invalidateQueries({ queryKey: ["reminders"] });
     } catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
   }

@@ -261,6 +261,7 @@ export type Database = {
           payment_env: string | null
           payment_link: string | null
           phone: string
+          sale_total: number | null
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
           warranty_error: string | null
@@ -292,6 +293,7 @@ export type Database = {
           payment_env?: string | null
           payment_link?: string | null
           phone: string
+          sale_total?: number | null
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           warranty_error?: string | null
@@ -323,6 +325,7 @@ export type Database = {
           payment_env?: string | null
           payment_link?: string | null
           phone?: string
+          sale_total?: number | null
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           warranty_error?: string | null

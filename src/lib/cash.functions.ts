@@ -182,6 +182,8 @@ export const addReminder = createServerFn({ method: "POST" })
       cash: z.boolean().default(false),
       /** Dates choisies à la main pour chaque échéance (ventes en espèces). */
       dueDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(3).optional(),
+      /** Total de la vente en espèces (acompte compris), pour les confirmations suivantes. */
+      saleTotal: z.number().positive().max(1_000_000).optional(),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -198,7 +200,7 @@ export const addReminder = createServerFn({ method: "POST" })
       warranty_months: i === 0 ? data.warrantyMonths : null,
       warranty_imei: i === 0 && data.imei ? data.imei : null,
       group_id: groupId, installment: i + 1, installments: parts.length, group_total: parts.length > 1 ? data.amount : null, contract_lang: data.contractLang,
-      cash: data.cash,
+      cash: data.cash, sale_total: data.cash ? (data.saleTotal ?? null) : null,
       note: parts.length > 1 ? `${data.note ? data.note + " — " : ""}${i + 1}/${parts.length}` : data.note,
     }));
     const { data: inserted, error } = await context.supabase.from("payment_reminders").insert(rows).select("id, amount, due_date");
@@ -277,7 +279,22 @@ export const markReminderPaid = createServerFn({ method: "POST" })
       .eq("id", data.id).eq("cash", true).is("paid_session_id", null).is("cancelled_at", null)
       .select("id");
     if (error || !updated?.length) throw new Error("Ce rappel ne peut pas être marqué payé.");
-    return { ok: true };
+    // Confirmation WhatsApp au client : total payé à ce jour, reste et prochaines échéances.
+    let whatsapp: boolean | null = null;
+    try {
+      const { data: r } = await context.supabase.from("payment_reminders").select("id, name, phone, amount, group_id, group_total, sale_total").eq("id", data.id).single();
+      if (r?.phone) {
+        const q = context.supabase.from("payment_reminders").select("amount, due_date, paid_session_id, cancelled_at").eq("cash", true);
+        const { data: rows } = await (r.group_id ? q.eq("group_id", r.group_id) : q.eq("id", r.id));
+        const open = (rows ?? []).filter((x) => !x.paid_session_id && !x.cancelled_at).sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+        const rest = open.reduce((s, x) => s + Number(x.amount), 0);
+        const total = Number(r.sale_total ?? r.group_total ?? r.amount);
+        const { sendCashConfirmation } = await import("./whatsapp.server");
+        const res = await sendCashConfirmation(r.phone, r.name, total, Math.max(0, total - rest), open.map((x) => ({ amount: Number(x.amount), dueDate: x.due_date })));
+        whatsapp = res.sent;
+      }
+    } catch (e) { console.error("cash paid confirmation", e); whatsapp = false; }
+    return { ok: true, whatsapp };
   });
 
 export const cancelReminder = createServerFn({ method: "POST" })
