@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Download, MessageCircle, Trash2 } from "lucide-react";
-import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, chargeReminderNow, listCancelledReminders, getCashBook, listReminders, listWarranties, markReminderPaid, setWarrantyImei } from "@/lib/cash.functions";
+import { addEmployee, addExpense, addReminder, addWarranty, deleteEmployee, deleteExpense, deleteReminder, cancelReminder, chargeReminderNow, listCancelledReminders, getCashBook, listReminders, listWarranties, markReminderPaid, cashReminderToCard, setWarrantyImei } from "@/lib/cash.functions";
 import { setCashDrawer, payDebt, correctCashDrawer, sendCashConfirmationFn } from "@/lib/cash.functions";
 import { canChargeReminder, purchaseDebts, cashInDrawer, availableMonths, employeeTotals, filterBookByMonth, formatDueDate, monthOf, normalizeBook, reminderMessage, stripeFee, summarizeCash, todayParis, whatsappDigits, type CashBook, type CashEntry } from "@/lib/cash";
 import { brl } from "@/lib/products";
@@ -177,6 +177,7 @@ function Caisse() {
   const chargeNowFn = useServerFn(chargeSecondPaymentNow);
   const chargeReminderFn = useServerFn(chargeReminderNow);
   const markPaidFn = useServerFn(markReminderPaid);
+  const toCardFn = useServerFn(cashReminderToCard);
   const [chargingId, setChargingId] = useState<string | null>(null);
   async function chargeNow(id: string, fromOrder = true) {
     if (chargingId) return;
@@ -365,6 +366,18 @@ function Caisse() {
     if (!confirm(t("cash.confirmDelete"))) return;
     try { await delRem({ data: { id } }); await qc.invalidateQueries({ queryKey: ["reminders"] }); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Erreur"); }
+  }
+
+  async function cashToCard(r: { id: string; name: string; phone: string; amount: number; dueDate: string | null; paymentLink: string | null }) {
+    if (!confirm(t("cash.reminderToCardConfirm"))) return;
+    const win = window.open("", "_blank");
+    try {
+      await toCardFn({ data: { id: r.id } });
+      const link = `${window.location.origin}/pagar/${r.id}`;
+      const url = `https://wa.me/${whatsappDigits(r.phone)}?text=${encodeURIComponent(reminderMessage(t("cash.reminderMessage"), r, link))}`;
+      if (win) win.location.href = url; else window.open(url, "_blank", "noopener");
+      await qc.invalidateQueries({ queryKey: ["reminders"] });
+    } catch (e) { win?.close(); toast.error(e instanceof Error ? e.message : "Erreur"); }
   }
 
   async function markPaid(id: string) {
@@ -627,6 +640,9 @@ function Caisse() {
                 <div className="flex max-w-full flex-wrap items-center gap-2">
                   {r.cash && !r.paid && (
                     <Button type="button" size="sm" className="bg-success text-background hover:bg-success/85" onClick={() => markPaid(r.id)}>{t("cash.reminderPaidCash")}</Button>
+                  )}
+                  {r.cash && !r.paid && (
+                    <Button type="button" size="sm" variant="outline" onClick={() => cashToCard(r)}>{t("cash.reminderToCard")}</Button>
                   )}
                   {!r.failed && (
                     <Button type="button" size="sm" variant="destructive" onClick={() => cancelManual(r.id)}>ANNULER</Button>

@@ -297,6 +297,20 @@ export const markReminderPaid = createServerFn({ method: "POST" })
     return { ok: true, whatsapp };
   });
 
+/** Le client prévu en espèces paie finalement par carte : l'échéance devient un rappel carte seul (lien /pagar). */
+export const cashReminderToCard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: updated, error } = await context.supabase.from("payment_reminders")
+      .update({ cash: false, group_id: null, installment: 1, installments: 1, group_total: null })
+      .eq("id", data.id).eq("cash", true).is("paid_session_id", null).is("cancelled_at", null)
+      .select("id");
+    if (error || !updated?.length) throw new Error("Ce rappel ne peut pas passer en paiement par carte.");
+    return { ok: true };
+  });
+
 export const cancelReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))

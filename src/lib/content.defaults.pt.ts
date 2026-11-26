@@ -328,6 +328,8 @@ export const DEFAULTS_PT: Record<string, string> = {
   "cash.remCashReady": "Confirmação pronta: aperte o botão WhatsApp para enviar.",
   "cash.reminderCashBadge": "Dinheiro",
   "cash.reminderPaidCash": "Pago",
+  "cash.reminderToCard": "Link de pagamento cartão",
+  "cash.reminderToCardConfirm": "O cliente vai pagar no cartão? Este lembrete vira pagamento por cartão e o link abre no WhatsApp.",
   "cash.reminderPaidConfirm": "Confirmar: o cliente pagou este lembrete em dinheiro?",
   "cash.reminderPaidDone": "Lembrete marcado como pago.",
   "cash.reminderSend": "Enviar no WhatsApp",

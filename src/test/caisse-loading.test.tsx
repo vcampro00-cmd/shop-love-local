@@ -18,7 +18,7 @@ vi.mock("@/lib/cash.functions", () => Object.fromEntries([
   "addEmployee", "addExpense", "addReminder", "addWarranty", "deleteEmployee",
   "deleteExpense", "deleteReminder", "cancelReminder", "chargeReminderNow",
   "listCancelledReminders", "getCashBook", "listReminders", "listWarranties",
-  "markReminderPaid", "setWarrantyImei", "setCashDrawer", "payDebt",
+  "markReminderPaid", "cashReminderToCard", "setWarrantyImei", "setCashDrawer", "payDebt",
   "correctCashDrawer", "sendCashConfirmationFn",
 ].map((name) => [name, vi.fn().mockResolvedValue([])])));
 
